@@ -131,9 +131,9 @@ checkpoints/
 # Jupyter Notebooks
 .ipynb_checkpoints
 
-# Claude/AI Assistant files
-.claude/
-claude/
+# Claude/AI Assistant files (KEEP THESE - needed for project)
+# .claude/
+# claude/
 .anthropic/
 anthropic/
 
