@@ -29,6 +29,7 @@ import TrackNOC from './pages/TrackNOC';
 import ManageNOC from './pages/ManageNOC';
 import StudentProfileDashboard from './pages/StudentProfile/StudentProfileDashboard';
 import StudentProfileEdit from './pages/StudentProfile/StudentProfileEdit';
+import ResumeAnalyzerPage from './pages/ResumeAnalyzerPage';
 
 // ✅ Optional: Add React Query DevTools
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -81,6 +82,7 @@ function App() {
         <Route path='/admin/manage-noc' element={<ProtectedRoute><ManageNOC /></ProtectedRoute>} />
         <Route path='/student/profile' element={<ProtectedRoute><StudentProfileDashboard /></ProtectedRoute>} />
         <Route path='/student/profile/edit' element={<ProtectedRoute><StudentProfileEdit /></ProtectedRoute>} />
+        <Route path='/student/resume-analyzer' element={<ProtectedRoute><ResumeAnalyzerPage /></ProtectedRoute>} />
       </Routes>
 
       {/* ✅ Add React Query DevTools at the bottom */}

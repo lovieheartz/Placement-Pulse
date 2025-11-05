@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare } from 'react-icons/fi';
+import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare, FiTarget } from 'react-icons/fi';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -242,6 +242,20 @@ const Sidebar = () => {
                   </button>
                 </div>
               )}
+            </li>
+            
+            {/* Resume Analyzer */}
+            <li className="w-full">
+              <button
+                onClick={() => {
+                  navigate('/student/resume-analyzer');
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center px-4 py-3 text-left text-white hover:bg-blue-700 rounded-lg transition-all duration-200 font-medium"
+              >
+                <FiTarget className="w-5 h-5 mr-3" />
+                Resume Analyzer
+              </button>
             </li>
             
             {/* Profile */}

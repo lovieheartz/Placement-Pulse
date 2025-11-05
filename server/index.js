@@ -36,6 +36,7 @@ app.use("/admin", require("./routes/adminRoutes"));
 app.use("/faculty", require("./routes/facultyRoutes")); // ✅ Ensures /faculty/:id will work
 app.use("/notifications", require("./routes/notificationRoutes")); // Notification routes
 app.use("/noc", require("./routes/nocRoutes")); // NOC routes
+app.use("/api/resume-analysis", require("./routes/resumeAnalysisRoutes")); // Resume analysis routes
 
 // === HEALTH CHECK ===
 app.get("/", (req, res) => {
