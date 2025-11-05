@@ -284,10 +284,39 @@ ecosystem.config.js
 # Project Specific
 ##############################
 
-# Uploads directory (if storing user uploads)
+# Uploads directory (ALL user uploaded files - PDFs, images, etc.)
 uploads/
 server/uploads/
+server/uploads/**/*
+server/uploads/resumes/
+server/uploads/resumes/**/*.pdf
+server/uploads/resumes/**/*.docx
+server/uploads/optimized_resumes/
+server/uploads/optimized_resumes/**/*.pdf
+server/uploads/noc/
+server/uploads/noc/**/*
 client/public/uploads/
+
+# PDF and Document files (user uploads)
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Exclude PDFs EXCEPT documentation in docs/
+!docs/**/*.pdf
+!documentation/**/*.pdf
+!README.pdf
+
+# Image uploads (profile pictures, etc.)
+uploads/**/*.jpg
+uploads/**/*.jpeg
+uploads/**/*.png
+uploads/**/*.gif
+uploads/**/*.webp
 
 # Generated documentation
 docs/build/
@@ -295,3 +324,11 @@ docs/build/
 # Local configuration overrides
 config/local.js
 config/local.json
+
+# Batch files (Windows scripts)
+*.bat
+
+# Test files
+test_*.js
+test_*.html
+*_test.js
