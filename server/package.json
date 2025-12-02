@@ -11,6 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/genai": "^1.29.1",
+    "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^4.8.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -19,11 +21,13 @@
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.10.0",
     "mongoose": "^8.14.1",
-    "multer": "^2.0.1",
+    "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
-    "pdf-parse": "^1.1.1",
-    "pdfkit": "^0.17.2"
+    "openai": "^6.9.0",
+    "pdf-parse": "^1.1.4",
+    "pdfkit": "^0.17.2",
+    "ws": "^8.18.3"
   }
 }

@@ -317,15 +317,15 @@ const StudentProfileEdit = () => {
 
                 {/* Tabs */}
                 <div className="border-b border-gray-200 mb-8">
-                  <nav className="flex space-x-1 overflow-x-auto">
+                  <nav className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {tabs.map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`py-3 px-6 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                        className={`py-3 px-6 rounded-t-xl font-semibold text-sm whitespace-nowrap transition-all duration-200 border-2 ${
                           activeTab === tab.id
-                            ? 'border-blue-500 text-blue-600 bg-blue-50'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            ? 'border-blue-500 border-b-white text-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm -mb-0.5'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-200'
                         }`}
                       >
                         {tab.label}
@@ -414,15 +414,20 @@ const StudentProfileEdit = () => {
                   {activeTab === 'academic' && (
                     <div className="space-y-8">
                       {/* Class X */}
-                      <div className="border border-gray-200 rounded-lg p-6">
+                      <div className="border-2 border-blue-100 rounded-xl p-6 bg-gradient-to-br from-white to-blue-50/30">
                         <div className="flex justify-between items-center mb-6">
-                          <h3 className="text-lg font-semibold text-gray-800">Class X Details</h3>
+                          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span className="text-2xl">📚</span> Class X Details
+                          </h3>
                           <button
                             type="button"
                             onClick={() => toggleSubjectForm('classX')}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                           >
-                            + Add Subject
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Subject
                           </button>
                         </div>
                         
@@ -472,19 +477,25 @@ const StudentProfileEdit = () => {
                                 className="px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
-                            <div className="flex gap-2 mt-3">
+                            <div className="flex gap-3 mt-4">
                               <button
                                 type="button"
                                 onClick={() => handleAddSubject('classX')}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+                                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:from-green-700 hover:to-green-800 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
                               >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
                                 Add Subject
                               </button>
                               <button
                                 type="button"
                                 onClick={() => toggleSubjectForm('classX')}
-                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-400"
+                                className="flex-1 bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 border border-gray-300"
                               >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                                 Cancel
                               </button>
                             </div>
@@ -517,15 +528,20 @@ const StudentProfileEdit = () => {
                       </div>
 
                       {/* Class XII */}
-                      <div className="border border-gray-200 rounded-lg p-6">
+                      <div className="border-2 border-indigo-100 rounded-xl p-6 bg-gradient-to-br from-white to-indigo-50/30">
                         <div className="flex justify-between items-center mb-6">
-                          <h3 className="text-lg font-semibold text-gray-800">Class XII Details</h3>
+                          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span className="text-2xl">🎓</span> Class XII Details
+                          </h3>
                           <button
                             type="button"
                             onClick={() => toggleSubjectForm('classXII')}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+                            className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-indigo-800 hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                           >
-                            + Add Subject
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Subject
                           </button>
                         </div>
                         
@@ -575,19 +591,25 @@ const StudentProfileEdit = () => {
                                 className="px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
-                            <div className="flex gap-2 mt-3">
+                            <div className="flex gap-3 mt-4">
                               <button
                                 type="button"
                                 onClick={() => handleAddSubject('classXII')}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+                                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:from-green-700 hover:to-green-800 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
                               >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
                                 Add Subject
                               </button>
                               <button
                                 type="button"
                                 onClick={() => toggleSubjectForm('classXII')}
-                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-400"
+                                className="flex-1 bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 border border-gray-300"
                               >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                                 Cancel
                               </button>
                             </div>
@@ -768,34 +790,42 @@ const StudentProfileEdit = () => {
                   )}
 
                   {/* Submit Button */}
-                  <div className="flex justify-between items-center pt-8 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center pt-8 border-t border-gray-200 gap-4">
                     <button
                       type="button"
                       onClick={() => navigate('/student/profile')}
-                      className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center space-x-2"
+                      className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 hover:shadow-md transition-all duration-200 font-semibold flex items-center justify-center gap-2 border border-gray-300"
                     >
-                      <span>← Back to Profile</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                      </svg>
+                      <span>Back to Profile</span>
                     </button>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         type="button"
                         onClick={() => reset()}
-                        className="px-6 py-3 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors font-medium"
+                        className="px-6 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-2 border-amber-200 rounded-xl hover:from-amber-100 hover:to-yellow-100 hover:shadow-md transition-all duration-200 font-semibold"
                       >
-                        Reset Form
+                        🔄 Reset Form
                       </button>
                       <button
                         type="submit"
                         disabled={updateProfileMutation.isPending}
-                        className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all font-medium shadow-lg"
+                        className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                       >
                         {updateProfileMutation.isPending ? (
-                          <span className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                            <span>Saving...</span>
+                          <span className="flex items-center justify-center gap-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                            <span>Saving Changes...</span>
                           </span>
                         ) : (
-                          'Save Changes'
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Save Changes</span>
+                          </span>
                         )}
                       </button>
                     </div>

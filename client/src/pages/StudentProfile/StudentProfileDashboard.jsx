@@ -107,31 +107,34 @@ const StudentProfileDashboard = () => {
                             </div>
                           </div>
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <h1 className="text-2xl font-bold text-gray-800">
-                            {profileData?.firstName && profileData?.lastName 
+                            {profileData?.firstName && profileData?.lastName
                               ? `${profileData.firstName} ${profileData.lastName}`
                               : profileData?.fullName || user.name
                             }
                           </h1>
-                          <p className="text-gray-600 text-lg">
+                          <p className="text-gray-600 text-lg mb-3">
                             {(profileData?.course || user.course)} - {(profileData?.stream || user.branch)}
                           </p>
-                          <div className="flex items-center space-x-4 mt-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3">
                             <button
                               onClick={() => navigate('/student/profile/edit')}
-                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2.5 rounded-xl hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all duration-200 font-semibold text-sm flex items-center gap-2"
                             >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
                               Update Profile
                             </button>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div className="flex items-center gap-3 bg-gradient-to-r from-gray-50 to-blue-50 px-4 py-2 rounded-lg border border-gray-200">
+                              <div className="w-24 bg-gray-200 rounded-full h-2.5 shadow-inner">
                                 <div
-                                  className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(profileData?.completionPercentage || 0)}`}
+                                  className={`h-2.5 rounded-full transition-all duration-300 ${getProgressColor(profileData?.completionPercentage || 0)}`}
                                   style={{ width: `${profileData?.completionPercentage || 0}%` }}
                                 ></div>
                               </div>
-                              <span className={`text-sm font-medium ${getCompletionColor(profileData?.completionPercentage || 0)}`}>
+                              <span className={`text-sm font-bold whitespace-nowrap ${getCompletionColor(profileData?.completionPercentage || 0)}`}>
                                 {profileData?.completionPercentage || 0}% Complete
                               </span>
                             </div>

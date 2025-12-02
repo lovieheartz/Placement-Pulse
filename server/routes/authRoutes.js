@@ -16,6 +16,32 @@ router.post("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
 router.post("/verify-account", verifyAccount);
 
+// Token refresh endpoint for production
+router.post("/refresh-token", authenticateToken, async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    const jwt = require('jsonwebtoken');
+
+    // Generate new token with extended expiry
+    const newToken = jwt.sign(
+      { id, role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' } // 24 hours for long interviews
+    );
+
+    console.log(`✅ Token refreshed for user: ${id}`);
+
+    res.json({
+      success: true,
+      token: newToken,
+      expiresIn: '24h'
+    });
+  } catch (error) {
+    console.error('❌ Token refresh error:', error);
+    res.status(500).json({ message: 'Failed to refresh token' });
+  }
+});
+
 // Avatar upload route
 router.post("/upload-avatar", authenticateToken, upload.single('avatar'), async (req, res) => {
   try {

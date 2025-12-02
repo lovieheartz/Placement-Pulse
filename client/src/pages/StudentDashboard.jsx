@@ -75,25 +75,49 @@ const StudentDashboard = () => {
         />
 
         <div className="card-container">
-          <Card title="Student Dashboard" />
-          <Card title="Faculty Dashboard" />
-          <Card title="Admin Dashboard" />
-          <div 
-            className="card cursor-pointer hover:shadow-lg transition-shadow duration-300"
-            onClick={() => navigate('/student/resume-analyzer')}
-          >
-            <div className="card-icon bg-gradient-to-r from-purple-500 to-purple-600">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <Card
+            title="AI Resume Analyzer"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-            </div>
-            <div className="card-content">
-              <h3 className="card-title">AI Resume Analyzer</h3>
-              <p className="card-description">
-                Get AI-powered insights on your resume with ATS scoring, keyword analysis, and optimization suggestions.
-              </p>
-            </div>
-          </div>
+            }
+            description="Get AI-powered resume analysis with ATS scoring"
+            onClick={() => navigate('/student/resume-analyzer')}
+          />
+
+          <Card
+            title="AI Mock Interview"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            }
+            description="Practice interviews with AI voice assistant"
+            onClick={() => navigate('/student/mock-interview')}
+          />
+
+          <Card
+            title="Apply for NOC"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            }
+            description="Submit and track your NOC applications"
+            onClick={() => navigate('/student/apply-noc')}
+          />
+
+          <Card
+            title="Enrolled Tests"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+            }
+            description="View and attempt your enrolled tests"
+            onClick={() => navigate('/student/tests')}
+          />
         </div>
 
         <Footer />

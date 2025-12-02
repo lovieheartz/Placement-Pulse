@@ -21,10 +21,7 @@ app.use("/uploads/noc", express.static(path.join(__dirname, "uploads", "noc")));
 
 // === MONGODB CONNECTION ===
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
@@ -37,6 +34,8 @@ app.use("/faculty", require("./routes/facultyRoutes")); // ✅ Ensures /faculty/
 app.use("/notifications", require("./routes/notificationRoutes")); // Notification routes
 app.use("/noc", require("./routes/nocRoutes")); // NOC routes
 app.use("/api/resume-analysis", require("./routes/resumeAnalysisRoutes")); // Resume analysis routes
+app.use("/api/mock-interview", require("./routes/mockInterviewRoutes")); // AI Mock Interview routes
+app.use("/api/interview", require("./routes/openaiInterviewRoutes").router); // OpenAI Realtime Interview routes
 
 // === HEALTH CHECK ===
 app.get("/", (req, res) => {
@@ -49,6 +48,16 @@ const { scheduleReminderJobs } = require('./jobs/deadlineReminderJob');
 scheduleJobs();
 scheduleReminderJobs();
 
-// === START SERVER ===
+// === START SERVER WITH WEBSOCKET SUPPORT ===
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+const http = require('http');
+const server = http.createServer(app);
+
+// Initialize OpenAI Realtime Interview WebSocket
+const WebSocket = require('ws');
+const { setupWebSocket: setupOpenAIWebSocket } = require('./routes/openaiInterviewRoutes');
+const interviewWss = new WebSocket.Server({ server, path: '/api/interview/ws' });
+setupOpenAIWebSocket(interviewWss);
+console.log('✅ OpenAI Realtime Interview WebSocket initialized on /api/interview/ws');
+
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

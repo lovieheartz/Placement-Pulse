@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare, FiTarget } from 'react-icons/fi';
+import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare, FiTarget, FiCpu, FiVideo, FiMic } from 'react-icons/fi';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [testDropdownOpen, setTestDropdownOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [nocDropdownOpen, setNocDropdownOpen] = useState(false);
+  const [aiToolsDropdownOpen, setAiToolsDropdownOpen] = useState(false);
   const [tpoNotificationCount, setTpoNotificationCount] = useState(0);
   const [facultyNotificationCount, setFacultyNotificationCount] = useState(0);
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Sidebar = () => {
   const toggleTestDropdown = () => setTestDropdownOpen(!testDropdownOpen);
   const toggleNotificationDropdown = () => setNotificationDropdownOpen(!notificationDropdownOpen);
   const toggleNocDropdown = () => setNocDropdownOpen(!nocDropdownOpen);
+  const toggleAiToolsDropdown = () => setAiToolsDropdownOpen(!aiToolsDropdownOpen);
 
   useEffect(() => {
     // Fetch notification counts
@@ -28,17 +30,17 @@ const Sidebar = () => {
         const { data } = await axios.get('http://localhost:3001/notifications/user', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         if (data && Array.isArray(data.data)) {
           // Count unread notifications by createdByModel type
-          const tpoUnread = data.data.filter(notif => 
+          const tpoUnread = data.data.filter(notif =>
             notif.createdByModel === 'Admin' && !notif.isReadByUser
           ).length;
-          
-          const facultyUnread = data.data.filter(notif => 
+
+          const facultyUnread = data.data.filter(notif =>
             notif.createdByModel === 'Faculty' && !notif.isReadByUser
           ).length;
-          
+
           setTpoNotificationCount(tpoUnread);
           setFacultyNotificationCount(facultyUnread);
         }
@@ -68,7 +70,7 @@ const Sidebar = () => {
       {/* Sidebar */}
       <nav
         className={`fixed top-0 left-0 h-full w-full bg-gradient-to-b from-blue-800 to-blue-900 text-white px-4 py-6 z-[110] transform transition-all duration-300 shadow-xl
-        ${isOpen ? "translate-y-0" : "-translate-y-full"} 
+        ${isOpen ? "translate-y-0" : "-translate-y-full"}
         md:relative md:translate-y-0 md:translate-x-0 md:h-auto md:w-[240px] md:min-h-screen`}
       >
         {/* Close Button - Mobile only */}
@@ -123,13 +125,13 @@ const Sidebar = () => {
               </div>
               {testDropdownOpen && (
                 <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
-                  <button 
+                  <button
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                   >
                     <FiFileText className="w-4 h-4 mr-2" />
                     Enrolled Tests
                   </button>
-                  <button 
+                  <button
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                   >
                     <FiCheckSquare className="w-4 h-4 mr-2" />
@@ -138,7 +140,7 @@ const Sidebar = () => {
                 </div>
               )}
             </li>
-            
+
             {/* Notifications Dropdown */}
             <li className="w-full">
               <div
@@ -163,7 +165,7 @@ const Sidebar = () => {
               {notificationDropdownOpen && (
                 <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
                   {/* TPO Notifications */}
-                  <button 
+                  <button
                     className="w-full flex items-center justify-between px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                     onClick={() => {
                       navigate('/student/notifications/tpo');
@@ -180,9 +182,9 @@ const Sidebar = () => {
                       </span>
                     )}
                   </button>
-                  
+
                   {/* Faculty Notifications */}
-                  <button 
+                  <button
                     className="w-full flex items-center justify-between px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                     onClick={() => {
                       navigate('/student/notifications/faculty');
@@ -202,7 +204,7 @@ const Sidebar = () => {
                 </div>
               )}
             </li>
-            
+
             {/* NOC Dropdown */}
             <li className="w-full">
               <div
@@ -219,7 +221,7 @@ const Sidebar = () => {
               </div>
               {nocDropdownOpen && (
                 <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
-                  <button 
+                  <button
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                     onClick={() => {
                       navigate('/student/apply-noc');
@@ -229,8 +231,8 @@ const Sidebar = () => {
                     <FiFileText className="w-4 h-4 mr-2" />
                     Apply NOC
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                     onClick={() => {
                       navigate('/student/track-noc');
@@ -243,21 +245,60 @@ const Sidebar = () => {
                 </div>
               )}
             </li>
-            
-            {/* Resume Analyzer */}
+
+            {/* AI Tools Dropdown - NEW! */}
             <li className="w-full">
-              <button
-                onClick={() => {
-                  navigate('/student/resume-analyzer');
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center px-4 py-3 text-left text-white hover:bg-blue-700 rounded-lg transition-all duration-200 font-medium"
+              <div
+                className={`flex justify-between items-center cursor-pointer px-4 py-3 w-full hover:bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg transition-all duration-200 ${aiToolsDropdownOpen ? 'bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg' : ''}`}
+                onClick={toggleAiToolsDropdown}
               >
-                <FiTarget className="w-5 h-5 mr-3" />
-                Resume Analyzer
-              </button>
+                <div className="flex items-center">
+                  <FiCpu className="w-5 h-5 mr-3 flex-shrink-0" />
+                  <span className="font-bold">AI Tools</span>
+                  <span className="ml-2 text-xs bg-yellow-400 text-blue-900 px-2 py-0.5 rounded-full font-bold">NEW</span>
+                </div>
+                <FiChevronDown
+                  className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${aiToolsDropdownOpen ? "rotate-180" : ""}`}
+                />
+              </div>
+              {aiToolsDropdownOpen && (
+                <div className="mt-1 ml-6 pl-6 border-l-2 border-purple-400 space-y-2">
+                  <button
+                    className="w-full flex items-center px-3 py-2.5 text-sm text-blue-100 hover:bg-purple-600 rounded-lg transition-all duration-200 group"
+                    onClick={() => {
+                      navigate('/student/resume-analyzer');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <FiTarget className="w-4 h-4 mr-2 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">Resume Analyzer</span>
+                  </button>
+
+                  <button
+                    className="w-full flex items-center px-3 py-2.5 text-sm text-blue-100 hover:bg-purple-600 rounded-lg transition-all duration-200 group"
+                    onClick={() => {
+                      navigate('/student/mock-interview');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <FiMic className="w-4 h-4 mr-2 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">Mock Interview</span>
+                  </button>
+
+                  <button
+                    className="w-full flex items-center px-3 py-2.5 text-sm text-blue-100 hover:bg-purple-600 rounded-lg transition-all duration-200 group"
+                    onClick={() => {
+                      navigate('/student/interview-history');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <FiFileText className="w-4 h-4 mr-2 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">Interview History</span>
+                  </button>
+                </div>
+              )}
             </li>
-            
+
             {/* Profile */}
             <li className="w-full">
               <button
@@ -272,7 +313,7 @@ const Sidebar = () => {
               </button>
             </li>
           </ul>
-        
+
         </div>
       </nav>
 

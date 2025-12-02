@@ -24,7 +24,7 @@
   justify-content: space-between;
   align-items: center;
   position: relative;
-  z-index: 5;
+  z-index: 100;
 }
 
 /* Welcome text in header */
@@ -95,23 +95,54 @@
   background-color: #f0f0f0;
 }
 
-/* Cards section - Horizontal Scroll (Desktop) */
+/* Cards section - Grid Layout (Desktop) */
 .card-container {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
   padding: 40px;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.card-container > * {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  min-width: 250px;
-  max-width: 300px;
+/* New Grid Layout for Dashboard Cards */
+.dashboard-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .card-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: 3 columns for card-container */
+@media (min-width: 1024px) {
+  .card-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .dashboard-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Large Desktop: 4 columns */
+@media (min-width: 1440px) {
+  .card-container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .dashboard-cards-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 /* Responsive Design */
@@ -149,19 +180,18 @@
     align-self: flex-end;
   }
 
-  /* 🔁 Cards vertical scroll on mobile */
+  /* 🔁 Cards grid on mobile */
   .card-container {
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    gap: 20px;
+    grid-template-columns: 1fr;
     padding: 20px;
+    gap: 16px;
   }
 
-  .card-container > * {
-    flex: unset;
-    min-width: 100%;
-    max-width: 100%;
+  /* Grid layout responsive for mobile */
+  .dashboard-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 16px;
   }
 
   .dropdown-menu {

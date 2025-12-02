@@ -6,8 +6,9 @@ const fs = require('fs');
 const path = require('path');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 const Student = require('../models/Student');
+const aiService = require('../services/aiService');
 
-// Initialize Hugging Face client
+// Initialize Hugging Face client (fallback)
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 class ResumeAnalysisController {
@@ -32,11 +33,36 @@ class ResumeAnalysisController {
     }
   }
 
-  // Generate AI analysis using local AI service or fallback
+  // Generate AI analysis using Gemini -> Fallback
   static async generateAIAnalysis(resumeText, jobDescription) {
     console.log('Starting AI analysis...');
-    
-    // Try local AI service first
+
+    // 1ST PRIORITY: Try AI Service (Gemini + OpenRouter fallback)
+    if (aiService.isAvailable()) {
+      try {
+        console.log('🚀 Attempting AI analysis (Gemini/OpenRouter)...');
+        const geminiResult = await aiService.analyzeResume(resumeText, jobDescription);
+        console.log('✅ AI analysis successful!');
+
+        // Convert Gemini format to our expected format
+        return {
+          ats_score: geminiResult.atsScore,
+          score_breakdown: geminiResult.scoreBreakdown,
+          detected_industry: geminiResult.detectedIndustry,
+          matched_keywords: geminiResult.matchedKeywords || [],
+          missing_keywords: geminiResult.missingKeywords || [],
+          suggestions: geminiResult.suggestions || [],
+          optimized_resume: resumeText, // Keep original for now
+          analysis_metadata: geminiResult.skillGapAnalysis
+        };
+      } catch (error) {
+        console.log('⚠️  Gemini AI failed, trying fallback:', error.message);
+      }
+    } else {
+      console.log('⚠️  Gemini API not configured, using fallback');
+    }
+
+    // 2ND PRIORITY: Try local AI service
     try {
       console.log('Attempting to use local AI service...');
       const localAIResult = await ResumeAnalysisController.callLocalAIService(resumeText, jobDescription);
@@ -47,8 +73,8 @@ class ResumeAnalysisController {
     } catch (error) {
       console.log('Local AI service not available:', error.message);
     }
-    
-    // Try Hugging Face API if available
+
+    // 3RD PRIORITY: Try Hugging Face API if available
     if (process.env.HUGGINGFACE_API_KEY) {
       try {
         console.log('Attempting Hugging Face API call...');
@@ -380,6 +406,28 @@ class ResumeAnalysisController {
       const aiAnalysis = await ResumeAnalysisController.generateAIAnalysis(extractedText, jobDescription);
       console.log('AI analysis completed:', aiAnalysis);
 
+      // Transform suggestions if they're plain strings
+      const transformedSuggestions = Array.isArray(aiAnalysis.suggestions)
+        ? aiAnalysis.suggestions.map(suggestion => {
+            // If it's already an object with the right structure, keep it
+            if (typeof suggestion === 'object' && suggestion.suggestion) {
+              return {
+                category: suggestion.category || 'general',
+                suggestion: String(suggestion.suggestion).substring(0, 500),
+                priority: suggestion.priority || 'medium'
+              };
+            }
+            // If it's a plain string, convert it
+            return {
+              category: 'general',
+              suggestion: String(suggestion).substring(0, 500),
+              priority: 'medium'
+            };
+          })
+        : [];
+
+      console.log('Transformed suggestions:', transformedSuggestions.length);
+
       // Create analysis record with all required fields
       analysisRecord = new ResumeAnalysis({
         student: studentId,
@@ -395,7 +443,7 @@ class ResumeAnalysisController {
         analysis: {
           atsScore: aiAnalysis.ats_score || 0,
           missingKeywords: aiAnalysis.missing_keywords || [],
-          suggestions: aiAnalysis.suggestions || [],
+          suggestions: transformedSuggestions,
           optimizedResume: aiAnalysis.optimized_resume || extractedText
         },
         status: 'completed',

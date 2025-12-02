@@ -12,16 +12,13 @@ const Card = ({ title, icon, value, trend, description, onClick }) => {
     <div
       className={`
         relative overflow-hidden
-        bg-gradient-to-br from-white to-blue-50 p-5 rounded-xl
-        w-[280px] h-[160px]
+        bg-gradient-to-br from-white to-blue-50 p-4 rounded-xl
+        w-full h-[150px]
         shadow-md hover:shadow-xl
         flex flex-col justify-between
         transition-all duration-300 ease-in-out
         hover:-translate-y-1
         border border-blue-100/50
-        flex-shrink-0
-        scroll-snap-start
-        sm:w-[240px] sm:h-[140px] sm:p-4
         cursor-pointer
         group
       `}
@@ -34,17 +31,17 @@ const Card = ({ title, icon, value, trend, description, onClick }) => {
       <div className="absolute -left-4 -bottom-4 w-16 h-16 rounded-full bg-blue-500/5 z-0"></div>
       
       {/* Content */}
-      <div className="z-10 flex justify-between items-start">
-        <div>
-          <h3 className="m-0 text-lg font-semibold text-blue-900 group-hover:text-blue-700 transition-colors">
+      <div className="z-10 flex justify-between items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="m-0 text-base font-bold text-blue-900 group-hover:text-blue-700 transition-colors leading-tight mb-1">
             {title}
           </h3>
           {description && (
-            <p className="mt-1 text-xs text-gray-500 line-clamp-1">{description}</p>
+            <p className="mt-1.5 text-[11px] text-gray-600 line-clamp-2 leading-relaxed">{description}</p>
           )}
         </div>
         {icon && (
-          <div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+          <div className="bg-blue-100 p-2.5 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors flex-shrink-0">
             {icon}
           </div>
         )}

@@ -134,6 +134,7 @@ checkpoints/
 # Claude/AI Assistant files (KEEP THESE - needed for project)
 # .claude/
 # claude/
+.claude/settings.local.json
 .anthropic/
 anthropic/
 
@@ -311,12 +312,27 @@ client/public/uploads/
 !documentation/**/*.pdf
 !README.pdf
 
-# Image uploads (profile pictures, etc.)
-uploads/**/*.jpg
-uploads/**/*.jpeg
-uploads/**/*.png
-uploads/**/*.gif
-uploads/**/*.webp
+# Image files (ALL image types - user uploads, avatars, etc.)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.bmp
+*.ico
+*.tiff
+*.tif
+
+# SVG files (excluding essential ones)
+*.svg
+!client/public/vite.svg
+!client/src/assets/react.svg
+
+# Exclude essential images (if any exist in future)
+!docs/**/*.png
+!docs/**/*.jpg
+!documentation/**/*.png
+!documentation/**/*.jpg
 
 # Generated documentation
 docs/build/

@@ -19,14 +19,14 @@ const API_CONFIG = {
       EXISTS: '/admin/exists',
       CREATE_FIRST: '/admin/create-first-admin',
       PROFILE: '/admin/profile',
-      ALL_ADMINS: '/admin/admins',
+      ALL_ADMINS: '/admin/all-admins',
       FACULTY: '/admin/managed-faculty',
       STUDENTS: '/admin/students',
     },
-    
+
     // Faculty endpoints
     FACULTY: {
-      ALL: '/faculty',
+      ALL: '/faculty/all-faculties',
       PROFILE: '/faculty/profile',
     },
     

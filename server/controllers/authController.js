@@ -123,8 +123,9 @@ exports.login = async (req, res) => {
         }
       }
 
+      // Generate token with 24-hour expiry for production (allows long interviews)
       const token = jwt.sign({ id: user._id, email: user.email, role }, JWT_SECRET, {
-        expiresIn: "1h"
+        expiresIn: "24h"
       });
       
       console.log(`Login successful for ${role}: ${email}`);

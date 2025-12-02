@@ -30,6 +30,8 @@ import ManageNOC from './pages/ManageNOC';
 import StudentProfileDashboard from './pages/StudentProfile/StudentProfileDashboard';
 import StudentProfileEdit from './pages/StudentProfile/StudentProfileEdit';
 import ResumeAnalyzerPage from './pages/ResumeAnalyzerPage';
+import RealtimeInterviewPage from './pages/RealtimeInterviewPage';
+import InterviewHistoryPage from './pages/InterviewHistoryPage';
 
 // ✅ Optional: Add React Query DevTools
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -83,6 +85,8 @@ function App() {
         <Route path='/student/profile' element={<ProtectedRoute><StudentProfileDashboard /></ProtectedRoute>} />
         <Route path='/student/profile/edit' element={<ProtectedRoute><StudentProfileEdit /></ProtectedRoute>} />
         <Route path='/student/resume-analyzer' element={<ProtectedRoute><ResumeAnalyzerPage /></ProtectedRoute>} />
+        <Route path='/student/mock-interview' element={<ProtectedRoute><RealtimeInterviewPage /></ProtectedRoute>} />
+        <Route path='/student/interview-history' element={<ProtectedRoute><InterviewHistoryPage /></ProtectedRoute>} />
       </Routes>
 
       {/* ✅ Add React Query DevTools at the bottom */}
