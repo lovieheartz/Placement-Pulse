@@ -1,34 +1,37 @@
 const bcrypt = require("bcryptjs");
-const Student = require("../models/Student");
+const prisma = require("../lib/prisma");
 const path = require("path");
 const fs = require("fs");
+const storageService = require("../services/storageService");
 
 // ✅ Verify student account
 exports.verifyAccount = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
       });
     }
-    
-    const student = await Student.findOne({ email });
+
+    const student = await prisma.student.findUnique({ where: { email } });
     if (!student) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Student not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
       });
     }
-    
+
     // Update verification status
-    student.isVerified = true;
-    await student.save();
-    
+    await prisma.student.update({
+      where: { id: student.id },
+      data: { isVerified: true },
+    });
+
     console.log(`Student ${email} verified successfully`);
-    
+
     return res.status(200).json({
       success: true,
       message: 'Student account verified successfully',
@@ -42,30 +45,32 @@ exports.verifyAccount = async (req, res) => {
   }
 };
 
-// ✅ Register student (no manual hashing)
+// ✅ Register student
 exports.registerStudent = async (req, res) => {
   const { name, email, password, phone } = req.body;
 
   try {
-    const existingUser = await Student.findOne({ email });
+    const existingUser = await prisma.student.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(409).json({ error: "Student with this email already exists." });
     }
 
-    const newStudent = new Student({
-      name,
-      email,
-      password, // password hashed by pre-save hook
-      phone,
-      role: "student",
-    });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    await newStudent.save();
+    const newStudent = await prisma.student.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+        role: "student",
+      },
+    });
 
     res.status(201).json({
       message: "Student registered successfully.",
       user: {
-        id: newStudent._id,
+        id: newStudent.id,
         name: newStudent.name,
         email: newStudent.email,
         phone: newStudent.phone,
@@ -81,7 +86,10 @@ exports.registerStudent = async (req, res) => {
 // ✅ Get logged-in student's profile
 exports.getProfile = async (req, res) => {
   try {
-    const student = await Student.findById(req.user.id).select("-password");
+    const student = await prisma.student.findUnique({
+      where: { id: req.user.id },
+      omit: { password: true },
+    });
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -96,16 +104,19 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   const { name, email, phone } = req.body;
   try {
-    const student = await Student.findById(req.user.id);
+    const student = await prisma.student.findUnique({ where: { id: req.user.id } });
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    student.name = name || student.name;
-    student.email = email || student.email;
-    student.phone = phone || student.phone;
-
-    await student.save();
+    await prisma.student.update({
+      where: { id: student.id },
+      data: {
+        name: name || student.name,
+        email: email || student.email,
+        phone: phone || student.phone,
+      },
+    });
 
     res.json({ message: "Profile updated successfully." });
   } catch (err) {
@@ -121,28 +132,30 @@ exports.uploadAvatar = async (req, res) => {
   }
 
   try {
-    const student = await Student.findById(req.user.id);
+    const student = await prisma.student.findUnique({ where: { id: req.user.id } });
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // Delete the old avatar if exists
+    // Delete the old avatar from Supabase Storage if exists
     if (student.avatar) {
-      const oldPath = path.join(__dirname, "..", student.avatar);
-      fs.unlink(oldPath, (err) => {
-        if (err) {
-          console.error("Error deleting previous avatar:", err.message);
-        }
-      });
+      await storageService.remove(student.avatar);
     }
 
-    // Save the new avatar path
-    student.avatar = `/uploads/Avatar_Student/${req.file.filename}`;
-    await student.save();
+    // Upload the new avatar to Supabase Storage and store its public URL
+    const { publicUrl } = await storageService.uploadMulterFile(
+      req.file,
+      storageService.FOLDERS.AVATAR_STUDENT
+    );
+
+    const updated = await prisma.student.update({
+      where: { id: student.id },
+      data: { avatar: publicUrl },
+    });
 
     res.json({
       message: "Avatar uploaded successfully.",
-      avatar: student.avatar
+      avatar: updated.avatar
     });
   } catch (err) {
     console.error("Upload avatar error:", err);

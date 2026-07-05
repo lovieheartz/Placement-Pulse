@@ -13,7 +13,7 @@ const NotificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['text', 'form'],
+    enum: ['message', 'text', 'form'],
     default: 'text',
     required: true,
   },
@@ -23,7 +23,7 @@ const NotificationSchema = new mongoose.Schema({
   },
   deadline: {
     type: Date,
-    required: true,
+    required: false, // Optional - only required for 'text' and 'form' types
   },
   expired: {
     type: Boolean,
@@ -68,6 +68,12 @@ const NotificationSchema = new mongoose.Schema({
       specializations: [{
         type: String,
       }],
+      courses: [{
+        type: String,
+      }],
+      departments: [{
+        type: String,
+      }],
     },
     admins: {
       all: {
@@ -78,6 +84,21 @@ const NotificationSchema = new mongoose.Schema({
         type: String,
       }],
     },
+    hods: {
+      all: {
+        type: Boolean,
+        default: false,
+      },
+      courses: [{
+        type: String,
+      }],
+      departments: [{
+        type: String,
+      }],
+    },
+    emails: [{
+      type: String,
+    }],
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -87,7 +108,7 @@ const NotificationSchema = new mongoose.Schema({
   createdByModel: {
     type: String,
     required: true,
-    enum: ['Admin', 'Faculty'],
+    enum: ['Admin', 'Faculty', 'HOD'],
   },
   isRead: [{
     user: {
@@ -96,7 +117,7 @@ const NotificationSchema = new mongoose.Schema({
     },
     userModel: {
       type: String,
-      enum: ['Admin', 'Faculty', 'Student'],
+      enum: ['Admin', 'Faculty', 'Student', 'HOD'],
     },
     readAt: {
       type: Date,

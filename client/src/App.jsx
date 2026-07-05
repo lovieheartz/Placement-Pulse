@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
+import LandingPage from './pages/LandingPage';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -32,6 +32,31 @@ import StudentProfileEdit from './pages/StudentProfile/StudentProfileEdit';
 import ResumeAnalyzerPage from './pages/ResumeAnalyzerPage';
 import RealtimeInterviewPage from './pages/RealtimeInterviewPage';
 import InterviewHistoryPage from './pages/InterviewHistoryPage';
+import HODList from './pages/HODList';
+import AddHOD from './pages/AddHOD';
+import EditHOD from './pages/EditHOD';
+import HODDashboard from './pages/HODDashboard';
+import HODFacultyList from './pages/HODFacultyList';
+import AddFacultyByHOD from './pages/AddFacultyByHOD';
+import HODProfile from './pages/HODProfile';
+import HODStudents from './pages/HODStudents';
+import HODBlockedStudents from './pages/HODBlockedStudents';
+import HODSendNotification from './pages/HODSendNotification';
+import FacultyStudentList from './pages/FacultyStudentList';
+import FacultyProfile from './pages/FacultyProfile';
+import NotificationHistory from './pages/NotificationHistory';
+import HODNotificationHistory from './pages/HODNotificationHistory';
+
+// Aptitude Test System Pages
+import AptitudeTestList from './pages/AptitudeTestList';
+import CreateAptitudeTest from './pages/CreateAptitudeTest';
+import EditAptitudeTest from './pages/EditAptitudeTest';
+import AptitudeTestAnalytics from './pages/AptitudeTestAnalytics';
+import StudentTestPortal from './pages/StudentTestPortal';
+import StudentTestHistory from './pages/StudentTestHistory';
+import TestInstructions from './pages/TestInstructions';
+import TakeTest from './pages/TakeTest';
+import TestResult from './pages/TestResult';
 
 // ✅ Optional: Add React Query DevTools
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -41,7 +66,7 @@ function App() {
     <BrowserRouter>
       <ToastContainer
         position="top-right"
-        autoClose={2000}
+        autoClose={2600}
         hideProgressBar={false}
         newestOnTop
         closeOnClick
@@ -49,11 +74,14 @@ function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
+        theme="dark"
       />
 
       <Routes>
         {/* Public routes */}
-        <Route path='/' element={<Signup />} />
+        <Route path='/' element={<LandingPage />} />
+        <Route path='/signup' element={<Signup />} />
+        <Route path='/register' element={<Signup />} />
         <Route path='/student' element={<Signup />} />
         <Route path='/login' element={<Login />} />
         <Route path='/create-admin' element={<CreateAdmin />} />
@@ -68,8 +96,12 @@ function App() {
         <Route path='/home' element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path='/profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path='/student-dashboard' element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+        <Route path='/student/dashboard' element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
         <Route path='/faculty-dashboard' element={<ProtectedRoute><FacultyDashboard /></ProtectedRoute>} />
+        <Route path='/faculty/students' element={<ProtectedRoute><FacultyStudentList /></ProtectedRoute>} />
+        <Route path='/faculty/profile' element={<ProtectedRoute><FacultyProfile /></ProtectedRoute>} />
         <Route path='/admin/faculty' element={<ProtectedRoute><FacultyList /></ProtectedRoute>} />
+        <Route path='/admin/add-faculty' element={<ProtectedRoute><AddFaculty /></ProtectedRoute>} />
         <Route path='/faculty/add-faculty' element={<ProtectedRoute><AddFaculty /></ProtectedRoute>} />
         <Route path="/admin/edit-faculty/:id" element={<ProtectedRoute><EditFaculty /></ProtectedRoute>} />
         <Route path='/admin/students' element={<ProtectedRoute><StudentList /></ProtectedRoute>} />
@@ -77,6 +109,7 @@ function App() {
         <Route path='/admin/admins' element={<ProtectedRoute><AdminList /></ProtectedRoute>} />
         <Route path='/admin/add-admin' element={<ProtectedRoute><AddAdmin /></ProtectedRoute>} />
         <Route path='/admin/send-notification' element={<ProtectedRoute><SendNotification /></ProtectedRoute>} />
+        <Route path='/admin/notification-history' element={<ProtectedRoute><NotificationHistory /></ProtectedRoute>} />
         <Route path='/student/notifications' element={<ProtectedRoute><StudentNotifications /></ProtectedRoute>} />
         <Route path='/student/notifications/:source' element={<ProtectedRoute><StudentNotifications /></ProtectedRoute>} />
         <Route path='/student/apply-noc' element={<ProtectedRoute><ApplyNOC /></ProtectedRoute>} />
@@ -86,7 +119,41 @@ function App() {
         <Route path='/student/profile/edit' element={<ProtectedRoute><StudentProfileEdit /></ProtectedRoute>} />
         <Route path='/student/resume-analyzer' element={<ProtectedRoute><ResumeAnalyzerPage /></ProtectedRoute>} />
         <Route path='/student/mock-interview' element={<ProtectedRoute><RealtimeInterviewPage /></ProtectedRoute>} />
+        {/* HOD Routes */}
+        <Route path='/admin/hods' element={<ProtectedRoute><HODList /></ProtectedRoute>} />
+        <Route path='/admin/add-hod' element={<ProtectedRoute><AddHOD /></ProtectedRoute>} />
+        <Route path='/admin/edit-hod/:id' element={<ProtectedRoute><EditHOD /></ProtectedRoute>} />
+        <Route path='/hod/dashboard' element={<ProtectedRoute><HODDashboard /></ProtectedRoute>} />
+        <Route path='/hod/faculties' element={<ProtectedRoute><HODFacultyList /></ProtectedRoute>} />
+        <Route path='/hod/add-faculty' element={<ProtectedRoute><AddFacultyByHOD /></ProtectedRoute>} />
+        <Route path='/hod/profile' element={<ProtectedRoute><HODProfile /></ProtectedRoute>} />
+        <Route path='/hod/students' element={<ProtectedRoute><HODStudents /></ProtectedRoute>} />
+        <Route path='/hod/blocked-students' element={<ProtectedRoute><HODBlockedStudents /></ProtectedRoute>} />
+        <Route path='/hod/send-notification' element={<ProtectedRoute><HODSendNotification /></ProtectedRoute>} />
+        <Route path='/hod/notification-history' element={<ProtectedRoute><HODNotificationHistory /></ProtectedRoute>} />
         <Route path='/student/interview-history' element={<ProtectedRoute><InterviewHistoryPage /></ProtectedRoute>} />
+
+        {/* Aptitude Test System Routes */}
+        {/* Admin/HOD/Faculty Routes */}
+        <Route path='/admin/aptitude-tests' element={<ProtectedRoute><AptitudeTestList /></ProtectedRoute>} />
+        <Route path='/admin/aptitude-tests/create' element={<ProtectedRoute><CreateAptitudeTest /></ProtectedRoute>} />
+        <Route path='/admin/aptitude-tests/:id/edit' element={<ProtectedRoute><EditAptitudeTest /></ProtectedRoute>} />
+        <Route path='/admin/aptitude-tests/:id/analytics' element={<ProtectedRoute><AptitudeTestAnalytics /></ProtectedRoute>} />
+        <Route path='/hod/aptitude-tests' element={<ProtectedRoute><AptitudeTestList /></ProtectedRoute>} />
+        <Route path='/hod/aptitude-tests/create' element={<ProtectedRoute><CreateAptitudeTest /></ProtectedRoute>} />
+        <Route path='/hod/aptitude-tests/:id/edit' element={<ProtectedRoute><EditAptitudeTest /></ProtectedRoute>} />
+        <Route path='/hod/aptitude-tests/:id/analytics' element={<ProtectedRoute><AptitudeTestAnalytics /></ProtectedRoute>} />
+        <Route path='/faculty/aptitude-tests' element={<ProtectedRoute><AptitudeTestList /></ProtectedRoute>} />
+        <Route path='/faculty/aptitude-tests/create' element={<ProtectedRoute><CreateAptitudeTest /></ProtectedRoute>} />
+        <Route path='/faculty/aptitude-tests/:id/edit' element={<ProtectedRoute><EditAptitudeTest /></ProtectedRoute>} />
+        <Route path='/faculty/aptitude-tests/:id/analytics' element={<ProtectedRoute><AptitudeTestAnalytics /></ProtectedRoute>} />
+
+        {/* Student Routes */}
+        <Route path='/student/tests' element={<ProtectedRoute><StudentTestPortal /></ProtectedRoute>} />
+        <Route path='/student/test-history' element={<ProtectedRoute><StudentTestHistory /></ProtectedRoute>} />
+        <Route path='/student/tests/:testId/instructions' element={<ProtectedRoute><TestInstructions /></ProtectedRoute>} />
+        <Route path='/student/tests/:testId/take' element={<ProtectedRoute><TakeTest /></ProtectedRoute>} />
+        <Route path='/student/tests/:testId/result' element={<ProtectedRoute><TestResult /></ProtectedRoute>} />
       </Routes>
 
       {/* ✅ Add React Query DevTools at the bottom */}

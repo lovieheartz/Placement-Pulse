@@ -1,8 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const Admin = require("../models/Admin");
-const Faculty = require("../models/Faculty");
-const Student = require("../models/Student");
+const prisma = require("../lib/prisma");
 const { sendOTPEmail } = require("../services/mailService");
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -31,30 +29,34 @@ exports.verifyAccount = async (req, res) => {
       });
     }
     
-    // Try to find the user in different collections
-    let user = await Student.findOne({ email });
+    // Try to find the user in different tables
+    let user = await prisma.student.findUnique({ where: { email } });
     let userType = 'student';
-    
+    let delegate = 'student';
+
     if (!user) {
-      user = await Faculty.findOne({ email });
+      user = await prisma.faculty.findUnique({ where: { email } });
       userType = 'faculty';
+      delegate = 'faculty';
     }
-    
+
     if (!user) {
-      user = await Admin.findOne({ email });
+      user = await prisma.admin.findUnique({ where: { email } });
       userType = 'admin';
+      delegate = 'admin';
     }
-    
+
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
-    
-    // Update verification status
-    user.isVerified = true;
-    await user.save();
+
+    // Update verification status (only students have this column)
+    if (delegate === 'student') {
+      await prisma.student.update({ where: { id: user.id }, data: { isVerified: true } });
+    }
     
     console.log(`${userType} ${email} verified successfully`);
     
@@ -77,13 +79,14 @@ exports.login = async (req, res) => {
     console.log(`Login attempt for: ${email}`);
 
     const models = [
-    { model: Admin, role: "admin" },
-    { model: Faculty, role: "faculty" },
-    { model: Student, role: "student" },
+    { delegate: "admin", role: "admin" },
+    { delegate: "hOD", role: "hod" },
+    { delegate: "faculty", role: "faculty" },
+    { delegate: "student", role: "student" },
   ];
 
-  for (let { model, role } of models) {
-    const user = await model.findOne({ email });
+  for (let { delegate, role } of models) {
+    const user = await prisma[delegate].findUnique({ where: { email } });
     if (user) {
       try {
         // Log the password hash for debugging
@@ -124,7 +127,7 @@ exports.login = async (req, res) => {
       }
 
       // Generate token with 24-hour expiry for production (allows long interviews)
-      const token = jwt.sign({ id: user._id, email: user.email, role }, JWT_SECRET, {
+      const token = jwt.sign({ id: user.id, email: user.email, role }, JWT_SECRET, {
         expiresIn: "24h"
       });
       
@@ -153,34 +156,27 @@ exports.login = async (req, res) => {
 exports.me = async (req, res) => {
   try {
     const { id, role } = req.user;
-    let user;
-    
-    switch (role) {
-      case 'student':
-        user = await Student.findById(id).select('-password');
-        break;
-      case 'faculty':
-        user = await Faculty.findById(id).select('-password');
-        break;
-      case 'admin':
-        user = await Admin.findById(id).select('-password');
-        break;
-      default:
-        return res.status(400).json({ message: 'Invalid user role' });
+    const delegateByRole = { student: 'student', faculty: 'faculty', hod: 'hOD', admin: 'admin' };
+    const delegate = delegateByRole[role];
+    if (!delegate) {
+      return res.status(400).json({ message: 'Invalid user role' });
     }
-    
+
+    const user = await prisma[delegate].findUnique({ where: { id } });
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.json({
-      id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       avatar: user.avatar,
       course: user.course,
-      branch: user.branch
+      branch: user.branch,
+      department: user.department
     });
   } catch (error) {
     console.error('Me endpoint error:', error);
@@ -199,7 +195,7 @@ exports.registerStudent = async (req, res) => {
     }
 
     // Check if student already exists
-    const existingStudent = await Student.findOne({ email });
+    const existingStudent = await prisma.student.findUnique({ where: { email } });
     if (existingStudent) {
       return res.status(400).json({ error: 'Student already exists' });
     }
@@ -232,21 +228,24 @@ exports.registerStudent = async (req, res) => {
       return res.status(400).json({ error: 'OTP is required' });
     }
 
-    // Create new student with verified status
-    const student = new Student({
-      name,
-      email,
-      phone,
-      password,
-      course,
-      branch,
-      admissionYear,
-      passoutYear,
-      isVerified: true, // Set to true since OTP is verified
-      role: 'student'
-    });
+    // Hash the password (Mongoose used to do this in a pre-save hook)
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    await student.save();
+    // Create new student with verified status
+    await prisma.student.create({
+      data: {
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        course,
+        branch,
+        admissionYear: parseInt(admissionYear, 10),
+        passoutYear: parseInt(passoutYear, 10),
+        isVerified: true, // Set to true since OTP is verified
+        role: 'student'
+      }
+    });
     console.log(`Student registered successfully: ${email}`);
 
     res.status(201).json({ 

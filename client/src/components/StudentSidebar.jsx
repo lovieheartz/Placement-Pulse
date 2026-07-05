@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare, FiTarget, FiCpu, FiVideo, FiMic } from 'react-icons/fi';
+import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare, FiTarget, FiCpu, FiVideo, FiMic, FiClipboard, FiBarChart2 } from 'react-icons/fi';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -127,15 +127,24 @@ const Sidebar = () => {
                 <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
                   <button
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
+                    onClick={() => {
+                      navigate('/student/tests');
+                      setIsOpen(false);
+                    }}
                   >
-                    <FiFileText className="w-4 h-4 mr-2" />
-                    Enrolled Tests
+                    <FiClipboard className="w-4 h-4 mr-2" />
+                    Aptitude Tests
                   </button>
+
                   <button
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
+                    onClick={() => {
+                      navigate('/student/test-history');
+                      setIsOpen(false);
+                    }}
                   >
-                    <FiCheckSquare className="w-4 h-4 mr-2" />
-                    Check Scores
+                    <FiBarChart2 className="w-4 h-4 mr-2" />
+                    Test History
                   </button>
                 </div>
               )}

@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import StudentSidebar from '../components/StudentSidebar';
-import StudentHeader from '../components/StudentHeader';
-import StudentFooter from '../components/StudentFooter';
+import PortalLayout from '@/components/app/PortalLayout';
 import AIAvatar from '../components/AIAvatar';
 import './Dashboard.css';
 import './RealtimeInterview.css';
@@ -57,9 +56,22 @@ const INDUSTRIES = [
 ];
 
 const RealtimeInterviewPage = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
+
+  const token = sessionStorage.getItem('authToken');
+
+  // Fetch profile with avatar
+  const { data: profileData } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:3001/student/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data;
+    },
+    enabled: !!token,
+  });
 
   // Interview configuration
   const [step, setStep] = useState('setup');
@@ -100,13 +112,6 @@ const RealtimeInterviewPage = () => {
   const isPlayingRef = useRef(false);
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
-
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
 
   useEffect(() => {
     if (!user) {
@@ -1650,24 +1655,11 @@ const RealtimeInterviewPage = () => {
   }
 
   return (
-    <div className="dashboard">
-      <StudentSidebar />
-      <div className="main">
-        <StudentHeader
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-
+    <PortalLayout role="student" title="AI Mock Interview" user={profileData}>
         {step === 'setup' && renderSetup()}
         {step === 'interview' && renderInterview()}
         {step === 'completed' && renderResults()}
-
-        <StudentFooter />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 

@@ -46,8 +46,14 @@ const FacultyHeader = ({
                 alt="Profile"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/150";
+                  console.log('Faculty Image failed to load:', profileImageUrl);
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.style.display = 'none'; // Hide broken image
+                  // Show fallback letter instead
+                  const parent = e.target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = `<div class="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">${profileLetter}</div>`;
+                  }
                 }}
               />
             ) : (

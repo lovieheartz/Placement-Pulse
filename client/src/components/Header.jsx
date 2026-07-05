@@ -115,6 +115,14 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
       : `http://localhost:3001${rawProfilePicture}`
     : null;
 
+  // Debug logging
+  console.log('Admin Header - User data:', {
+    name: safeUser.name,
+    avatar: safeUser.avatar,
+    profilePicture: safeUser.profilePicture,
+    constructedURL: profilePictureUrl
+  });
+
   return (
     <header className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-4 py-3 flex justify-between items-center relative z-10 shadow-md">
       <h1 className="text-xs sm:text-sm md:text-base font-medium truncate max-w-[60vw] sm:max-w-[70vw]">
@@ -123,8 +131,8 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
 
       <div className="relative z-20 flex items-center space-x-2 sm:space-x-4">
         {/* Notification Bell */}
-        <div 
-          className="relative cursor-pointer p-2 hover:bg-blue-700 rounded-full transition-colors duration-200" 
+        <div
+          className="relative cursor-pointer p-2 hover:bg-blue-700 rounded-full transition-colors duration-200"
           onClick={toggleNotifications}
         >
           <FiBell className="h-5 w-5 text-white" />
@@ -146,6 +154,16 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
                 src={profilePictureUrl}
                 alt="Profile"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.log('Image failed to load:', profilePictureUrl);
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.style.display = 'none'; // Hide broken image
+                  // Show fallback letter instead
+                  const parent = e.target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = `<div class="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">${profileLetter}</div>`;
+                  }
+                }}
               />
             ) : (
               <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">

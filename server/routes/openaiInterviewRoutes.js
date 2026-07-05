@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const WebSocket = require('ws');
 const openaiRealtimeService = require('../services/openaiRealtimeService');
-const MockInterview = require('../models/MockInterview');
-const Student = require('../models/Student');
+const prisma = require('../lib/prisma');
 const jwt = require('jsonwebtoken');
 const { authenticateToken } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -32,7 +31,7 @@ router.post('/start', authenticateToken, upload.single('resume'), async (req, re
     }
 
     // Get student info
-    const student = await Student.findById(userId);
+    const student = await prisma.student.findUnique({ where: { id: userId } });
     if (!student) {
       return res.status(404).json({ error: 'Student not found' });
     }
@@ -60,23 +59,23 @@ router.post('/start', authenticateToken, upload.single('resume'), async (req, re
     }
 
     // Create interview session in database
-    const interviewSession = new MockInterview({
-      studentId: userId,
-      company: company || 'Not specified',
-      jobRole,
-      industry,
-      difficulty,
-      interviewType,
-      status: 'in_progress',
-      aiModel: 'gpt-4o-realtime',
-      startedAt: new Date(),
-      resumeData: resumeData
+    // Note: `company` and `interviewType` are not persisted columns (they were
+    // silently dropped under Mongoose too); they are still passed to the AI session below.
+    const interviewSession = await prisma.mockInterview.create({
+      data: {
+        studentId: userId,
+        jobRole,
+        industry,
+        difficulty,
+        status: 'in_progress',
+        aiModel: 'gpt-4o-realtime',
+        startedAt: new Date(),
+        resumeData: resumeData
+      }
     });
 
-    await interviewSession.save();
-
     // Create OpenAI Realtime session with resume context
-    const sessionId = interviewSession._id.toString();
+    const sessionId = interviewSession.id;
     await openaiRealtimeService.createSession(sessionId, {
       company: company || 'Not specified',
       jobRole,
@@ -92,7 +91,7 @@ router.post('/start', authenticateToken, upload.single('resume'), async (req, re
     res.json({
       success: true,
       sessionId,
-      interviewId: interviewSession._id,
+      interviewId: interviewSession.id,
       message: 'OpenAI Realtime interview session started',
       resumeUploaded: !!resumeData
     });
@@ -136,7 +135,7 @@ router.post('/end', authenticateToken, async (req, res) => {
     const analysis = await openaiRealtimeService.analyzeInterview(sessionId);
 
     // Update database with results
-    const interview = await MockInterview.findById(interviewId);
+    const interview = await prisma.mockInterview.findUnique({ where: { id: interviewId } });
     if (interview) {
       // Map readinessLevel to valid enum values
       const readinessLevelMap = {
@@ -157,17 +156,21 @@ router.post('/end', authenticateToken, async (req, res) => {
                         readinessLevelMap[analysis.readinessLevel.toLowerCase().trim()] ||
                         'ready'; // Default fallback
 
-      interview.status = 'completed';
-      interview.completedAt = new Date();
-      interview.overallScore = analysis.overallScore;
-      interview.overallFeedback = {
-        strengths: analysis.strengthAreas,
-        areasForImprovement: analysis.improvementAreas,
-        recommendations: analysis.recommendations,
-        closingMessage: analysis.summaryFeedback,
-        readinessLevel: validLevel
-      };
-      await interview.save();
+      await prisma.mockInterview.update({
+        where: { id: interview.id },
+        data: {
+          status: 'completed',
+          completedAt: new Date(),
+          overallScore: analysis.overallScore,
+          overallFeedback: {
+            strengths: analysis.strengthAreas,
+            areasForImprovement: analysis.improvementAreas,
+            recommendations: analysis.recommendations,
+            closingMessage: analysis.summaryFeedback,
+            readinessLevel: validLevel
+          }
+        }
+      });
     }
 
     // End the realtime session
@@ -195,21 +198,21 @@ router.get('/results/:interviewId', authenticateToken, async (req, res) => {
     const { interviewId } = req.params;
     const userId = req.user.id;
 
-    const interview = await MockInterview.findById(interviewId);
+    const interview = await prisma.mockInterview.findUnique({ where: { id: interviewId } });
 
     if (!interview) {
       return res.status(404).json({ error: 'Interview not found' });
     }
 
     // Verify user owns this interview
-    if (interview.studentId.toString() !== userId) {
+    if (interview.studentId !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
     res.json({
       success: true,
       interview: {
-        id: interview._id,
+        id: interview.id,
         jobRole: interview.jobRole,
         industry: interview.industry,
         difficulty: interview.difficulty,
@@ -234,10 +237,23 @@ router.get('/history', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const interviews = await MockInterview.find({ studentId: userId })
-      .sort({ startedAt: -1 })
-      .limit(50)
-      .select('jobRole industry difficulty status startedAt completedAt overallScore overallFeedback aiModel');
+    const interviews = await prisma.mockInterview.findMany({
+      where: { studentId: userId },
+      orderBy: { startedAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        jobRole: true,
+        industry: true,
+        difficulty: true,
+        status: true,
+        startedAt: true,
+        completedAt: true,
+        overallScore: true,
+        overallFeedback: true,
+        aiModel: true
+      }
+    });
 
     res.json({
       success: true,
@@ -258,18 +274,18 @@ router.delete('/:interviewId', authenticateToken, async (req, res) => {
     const { interviewId } = req.params;
     const userId = req.user.id;
 
-    const interview = await MockInterview.findById(interviewId);
+    const interview = await prisma.mockInterview.findUnique({ where: { id: interviewId } });
 
     if (!interview) {
       return res.status(404).json({ error: 'Interview not found' });
     }
 
     // Verify user owns this interview
-    if (interview.studentId.toString() !== userId) {
+    if (interview.studentId !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    await MockInterview.findByIdAndDelete(interviewId);
+    await prisma.mockInterview.delete({ where: { id: interviewId } });
 
     console.log(`🗑️ Interview deleted: ${interviewId}`);
 

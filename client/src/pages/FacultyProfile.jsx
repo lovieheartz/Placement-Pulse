@@ -4,9 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Footer from "../components/Footer";
-import FacultyHeader from "../components/FacultyHeader";
-import FacultySidebar from "../components/FacultySidebar";
+import PortalLayout from "@/components/app/PortalLayout";
+import { GlassPanel } from "@/components/ui/surface";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { resolveFileUrl } from "../lib/api";
 
 const FacultyProfile = () => {
   const token = sessionStorage.getItem("authToken");
@@ -109,10 +111,7 @@ const FacultyProfile = () => {
   }
 
   return (
-    <div className="dashboard">
-      <FacultySidebar />
-      <div className="main">
-        <FacultyHeader user={profileData} />
+    <PortalLayout role="faculty" title="My Profile" user={profileData || {}}>
         <ProfileContent
           profileData={profileData}
           isEditing={isEditing}
@@ -128,9 +127,7 @@ const FacultyProfile = () => {
             setIsEditing(false);
           }}
         />
-        <Footer />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 
@@ -148,18 +145,20 @@ const ProfileContent = ({
   uploadingAvatar,
   reset,
 }) => (
-  <div className="content-container px-3 py-4 w-full mx-auto max-w-full">
-    <div className="bg-white rounded-xl shadow-sm px-6 py-6 w-full">
+  <div className="content-container px-3 py-4 w-full mx-auto max-w-2xl">
+    <GlassPanel className="w-full">
       {/* Avatar Centered */}
-      <div className="flex justify-center mb-6">
+      <div className="flex flex-col items-center mb-6">
         <Avatar avatar={profileData.avatar} />
+        <p className="mt-3 text-lg font-semibold text-foreground">{profileData.name}</p>
+        <Badge variant="default" className="mt-1">Faculty</Badge>
       </div>
 
       {/* Upload Avatar */}
       <div className="flex justify-center mb-6">
         <label
           htmlFor="avatarUpload"
-          className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-sm"
+          className="cursor-pointer inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
         >
           {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
         </label>
@@ -183,44 +182,46 @@ const ProfileContent = ({
 
         <div className="flex flex-col sm:flex-row justify-between gap-2 mt-4">
           {!isEditing ? (
-            <button
+            <Button
               type="button"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
+              className="w-full sm:w-auto"
               onClick={() => setIsEditing(true)}
             >
               Edit
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="outline"
               type="button"
-              className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 w-full sm:w-auto"
+              className="w-full sm:w-auto"
               onClick={reset}
             >
               Cancel
-            </button>
+            </Button>
           )}
 
           {isEditing && (
-            <button
+            <Button
+              variant="success"
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 w-full sm:w-auto"
+              className="w-full sm:w-auto"
             >
               {loading ? "Saving..." : "Save Changes"}
-            </button>
+            </Button>
           )}
         </div>
       </form>
-    </div>
+    </GlassPanel>
   </div>
 );
 
 const Avatar = ({ avatar }) => (
-  <div className="w-24 h-24 rounded-full overflow-hidden border border-gray-300">
+  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20 shadow-md">
     <img
       src={
         avatar
-          ? `http://localhost:3001${avatar}`
+          ? resolveFileUrl(avatar)
           : "https://via.placeholder.com/150"
       }
       alt="Avatar"
@@ -231,12 +232,12 @@ const Avatar = ({ avatar }) => (
 
 const InputField = ({ label, register, disabled }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700">{label}</label>
+    <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
     <input
       {...register}
       disabled={disabled}
-      className={`w-full border px-3 py-2 rounded ${
-        disabled ? "bg-gray-100" : "bg-white"
+      className={`w-full rounded-lg border border-input px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+        disabled ? "bg-muted/40 text-muted-foreground cursor-not-allowed" : "bg-card"
       }`}
     />
   </div>

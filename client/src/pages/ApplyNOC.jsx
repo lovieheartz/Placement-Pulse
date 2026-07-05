@@ -1,21 +1,35 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../context/AuthContext';
-import Sidebar from '../components/StudentSidebar';
-import Header from '../components/StudentHeader';
-import Footer from '../components/StudentFooter';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { FileText } from 'lucide-react';
 import axios from 'axios';
 
 const ApplyNOC = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState('');
+
+  const token = sessionStorage.getItem('authToken');
+
+  // Fetch profile with avatar
+  const { data: profileData } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:3001/student/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data;
+    },
+    enabled: !!token,
+  });
 
   const {
     register,
@@ -39,8 +53,6 @@ const ApplyNOC = () => {
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({length: 6}, (_, i) => currentYear + i);
-
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
   const { mutate: submitNOC, isPending: isSubmitting } = useMutation({
     mutationFn: async (formData) => {
@@ -105,11 +117,6 @@ const ApplyNOC = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
-
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-5">
@@ -120,49 +127,37 @@ const ApplyNOC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-        
-        <main className="flex-1 p-4 md:p-6">
+    <PortalLayout role="student" title="Apply for NOC" user={profileData}>
           <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100/50">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h1 className="text-xl font-bold text-white">Apply for NOC</h1>
-                <p className="text-blue-100 text-sm">No Objection Certificate Request</p>
-              </div>
-              
-              <div className="p-6">
+            <PageHeader
+              title="Apply for NOC"
+              subtitle="No Objection Certificate Request"
+              icon={FileText}
+            />
+            <GlassPanel>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         University Roll <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         {...register('universityRoll', { required: 'University Roll is required' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         placeholder="Enter your university roll"
                       />
                       {errors.universityRoll && <p className="text-red-500 text-xs mt-1">{errors.universityRoll.message}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Personal Email <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
                         {...register('personalEmail', { required: 'Personal email is required' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         placeholder="Enter your personal email"
                       />
                       {errors.personalEmail && <p className="text-red-500 text-xs mt-1">{errors.personalEmail.message}</p>}
@@ -170,36 +165,36 @@ const ApplyNOC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Subject <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       {...register('subject', { required: 'Subject is required' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       placeholder="Enter subject for NOC request"
                     />
                     {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Application Text <span className="text-red-500">*</span>
                     </label>
                     <textarea
-                      {...register('applicationText', { 
+                      {...register('applicationText', {
                         required: 'Application text is required',
                         maxLength: { value: 1000, message: 'Maximum 1000 characters allowed' }
                       })}
                       rows={8}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       placeholder="Write your NOC application here..."
                     />
                     {errors.applicationText && <p className="text-red-500 text-xs mt-1">{errors.applicationText.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Attachment (PDF only) <span className="text-red-500">*</span>
                     </label>
                     <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-blue-50 hover:bg-blue-100 transition-colors">
@@ -256,30 +251,24 @@ const ApplyNOC = () => {
                   </div>
 
                   <div className="flex justify-between space-x-4">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => navigate('/student-dashboard')}
-                      className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
                       {isSubmitting ? 'Submitting...' : 'Send Request'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
-              </div>
-            </div>
+            </GlassPanel>
           </div>
-        </main>
-        
-        <Footer />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 

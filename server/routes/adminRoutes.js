@@ -20,6 +20,11 @@ const {
   blockStudent,
   unblockStudent,
   getAllAdmins,
+  createHOD,
+  getAllHODs,
+  getHODById,
+  updateHOD,
+  deleteHOD,
 } = require("../controllers/adminController");
 
 // Check if any admin exists
@@ -66,5 +71,12 @@ router.get("/students", authenticateToken, getAllStudents);
 router.get("/students/blocked", authenticateToken, getBlockedStudents);
 router.put("/students/:id/block", authenticateToken, blockStudent);
 router.put("/students/:id/unblock", authenticateToken, unblockStudent);
+
+// HOD management routes
+router.post("/create-hod", authenticateToken, upload.single("avatar"), createHOD);
+router.get("/all-hods", authenticateToken, getAllHODs);
+router.get("/hod/:id", authenticateToken, getHODById);
+router.put("/hod/:id", authenticateToken, upload.single("avatar"), updateHOD);
+router.delete("/hod/:id", authenticateToken, deleteHOD);
 
 module.exports = router;

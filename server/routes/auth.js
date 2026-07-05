@@ -1,23 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-const Admin = require('../models/Admin');
-const Faculty = require('../models/Faculty');
-const Student = require('../models/Student');
+const prisma = require('../lib/prisma');
 
 const { sendPasswordResetEmail, sendOTPEmail } = require('../services/mailService');
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Helper to get model by role
-const getModelByRole = (role) => {
+// Helper to get the Prisma delegate name by role
+const getDelegateByRole = (role) => {
   switch (role) {
-    case 'admin': return Admin;
-    case 'faculty': return Faculty;
-    case 'student': return Student;
+    case 'admin': return 'admin';
+    case 'faculty': return 'faculty';
+    case 'hod': return 'hOD';
+    case 'student': return 'student';
     default: return null;
   }
 };
@@ -31,22 +34,23 @@ router.post('/login', async (req, res) => {
   }
 
   const userTypes = [
-    { model: Admin, role: 'admin' },
-    { model: Faculty, role: 'faculty' },
-    { model: Student, role: 'student' },
+    { delegate: 'admin', role: 'admin' },
+    { delegate: 'faculty', role: 'faculty' },
+    { delegate: 'hOD', role: 'hod' },
+    { delegate: 'student', role: 'student' },
   ];
 
   try {
-    for (const { model, role } of userTypes) {
-      const user = await model.findOne({ email });
+    for (const { delegate, role } of userTypes) {
+      const user = await prisma[delegate].findUnique({ where: { email } });
       if (user) {
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (isMatch) {
           // Check if student is verified
           if (role === 'student' && !user.isVerified) {
             return res.status(401).json({ message: 'Please verify your email first' });
           }
-          const token = user.generateToken();
+          const token = jwt.sign({ id: user.id, role }, JWT_SECRET, { expiresIn: '1h' });
           return res.json({ token, role, name: user.name });
         } else {
           console.warn(`Password mismatch for ${role}: ${email}`);
@@ -69,26 +73,34 @@ router.post('/reset-password', async (req, res) => {
     return res.status(400).json({ message: 'Token, password, and user type are required.' });
   }
 
-  const UserModel = getModelByRole(type);
-  if (!UserModel) {
+  const delegate = getDelegateByRole(type);
+  if (!delegate) {
     return res.status(400).json({ message: 'Invalid user type.' });
   }
 
   try {
-    const user = await UserModel.findOne({
-      resetToken: token,
-      resetTokenExpiry: { $gt: Date.now() },
+    const user = await prisma[delegate].findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: { gt: new Date() },
+      },
     });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset token.' });
     }
 
-    user.password = password; // Will be hashed via Mongoose middleware
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
+    // No pre-save hook anymore: hash the new password explicitly
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    await user.save();
+    await prisma[delegate].update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
 
     res.json({ message: 'Password has been reset successfully.' });
   } catch (error) {
@@ -104,18 +116,24 @@ router.post('/forgot-password', async (req, res) => {
   try {
     let user = null;
     let userType = null;
+    let delegate = null;
 
-    user = await Admin.findOne({ email });
-    if (user) userType = 'Admin';
+    user = await prisma.admin.findUnique({ where: { email } });
+    if (user) { userType = 'Admin'; delegate = 'admin'; }
 
     if (!user) {
-      user = await Faculty.findOne({ email });
-      if (user) userType = 'Faculty';
+      user = await prisma.faculty.findUnique({ where: { email } });
+      if (user) { userType = 'Faculty'; delegate = 'faculty'; }
     }
 
     if (!user) {
-      user = await Student.findOne({ email });
-      if (user) userType = 'Student';
+      user = await prisma.hOD.findUnique({ where: { email } });
+      if (user) { userType = 'HOD'; delegate = 'hOD'; }
+    }
+
+    if (!user) {
+      user = await prisma.student.findUnique({ where: { email } });
+      if (user) { userType = 'Student'; delegate = 'student'; }
     }
 
     if (!user) {
@@ -123,11 +141,12 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(20).toString('hex');
-    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
-    user.resetToken = resetToken;
-    user.resetTokenExpiry = resetTokenExpiry;
-    await user.save();
+    await prisma[delegate].update({
+      where: { id: user.id },
+      data: { resetToken, resetTokenExpiry },
+    });
 
     await sendPasswordResetEmail(email, resetToken, userType);
 
@@ -147,7 +166,7 @@ router.post('/send-otp', async (req, res) => {
       return res.status(400).json({ error: 'Email must be from @nsec.ac.in domain' });
     }
 
-    const existingStudent = await Student.findOne({ email });
+    const existingStudent = await prisma.student.findUnique({ where: { email } });
     if (existingStudent && existingStudent.isVerified) {
       return res.status(400).json({ error: 'Student already exists' });
     }
@@ -177,24 +196,28 @@ router.post('/register-student', async (req, res) => {
       return res.status(400).json({ error: 'Invalid or expired OTP' });
     }
 
-    const existingStudent = await Student.findOne({ email });
+    const existingStudent = await prisma.student.findUnique({ where: { email } });
     if (existingStudent && existingStudent.isVerified) {
       return res.status(400).json({ error: 'Student already exists' });
     }
 
-    const student = new Student({
-      name,
-      email,
-      phone,
-      password,
-      course,
-      branch,
-      admissionYear: parseInt(admissionYear),
-      passoutYear: parseInt(passoutYear),
-      isVerified: true
-    });
+    // No pre-save hook anymore: hash the password explicitly
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    await student.save();
+    await prisma.student.create({
+      data: {
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        course,
+        branch,
+        admissionYear: parseInt(admissionYear, 10),
+        passoutYear: parseInt(passoutYear, 10),
+        isVerified: true,
+        role: 'student'
+      }
+    });
     delete global.otpStore[email];
 
     res.status(201).json({ message: 'Registration successful. You can now login.' });
@@ -229,7 +252,7 @@ router.post('/resend-otp', async (req, res) => {
 router.get('/create-admin', async (req, res) => {
   try {
     // Check if admin already exists
-    const adminExists = await Admin.findOne({});
+    const adminExists = await prisma.admin.findFirst({});
     if (adminExists) {
       return res.send('Admin already exists');
     }
@@ -239,15 +262,15 @@ router.get('/create-admin', async (req, res) => {
     const hashedPassword = await bcrypt.hash('admin123', salt);
 
     // Create admin
-    const admin = new Admin({
-      name: 'Admin User',
-      email: 'admin@example.com',
-      phone: '+919471531830',
-      password: hashedPassword,
-      role: 'admin'
+    await prisma.admin.create({
+      data: {
+        name: 'Admin User',
+        email: 'admin@example.com',
+        phone: '+919471531830',
+        password: hashedPassword,
+        role: 'admin'
+      }
     });
-
-    await admin.save();
     res.send('Admin created successfully! Email: admin@example.com, Password: admin123');
   } catch (error) {
     res.status(500).send('Error creating admin: ' + error.message);

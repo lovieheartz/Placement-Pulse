@@ -3,20 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FiBell, FiUser, FiCheck, FiExternalLink, FiClock } from 'react-icons/fi';
-import Sidebar from '../components/StudentSidebar';
-import Header from '../components/StudentHeader';
-import Footer from '../components/StudentFooter';
+import { FiBell, FiCheck, FiExternalLink, FiClock } from 'react-icons/fi';
+import { Bell } from 'lucide-react';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
+import { Badge } from '@/components/ui/badge';
 
 const StudentNotifications = () => {
   const { source } = useParams(); // 'tpo' or 'faculty' or undefined for all
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(source || 'all');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const queryClient = useQueryClient();
-  
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-  
+
   const token = sessionStorage.getItem('authToken');
   
   // Fetch user profile with avatar
@@ -123,12 +121,6 @@ const StudentNotifications = () => {
   const tpoNotificationCount = notificationsData?.tpoCount || 0;
   const facultyNotificationCount = notificationsData?.facultyCount || 0;
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('authToken');
-    navigate('/login', { replace: true });
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab === 'all') {
@@ -154,37 +146,19 @@ const StudentNotifications = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-        
-        <main className="flex-1 p-4 md:p-6">
+    <PortalLayout role="student" title="Notifications" user={user}>
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100/50">
-              <div className="p-4 md:p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h1 className="text-xl font-bold text-blue-900">
-                      {activeTab === 'all' ? 'All Notifications' : 
-                       activeTab === 'tpo' ? 'TPO Notifications' : 'Faculty Notifications'}
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                      {activeTab === 'all' ? 'View all your notifications in one place' : 
-                       activeTab === 'tpo' ? 'Notifications from Training & Placement Office' :
-                       'Notifications from Faculty'}
-                    </p>
-                  </div>
-                </div>
-                
+            <PageHeader
+              title={activeTab === 'all' ? 'All Notifications' :
+                     activeTab === 'tpo' ? 'TPO Notifications' : 'Faculty Notifications'}
+              subtitle={activeTab === 'all' ? 'View all your notifications in one place' :
+                        activeTab === 'tpo' ? 'Notifications from Training & Placement Office' :
+                        'Notifications from Faculty'}
+              icon={Bell}
+            />
+            <GlassPanel>
                 {/* Tabs */}
-                <div className="flex border-b border-gray-200 mb-4">
+                <div className="flex border-b border-border mb-4">
                   <button
                     className={`px-3 py-2 font-medium text-sm transition-all duration-200 ${activeTab === 'all' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
                     onClick={() => handleTabChange('all')}
@@ -232,11 +206,11 @@ const StudentNotifications = () => {
                         ...notification,
                         sender: undefined
                       };
-                      
+
                       return (
-                        <div 
-                          key={modifiedNotification._id} 
-                          className={`p-3 rounded-lg border transition-all duration-200 hover:shadow-sm ${!modifiedNotification.isReadByUser ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}
+                        <div
+                          key={modifiedNotification._id}
+                          className={`p-3 rounded-xl border transition-all duration-200 hover:shadow-sm ${!modifiedNotification.isReadByUser ? 'bg-primary/5 border-primary/20' : 'bg-card border-border'}`}
                           onClick={(e) => {
                             e.preventDefault();
                             markAsRead(modifiedNotification._id);
@@ -244,20 +218,20 @@ const StudentNotifications = () => {
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                              <Badge variant="default">
                                 {notification.createdByModel === 'Admin' ? 'TPO' : 'Faculty'}
-                              </span>
-                              <h3 className="font-medium text-gray-800 text-base">{notification.title}</h3>
+                              </Badge>
+                              <h3 className="font-medium text-foreground text-base">{notification.title}</h3>
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted-foreground">
                               {new Date(notification.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          
-                          <p className="mt-1 text-sm text-gray-600">{notification.description}</p>
-                          
+
+                          <p className="mt-1 text-sm text-muted-foreground">{notification.description}</p>
+
                           {notification.extraInfo && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-700">
+                            <div className="mt-2 p-2 bg-muted/40 rounded-lg text-xs text-muted-foreground">
                               {notification.extraInfo}
                             </div>
                           )}
@@ -304,28 +278,20 @@ const StudentNotifications = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg">
-                    <div className="bg-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-3 shadow-sm">
-                      <FiBell className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-base font-medium text-gray-800 mb-1">No notifications found</h3>
-                    <p className="text-sm text-gray-500">
-                      {activeTab === 'all' 
-                        ? 'You don\'t have any notifications yet.' 
+                  <EmptyState
+                    icon={Bell}
+                    title="No notifications found"
+                    description={
+                      activeTab === 'all'
+                        ? "You don't have any notifications yet."
                         : activeTab === 'tpo'
                         ? 'No notifications from TPO.'
                         : 'No notifications from Faculty.'}
-                    </p>
-                  </div>
+                  />
                 )}
-              </div>
-            </div>
+            </GlassPanel>
           </div>
-        </main>
-        
-        <Footer />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 

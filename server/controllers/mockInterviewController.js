@@ -1,5 +1,55 @@
-const MockInterview = require('../models/MockInterview');
+const prisma = require('../lib/prisma');
 const aiService = require('../services/aiService');
+
+// ===== Ported MockInterview model logic (Prisma returns plain objects) =====
+
+// Ported from mockInterviewSchema.methods.calculateOverallScore.
+// Mutates the plain `interview` object's score fields and returns overallScore.
+function calculateOverallScore(interview) {
+  const questions = interview.questions || [];
+  if (questions.length === 0) {
+    interview.overallScore = 0;
+    return 0;
+  }
+
+  const totalScore = questions.reduce((sum, q) => sum + (q.aiScore || 0), 0);
+  interview.overallScore = Math.round((totalScore / questions.length) * 10);
+
+  interview.technicalScore = Math.round(
+    questions.reduce((sum, q) => sum + (q.technicalAccuracy || 0), 0) / questions.length * 10
+  );
+
+  interview.communicationScore = Math.round(
+    questions.reduce((sum, q) => sum + (q.communication || 0), 0) / questions.length * 10
+  );
+
+  interview.confidenceScore = Math.round(
+    questions.reduce((sum, q) => sum + (q.confidence || 0), 0) / questions.length * 10
+  );
+
+  return interview.overallScore;
+}
+
+// Ported from mockInterviewSchema.methods.calculateReadinessLevel.
+function calculateReadinessLevel(interview) {
+  const score = interview.overallScore;
+
+  if (score >= 90) return 'excellent';
+  if (score >= 75) return 'well_prepared';
+  if (score >= 60) return 'ready';
+  if (score >= 40) return 'needs_improvement';
+  return 'not_ready';
+}
+
+// Ported from mockInterviewSchema.virtual('duration').
+function getDuration(interview) {
+  if (interview.completedAt && interview.startedAt) {
+    return Math.round(
+      (new Date(interview.completedAt) - new Date(interview.startedAt)) / 1000 / 60
+    ); // in minutes
+  }
+  return null;
+}
 
 class MockInterviewController {
 
@@ -54,31 +104,31 @@ class MockInterviewController {
       }
 
       // Create interview session
-      const interview = new MockInterview({
-        studentId,
-        jobRole,
-        experienceLevel: experienceLevel || 'fresher',
-        industry,
-        difficulty: difficulty || 'medium',
-        totalQuestions: questionCount,
-        currentQuestionIndex: 0,
-        questions: [{
-          questionNumber: 1,
-          question: firstQuestion,
-          askedAt: new Date()
-        }],
-        status: 'in_progress'
+      const interview = await prisma.mockInterview.create({
+        data: {
+          studentId,
+          jobRole,
+          experienceLevel: experienceLevel || 'fresher',
+          industry,
+          difficulty: difficulty || 'medium',
+          totalQuestions: questionCount,
+          currentQuestionIndex: 0,
+          questions: [{
+            questionNumber: 1,
+            question: firstQuestion,
+            askedAt: new Date()
+          }],
+          status: 'in_progress'
+        }
       });
 
-      await interview.save();
-
-      console.log(`✅ Interview created with ID: ${interview._id}`);
+      console.log(`✅ Interview created with ID: ${interview.id}`);
 
       return res.status(201).json({
         success: true,
         message: 'Interview started successfully',
         data: {
-          interviewId: interview._id,
+          interviewId: interview.id,
           jobRole: interview.jobRole,
           industry: interview.industry,
           difficulty: interview.difficulty,
@@ -109,9 +159,8 @@ class MockInterviewController {
       const studentId = req.user.id;
 
       // Find interview
-      const interview = await MockInterview.findOne({
-        _id: interviewId,
-        studentId
+      const interview = await prisma.mockInterview.findFirst({
+        where: { id: interviewId, studentId }
       });
 
       if (!interview) {
@@ -119,6 +168,11 @@ class MockInterviewController {
           success: false,
           message: 'Interview not found'
         });
+      }
+
+      // Ensure questions is a mutable array (JSON column)
+      if (!Array.isArray(interview.questions)) {
+        interview.questions = [];
       }
 
       if (interview.status !== 'in_progress') {
@@ -163,7 +217,7 @@ class MockInterviewController {
 
       // Update the question with answer and analysis
       interview.questions[currentIndex] = {
-        ...currentQuestion.toObject(),
+        ...currentQuestion,
         studentAnswer: answer,
         answeredAt: new Date(),
         aiScore: analysis.aiScore,
@@ -210,18 +264,32 @@ class MockInterviewController {
         interview.completedAt = new Date();
 
         // Calculate scores
-        interview.calculateOverallScore();
+        calculateOverallScore(interview);
 
         // Generate overall feedback with closing
         const overallFeedback = await MockInterviewController.generateOverallFeedback(interview);
         interview.overallFeedback = overallFeedback;
-        interview.overallFeedback.readinessLevel = interview.calculateReadinessLevel();
+        interview.overallFeedback.readinessLevel = calculateReadinessLevel(interview);
 
         // Generate closing message
         interview.overallFeedback.closingMessage = await MockInterviewController.generateClosingMessage(interview);
       }
 
-      await interview.save();
+      // Persist all mutations to the interview row
+      await prisma.mockInterview.update({
+        where: { id: interview.id },
+        data: {
+          questions: interview.questions,
+          currentQuestionIndex: interview.currentQuestionIndex,
+          status: interview.status,
+          completedAt: interview.completedAt,
+          overallScore: interview.overallScore,
+          technicalScore: interview.technicalScore,
+          communicationScore: interview.communicationScore,
+          confidenceScore: interview.confidenceScore,
+          overallFeedback: interview.overallFeedback
+        }
+      });
 
       // Prepare response
       const response = {
@@ -246,7 +314,7 @@ class MockInterviewController {
           communicationScore: interview.communicationScore,
           confidenceScore: interview.confidenceScore,
           overallFeedback: interview.overallFeedback,
-          duration: interview.duration
+          duration: getDuration(interview)
         };
       }
 
@@ -268,9 +336,8 @@ class MockInterviewController {
       const { interviewId } = req.params;
       const studentId = req.user.id;
 
-      const interview = await MockInterview.findOne({
-        _id: interviewId,
-        studentId
+      const interview = await prisma.mockInterview.findFirst({
+        where: { id: interviewId, studentId }
       });
 
       if (!interview) {
@@ -283,13 +350,13 @@ class MockInterviewController {
       return res.status(200).json({
         success: true,
         data: {
-          interviewId: interview._id,
+          interviewId: interview.id,
           jobRole: interview.jobRole,
           difficulty: interview.difficulty,
           status: interview.status,
           startedAt: interview.startedAt,
           completedAt: interview.completedAt,
-          duration: interview.duration,
+          duration: getDuration(interview),
           overallScore: interview.overallScore,
           technicalScore: interview.technicalScore,
           communicationScore: interview.communicationScore,
@@ -314,10 +381,22 @@ class MockInterviewController {
     try {
       const studentId = req.user.id;
 
-      const interviews = await MockInterview.find({ studentId })
-        .sort({ createdAt: -1 })
-        .select('-questions.idealAnswer -questions.improvementSuggestions')
-        .limit(50);
+      const interviews = await prisma.mockInterview.findMany({
+        where: { studentId },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+
+      // Strip idealAnswer / improvementSuggestions from each question (JSON column),
+      // preserving the original `.select('-questions.idealAnswer ...')` behavior.
+      interviews.forEach((interview) => {
+        if (Array.isArray(interview.questions)) {
+          interview.questions = interview.questions.map((q) => {
+            const { idealAnswer, improvementSuggestions, ...rest } = q;
+            return rest;
+          });
+        }
+      });
 
       return res.status(200).json({
         success: true,
@@ -341,12 +420,11 @@ class MockInterviewController {
       const { interviewId } = req.params;
       const studentId = req.user.id;
 
-      const interview = await MockInterview.findOneAndDelete({
-        _id: interviewId,
-        studentId
+      const deleted = await prisma.mockInterview.deleteMany({
+        where: { id: interviewId, studentId }
       });
 
-      if (!interview) {
+      if (deleted.count === 0) {
         return res.status(404).json({
           success: false,
           message: 'Interview not found'

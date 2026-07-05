@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { apiUrl } from "../lib/api";
 
 // 1. Create context
 export const AuthContext = createContext();
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       const token = sessionStorage.getItem('authToken');
       if (!token) return;
       
-      const { data } = await axios.get('http://localhost:3001/auth/me', {
+      const { data } = await axios.get(apiUrl('/me'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       

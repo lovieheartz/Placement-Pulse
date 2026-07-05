@@ -1,0 +1,490 @@
+/* ============================================================
+   Liquid-Glass Design System
+   Shared aesthetic for the public landing + auth experience.
+   Pure CSS — animations are rAF/keyframe driven, no JS libs.
+   ============================================================ */
+
+/* ---- Tailwind v4 theme tokens (generate font-* / color-* utils) ---- */
+@theme {
+  --font-heading: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-body: "Barlow", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #05060a;
+  --color-brand-400: #8ab4ff;
+  --color-brand-500: #5b8cff;
+  --color-brand-600: #3a63ff;
+  --color-accent-400: #c6a7ff;
+}
+
+/* ---- Liquid glass: subtle (nav / chips / cards) ---- */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.055);
+  background-blend-mode: luminosity;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ---- Liquid glass: strong (primary CTA / panels) ---- */
+.liquid-glass-strong {
+  background: rgba(255, 255, 255, 0.04);
+  background-blend-mode: luminosity;
+  -webkit-backdrop-filter: blur(50px);
+  backdrop-filter: blur(50px);
+  border: none;
+  box-shadow: 4px 4px 14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass-strong::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.2) 80%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glass interactions */
+.glass-hover {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease, background-color 0.35s ease;
+}
+.glass-hover:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    0 18px 44px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 180, 255, 0.14),
+    0 10px 40px rgba(91, 140, 255, 0.14);
+}
+
+/* ============================================================
+   Motion system — cinematic + interactive polish
+   ============================================================ */
+
+/* Cinematic slow zoom (Ken Burns) for hero media */
+.ds-kenburns {
+  animation: dsKenburns 24s ease-in-out infinite alternate;
+}
+@keyframes dsKenburns {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1.16);
+  }
+}
+
+/* Scroll progress bar */
+.ds-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  z-index: 60;
+  width: var(--sp, 0%);
+  background: linear-gradient(90deg, #5b8cff, #c6a7ff 60%, #8ab4ff);
+  box-shadow: 0 0 14px rgba(91, 140, 255, 0.6);
+}
+
+/* Navbar entrance */
+.ds-nav-in {
+  animation: dsNavIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dsNavIn {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Light sweep / sheen on hover for glass buttons */
+.ds-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.ds-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.75s ease;
+  pointer-events: none;
+}
+.ds-shimmer:hover::after {
+  transform: translateX(130%);
+}
+
+/* Animated scroll-down cue */
+.ds-scrollcue {
+  animation: dsCue 1.8s ease-in-out infinite;
+}
+@keyframes dsCue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Animated fallback background (shows even if video fails)
+   ============================================================ */
+.ds-aurora {
+  background-color: #05060a;
+  background-image:
+    radial-gradient(60% 50% at 20% 18%, rgba(91, 140, 255, 0.28), transparent 60%),
+    radial-gradient(55% 45% at 82% 22%, rgba(198, 167, 255, 0.22), transparent 60%),
+    radial-gradient(70% 60% at 50% 100%, rgba(58, 99, 255, 0.18), transparent 60%);
+  animation: dsAurora 16s ease-in-out infinite alternate;
+}
+@keyframes dsAurora {
+  0% {
+    background-position: 0% 0%, 100% 0%, 50% 100%;
+  }
+  100% {
+    background-position: 8% 6%, 92% 10%, 46% 92%;
+  }
+}
+
+/* Soft grain/vignette to add depth over media */
+.ds-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 50% 20%,
+    transparent 45%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+/* ============================================================
+   Entrance reveal — blur + fade + rise
+   Use with inline style={{ animationDelay: '0.4s' }}
+   ============================================================ */
+.ds-reveal {
+  opacity: 0;
+  will-change: transform, filter, opacity;
+  animation: dsReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes dsReveal {
+  from {
+    filter: blur(10px);
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   BlurText — word-by-word reveal on scroll into view.
+   Parent .ds-blurtext, words get .ds-word with --i index.
+   Add .is-visible (via IntersectionObserver) to trigger.
+   ============================================================ */
+.ds-blurtext {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.1em;
+}
+.ds-blurtext.ds-center {
+  justify-content: center;
+}
+.ds-word {
+  display: inline-block;
+  margin-right: 0.28em;
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(46px);
+  will-change: transform, filter, opacity;
+}
+.ds-blurtext.is-visible .ds-word {
+  animation: dsWordIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 0.08s);
+}
+@keyframes dsWordIn {
+  0% {
+    filter: blur(10px);
+    opacity: 0;
+    transform: translateY(46px);
+  }
+  50% {
+    filter: blur(4px);
+    opacity: 0.55;
+    transform: translateY(-5px);
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Marquee for partner / recruiter logos */
+.ds-marquee {
+  display: flex;
+  width: max-content;
+  animation: dsMarquee 28s linear infinite;
+}
+.ds-marquee-wrap:hover .ds-marquee {
+  animation-play-state: paused;
+}
+@keyframes dsMarquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================================
+   Parallax glow orbs — add depth behind glass so the frosted
+   backdrop-blur actually reads on dark sections.
+   ============================================================ */
+.ds-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.5;
+  will-change: transform;
+  transition: transform 0.1s linear;
+}
+.ds-orb-1 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(91, 140, 255, 0.55), transparent 70%);
+  top: 4%;
+  left: -6%;
+  transform: translate3d(0, calc(var(--p, 0) * 70px), 0);
+}
+.ds-orb-2 {
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(198, 167, 255, 0.45), transparent 70%);
+  bottom: 2%;
+  right: -5%;
+  transform: translate3d(0, calc(var(--p, 0) * -90px), 0);
+}
+.ds-orb-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(58, 99, 255, 0.35), transparent 70%);
+  top: 40%;
+  left: 55%;
+  transform: translate3d(0, calc(var(--p, 0) * 50px), 0);
+}
+
+/* Section divider glow line */
+.ds-hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14),
+    transparent
+  );
+}
+
+/* Subtle floating accent */
+.ds-float {
+  animation: dsFloat 7s ease-in-out infinite;
+}
+@keyframes dsFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Custom scrollbar for the dark experience */
+.ds-scope {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Links inside the dark experience inherit their parent colour (fixes
+   Bootstrap's global blue <a> styling leaking in) and never underline.
+   These rules are unlayered so they reliably beat Bootstrap's `a {}`. */
+.ds-scope a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+.ds-scope a:hover {
+  color: #ffffff;
+}
+/* Solid pill CTAs that need dark text on a light background */
+.ds-scope a.ds-cta-dark,
+.ds-scope a.ds-cta-dark:hover {
+  color: #05060a;
+}
+
+/* Sticky navbar scroll state */
+.ds-nav {
+  transition: background-color 0.35s ease, backdrop-filter 0.35s ease,
+    box-shadow 0.35s ease;
+}
+.ds-nav.is-scrolled {
+  background: rgba(8, 10, 16, 0.55);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ============================================================
+   Form fields — focus glow for glass inputs
+   ============================================================ */
+.ds-field {
+  transition: box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.ds-field:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(139, 180, 255, 0.55), 0 0 24px rgba(91, 140, 255, 0.28);
+}
+/* Autofill fix so it doesn't turn white-on-white */
+.ds-field input:-webkit-autofill,
+.ds-field input:-webkit-autofill:hover,
+.ds-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* ============================================================
+   Premium dark-glass toasts (react-toastify override)
+   ============================================================ */
+.Toastify__toast {
+  background: rgba(12, 14, 22, 0.86) !important;
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  color: #fff;
+  font-family: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  padding: 6px 10px;
+}
+.Toastify__toast-body {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
+  font-weight: 500;
+}
+.Toastify__close-button {
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 1;
+  align-self: center;
+}
+.Toastify__close-button:hover {
+  color: #fff;
+}
+.Toastify__progress-bar {
+  height: 3px;
+}
+.Toastify__progress-bar--success {
+  background: linear-gradient(90deg, #34d399, #5b8cff) !important;
+}
+.Toastify__progress-bar--error {
+  background: linear-gradient(90deg, #fb7185, #c6a7ff) !important;
+}
+.Toastify__progress-bar--info,
+.Toastify__progress-bar--default {
+  background: linear-gradient(90deg, #5b8cff, #c6a7ff) !important;
+}
+.Toastify__toast-icon svg {
+  fill: #8ab4ff;
+}
+.Toastify__toast--success .Toastify__toast-icon svg {
+  fill: #34d399;
+}
+.Toastify__toast--error .Toastify__toast-icon svg {
+  fill: #fb7185;
+}
+
+/* Password strength meter */
+.ds-strength {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.ds-strength > span {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ds-reveal,
+  .ds-blurtext .ds-word,
+  .ds-float,
+  .ds-aurora,
+  .ds-marquee,
+  .ds-kenburns,
+  .ds-nav-in,
+  .ds-scrollcue {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}

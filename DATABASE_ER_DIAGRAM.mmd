@@ -1,0 +1,131 @@
+erDiagram
+
+    %% ============================================================
+    %% PLACEMENT MANAGEMENT SYSTEM - DATABASE ER DIAGRAM
+    %% Optimized for Horizontal/Landscape View
+    %% ============================================================
+
+    %% Core User Entities
+    STUDENT {
+        ObjectId _id PK
+        string name
+        string email UK
+        string password
+        string rollNumber
+        string course
+        string branch
+        number cgpa
+        boolean isVerified
+    }
+
+    FACULTY {
+        ObjectId _id PK
+        string name
+        string email UK
+        string employeeId UK
+        string department
+        string designation
+        boolean isActive
+    }
+
+    HOD {
+        ObjectId _id PK
+        string name
+        string email UK
+        string employeeId UK
+        string department UK
+        number experience
+    }
+
+    ADMIN {
+        ObjectId _id PK
+        string name
+        string email UK
+        string role
+        array permissions
+        boolean isSuperAdmin
+    }
+
+    %% Application Entities
+    NOC {
+        ObjectId _id PK
+        ObjectId studentId FK
+        string companyName
+        string jobRole
+        number package
+        string status
+        ObjectId processedBy FK
+    }
+
+    NOTIFICATION {
+        ObjectId _id PK
+        string title
+        string message
+        string priority
+        array targetRoles
+        date deadline
+        ObjectId createdBy FK
+    }
+
+    RESUME_ANALYSIS {
+        ObjectId _id PK
+        ObjectId studentId FK
+        string resumePath
+        number atsScore
+        array suggestions
+        string aiProvider
+    }
+
+    MOCK_INTERVIEW {
+        ObjectId _id PK
+        ObjectId studentId FK
+        string interviewType
+        string jobRole
+        number overallScore
+        string status
+    }
+
+    APTITUDE_TEST {
+        ObjectId _id PK
+        string testName UK
+        string testType
+        number duration
+        number totalMarks
+        ObjectId createdBy FK
+    }
+
+    TEST_ATTEMPT {
+        ObjectId _id PK
+        ObjectId testId FK
+        ObjectId studentId FK
+        number score
+        number percentage
+        boolean isPassed
+    }
+
+    TEST_BATCH {
+        ObjectId _id PK
+        ObjectId testId FK
+        string batchName
+        string department
+        date scheduledDate
+        string status
+    }
+
+    %% Relationships - Optimized Layout
+    STUDENT ||--o{ NOC : "applies"
+    STUDENT ||--o{ RESUME_ANALYSIS : "submits"
+    STUDENT ||--o{ MOCK_INTERVIEW : "takes"
+    STUDENT ||--o{ TEST_ATTEMPT : "attempts"
+
+    ADMIN ||--o{ NOC : "processes"
+    ADMIN ||--o{ NOTIFICATION : "creates"
+    ADMIN ||--o{ APTITUDE_TEST : "manages"
+
+    FACULTY ||--o{ NOTIFICATION : "sends"
+    HOD ||--o{ NOTIFICATION : "sends"
+    HOD ||--o{ APTITUDE_TEST : "creates"
+
+    APTITUDE_TEST ||--o{ TEST_ATTEMPT : "has"
+    APTITUDE_TEST ||--o{ TEST_BATCH : "includes"
+    TEST_BATCH ||--o{ TEST_ATTEMPT : "contains"

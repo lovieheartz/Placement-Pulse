@@ -1,28 +1,38 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiHome, FiUsers, FiUserPlus, FiUserX, FiUserCheck, FiLock, FiShield, FiBell, FiMenu, FiX, FiChevronDown, FiFileText } from 'react-icons/fi';
+import { FiHome, FiUsers, FiUserPlus, FiUserCheck, FiLock, FiShield, FiBell, FiMenu, FiX, FiChevronDown, FiFileText, FiBriefcase, FiClipboard } from 'react-icons/fi';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [facultyDropdownOpen, setFacultyDropdownOpen] = useState(false);
+  const [hodDropdownOpen, setHodDropdownOpen] = useState(false);
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
   const [studentDropdownOpen, setStudentDropdownOpen] = useState(false);
-  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const toggleFacultyDropdown = () => setFacultyDropdownOpen(!facultyDropdownOpen);
+  const toggleHodDropdown = () => setHodDropdownOpen(!hodDropdownOpen);
   const toggleAdminDropdown = () => setAdminDropdownOpen(!adminDropdownOpen);
   const toggleStudentDropdown = () => setStudentDropdownOpen(!studentDropdownOpen);
-  const toggleNotificationDropdown = () => setNotificationDropdownOpen(!notificationDropdownOpen);
 
-  const handleAddFaculty = () => {
+  const handleFacultyList = () => {
     navigate("/admin/faculty");
     setIsOpen(false);
   };
 
-  const handleRemoveFaculty = () => {
-    navigate("/admin/remove-faculty");
+  const handleAddFaculty = () => {
+    navigate("/admin/add-faculty");
+    setIsOpen(false);
+  };
+
+  const handleHODList = () => {
+    navigate("/admin/hods");
+    setIsOpen(false);
+  };
+
+  const handleAddHOD = () => {
+    navigate("/admin/add-hod");
     setIsOpen(false);
   };
 
@@ -30,7 +40,7 @@ const Sidebar = () => {
     navigate("/admin/admins");
     setIsOpen(false);
   };
-  
+
   const handleAdminCreate = () => {
     navigate("/admin/add-admin");
     setIsOpen(false);
@@ -69,7 +79,7 @@ const Sidebar = () => {
       {/* Sidebar */}
       <nav
         className={`fixed top-0 left-0 h-full w-full bg-gradient-to-b from-blue-800 to-blue-900 text-white px-4 py-6 z-[110] transform transition-all duration-300
-        ${isOpen ? "translate-y-0" : "-translate-y-full"} 
+        ${isOpen ? "translate-y-0" : "-translate-y-full"}
         md:relative md:translate-y-0 md:translate-x-0 md:h-auto md:w-[240px] md:min-h-screen md:shadow-xl`}
       >
         {/* Close Button - Mobile only */}
@@ -95,7 +105,7 @@ const Sidebar = () => {
 
           {/* Menu Items */}
           <ul className="flex flex-col space-y-1">
-            
+
             {/* Dashboard (Home) */}
             <li className="w-full">
               <button
@@ -105,6 +115,40 @@ const Sidebar = () => {
                 <FiHome className="w-5 h-5 mr-3" />
                 Dashboard
               </button>
+            </li>
+
+            {/* HOD Management */}
+            <li className="w-full">
+              <div
+                className={`flex justify-between items-center cursor-pointer px-4 py-3 w-full hover:bg-blue-700 rounded-lg transition-all duration-200 ${hodDropdownOpen ? 'bg-blue-700' : ''}`}
+                onClick={toggleHodDropdown}
+              >
+                <div className="flex items-center">
+                  <FiBriefcase className="w-5 h-5 mr-3" />
+                  <span className="font-medium">HOD</span>
+                </div>
+                <FiChevronDown
+                  className={`w-5 h-5 transition-transform duration-300 ${hodDropdownOpen ? "rotate-180" : ""}`}
+                />
+              </div>
+              {hodDropdownOpen && (
+                <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
+                  <button
+                    onClick={handleHODList}
+                    className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
+                  >
+                    <FiUsers className="w-4 h-4 mr-2" />
+                    HOD List
+                  </button>
+                  <button
+                    onClick={handleAddHOD}
+                    className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
+                  >
+                    <FiUserPlus className="w-4 h-4 mr-2" />
+                    Add HOD
+                  </button>
+                </div>
+              )}
             </li>
 
             {/* Faculty */}
@@ -124,18 +168,18 @@ const Sidebar = () => {
               {facultyDropdownOpen && (
                 <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
                   <button
+                    onClick={handleFacultyList}
+                    className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
+                  >
+                    <FiUsers className="w-4 h-4 mr-2" />
+                    Faculty List
+                  </button>
+                  <button
                     onClick={handleAddFaculty}
                     className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
                   >
                     <FiUserPlus className="w-4 h-4 mr-2" />
                     Add Faculty
-                  </button>
-                  <button
-                    onClick={handleRemoveFaculty}
-                    className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
-                  >
-                    <FiUserX className="w-4 h-4 mr-2" />
-                    Remove Faculty
                   </button>
                 </div>
               )}
@@ -174,7 +218,7 @@ const Sidebar = () => {
                 </div>
               )}
             </li>
-            
+
             {/* Admin */}
             <li className="w-full">
               <div
@@ -208,34 +252,34 @@ const Sidebar = () => {
                 </div>
               )}
             </li>
-            
-            {/* Notifications */}
+
+            {/* Send Notification */}
             <li className="w-full">
-              <div
-                className={`flex justify-between items-center cursor-pointer px-4 py-3 w-full hover:bg-blue-700 rounded-lg transition-all duration-200 ${notificationDropdownOpen ? 'bg-blue-700' : ''}`}
-                onClick={toggleNotificationDropdown}
+              <button
+                onClick={handleSendNotification}
+                className="w-full flex items-center px-4 py-3 text-left text-white hover:bg-blue-700 rounded-lg transition-all duration-200 font-medium"
               >
-                <div className="flex items-center">
-                  <FiBell className="w-5 h-5 mr-3" />
-                  <span className="font-medium">Notifications</span>
-                </div>
-                <FiChevronDown
-                  className={`w-5 h-5 transition-transform duration-300 ${notificationDropdownOpen ? "rotate-180" : ""}`}
-                />
-              </div>
-              {notificationDropdownOpen && (
-                <div className="mt-1 ml-6 pl-6 border-l-2 border-blue-500 space-y-1">
-                  <button
-                    onClick={handleSendNotification}
-                    className="w-full flex items-center px-3 py-2 text-sm text-blue-100 hover:bg-blue-700 rounded-lg transition-all duration-200"
-                  >
-                    <FiBell className="w-4 h-4 mr-2" />
-                    Send Notification
-                  </button>
-                </div>
-              )}
+                <FiBell className="w-5 h-5 mr-3" />
+                Send Notification
+              </button>
             </li>
-            
+
+            {/* Notification History */}
+            <li className="w-full">
+              <button
+                onClick={() => {
+                  navigate("/admin/notification-history");
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center px-4 py-3 text-left text-white hover:bg-blue-700 rounded-lg transition-all duration-200 font-medium"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Notification History
+              </button>
+            </li>
+
             {/* NOC Management */}
             <li className="w-full">
               <button
@@ -247,6 +291,20 @@ const Sidebar = () => {
               >
                 <FiFileText className="w-7 h-7 mr-3" />
                 NOC Requests
+              </button>
+            </li>
+
+            {/* Aptitude Tests */}
+            <li className="w-full">
+              <button
+                onClick={() => {
+                  navigate("/admin/aptitude-tests");
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center px-4 py-3 text-left text-white hover:bg-blue-700 rounded-lg transition-all duration-200 font-medium"
+              >
+                <FiClipboard className="w-5 h-5 mr-3" />
+                Aptitude Tests
               </button>
             </li>
           </ul>

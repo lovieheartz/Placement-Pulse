@@ -1,11 +1,59 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FaUser, FaEnvelope, FaPhone, FaLock, FaEye, FaEyeSlash, FaGraduationCap, FaCalendarAlt } from 'react-icons/fa';
-import './Signup.css';
+import { toast } from 'react-toastify';
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+} from 'react-icons/fa';
+import { apiUrl } from '../lib/api';
+import { BRAND } from '../constants/brand';
+import GlassBackground from '../components/ui/GlassBackground';
+import { ArrowRight } from '../components/ui/icons';
+
+const AUTH_VIDEO =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_094631_d30ab262-45ee-4b7d-99f3-5d5848c8ef13.mp4';
+
+const courseOptions = {
+  BTech: ['CSE', 'CSE(AIML)', 'CSE-DS', 'CSE-IOT', 'BME', 'IT', 'CSBS', 'CE', 'EE', 'ME', 'ECE'],
+  MTech: ['CSE', 'CI', 'ECE&PS'],
+  Diploma: ['EE', 'EEEVT', 'CE', 'CSE'],
+  BCA: ['BCA'],
+  MCA: ['MCA'],
+  BBA: ['BBA'],
+  MBA: ['MBA'],
+};
+
+const inputWrap =
+  'ds-field liquid-glass flex items-center gap-3 rounded-2xl px-4';
+const inputField =
+  'w-full bg-transparent py-3.5 text-sm text-white placeholder-white/40 outline-none';
+const selectWrap = 'ds-field liquid-glass rounded-2xl relative';
+const selectField =
+  'w-full appearance-none bg-transparent py-3.5 pl-4 pr-9 text-sm text-white outline-none [&>option]:bg-[#0b0d14] [&>option]:text-white';
+const errText = 'mt-1.5 text-xs text-rose-300/90 pl-1';
+
+const STRENGTH = [
+  { label: 'Too weak', color: '#fb7185', width: '20%' },
+  { label: 'Weak', color: '#fb923c', width: '40%' },
+  { label: 'Fair', color: '#fbbf24', width: '60%' },
+  { label: 'Good', color: '#a3e635', width: '80%' },
+  { label: 'Strong', color: '#34d399', width: '100%' },
+];
+const scorePassword = (pw = '') => {
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (/[A-Z]/.test(pw)) s++;
+  if (/[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.max(0, s - 1); // 0..4 index into STRENGTH
+};
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -16,35 +64,34 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const t = setInterval(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [resendCooldown]);
+
+  const [searchParams] = useSearchParams();
+  const prefillEmail = searchParams.get('email') || '';
 
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({ defaultValues: { email: prefillEmail } });
 
-  const courseOptions = {
-    'BTech': ['CSE', 'CSE(AIML)', 'CSE-DS', 'CSE-IOT', 'BME', 'IT', 'CSBS', 'CE', 'EE', 'ME', 'ECE'],
-    'MTech': ['CSE', 'CI', 'ECE&PS'],
-    'Diploma': ['EE', 'EEEVT', 'CE', 'CSE'],
-    'BCA': ['BCA'],
-    'MCA': ['MCA'],
-    'BBA': ['BBA'],
-    'MBA': ['MBA']
-  };
-  
-  // Generate years from 2000 to current year + 10
   const currentYear = new Date().getFullYear();
-  const years = Array.from({length: currentYear - 1999 + 10}, (_, i) => 2020 + i);
+  const years = Array.from({ length: currentYear - 1999 + 10 }, (_, i) => 2020 + i);
+
+  const passwordValue = watch('password') || '';
+  const strengthIdx = scorePassword(passwordValue);
 
   const sendOTPMutation = useMutation({
     mutationFn: async (email) => {
-      // Clean email if it has mailto: prefix
       email = email.replace(/^mailto:/, '');
-      console.log('Sending OTP to:', email);
-      const res = await fetch('http://localhost:3001/send-otp', {
+      const res = await fetch(apiUrl('/send-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -53,65 +100,30 @@ const Signup = () => {
       if (!res.ok) throw new Error(data.error || data.message || 'Failed to send OTP');
       return data;
     },
-    onSuccess: () => {
-      toast.success('OTP sent successfully!');
-      setOtpSending(false);
-    },
-    onError: (err) => {
-      toast.error(err.message);
-      setOtpSending(false);
-      setShowOTPVerification(false);
-    },
   });
 
   const registerMutation = useMutation({
-    mutationFn: async ({ name, email, phone, password, course, branch, admissionYear, passoutYear, otp }) => {
-      // Clean email if it has mailto: prefix
-      email = email.replace(/^mailto:/, '');
-      console.log('Verifying OTP for student:', email);
-      
-      try {
-        // Register the student directly with OTP
-        const registerRes = await fetch('http://localhost:3001/register-student', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            name, 
-            email, 
-            phone, 
-            password, 
-            course, 
-            branch, 
-            admissionYear, 
-            passoutYear,
-            otp // Include OTP in registration request
-          }),
-        });
-        
-        const registerData = await registerRes.json();
-        if (!registerRes.ok) throw new Error(registerData.error || registerData.message || 'Registration failed');
-        
-        return registerData;
-      } catch (error) {
-        console.error('Registration error details:', error);
-        throw error;
-      }
+    mutationFn: async (payload) => {
+      const email = payload.email.replace(/^mailto:/, '');
+      const res = await fetch(apiUrl('/register-student'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || 'Registration failed');
+      return data;
     },
-    onSuccess: (data) => {
-      toast.success('Registration successful! You can now login.');
-      setTimeout(() => navigate('/login'), 2000);
+    onSuccess: () => {
+      toast.success('Registration successful! You can now sign in.');
+      setTimeout(() => navigate('/login'), 1800);
     },
     onError: (err) => {
-      console.error('Registration error:', err);
-      if (err.message.includes('Invalid or expired OTP')) {
-        toast.error('OTP wrong! Please try again.');
-      } else if (err.message.includes('Student not found')) {
-        toast.error('Registration failed. Please try again.');
-        // If student not found during verification, go back to registration
-        setShowOTPVerification(false);
-      } else if (err.message.includes('already exists') || err.message.includes('duplicate')) {
-        toast.error('An account with this email already exists. Please login instead.');
-        setTimeout(() => navigate('/login'), 2000);
+      if (err.message.includes('already exists') || err.message.includes('duplicate')) {
+        toast.error('An account with this email already exists. Please sign in.');
+        setTimeout(() => navigate('/login'), 1800);
+      } else if (err.message.includes('Invalid or expired OTP')) {
+        toast.error('OTP is incorrect. Please try again.');
       } else {
         toast.error(err.message || 'Registration failed. Please try again.');
       }
@@ -120,10 +132,8 @@ const Signup = () => {
 
   const resendOTPMutation = useMutation({
     mutationFn: async (email) => {
-      // Clean email if it has mailto: prefix
       email = email.replace(/^mailto:/, '');
-      console.log('Resending OTP to:', email);
-      const res = await fetch('http://localhost:3001/resend-otp', {
+      const res = await fetch(apiUrl('/resend-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -134,11 +144,9 @@ const Signup = () => {
     },
     onSuccess: () => {
       toast.success('OTP resent successfully!');
+      setResendCooldown(30);
     },
-    onError: (err) => {
-      console.error('Resend OTP error:', err);
-      toast.error(err.message);
-    },
+    onError: (err) => toast.error(err.message),
   });
 
   const onSubmit = (data) => {
@@ -146,349 +154,355 @@ const Signup = () => {
       toast.error('Please use your @nsec.ac.in email address');
       return;
     }
-    // Remove mailto: prefix if present
     const cleanEmail = data.email.replace(/^mailto:/, '');
     data.email = cleanEmail;
-    
     setRegistrationEmail(cleanEmail);
     setFormData(data);
     setOtpSending(true);
-    
-    // Show loading animation
-    setIsLoading(true);
-    
-    // Send OTP
     sendOTPMutation.mutate(cleanEmail, {
       onSuccess: () => {
-        setIsLoading(false);
-        setShowOTPVerification(true);
-      },
-      onError: () => {
-        setIsLoading(false);
+        toast.success('OTP sent to your email!');
         setOtpSending(false);
-      }
+        setShowOTPVerification(true);
+        setResendCooldown(30);
+      },
+      onError: (err) => {
+        toast.error(err.message);
+        setOtpSending(false);
+      },
     });
   };
 
   const onOTPSubmit = (data) => {
-    // Clean email if it has mailto: prefix
     const cleanEmail = formData.email.replace(/^mailto:/, '');
-    console.log('Submitting OTP verification with:', { 
-      email: cleanEmail, 
-      otp: data.otp 
-    });
-    setIsLoading(true);
-    registerMutation.mutate({ 
-      ...formData, 
-      email: cleanEmail, 
-      otp: data.otp 
-    }, {
-      onSettled: () => setIsLoading(false)
-    });
+    registerMutation.mutate({ ...formData, email: cleanEmail, otp: data.otp });
   };
 
   const handleResendOTP = () => {
+    if (resendCooldown > 0 || resendOTPMutation.isPending) return;
     resendOTPMutation.mutate(registrationEmail);
   };
 
-  const handleCourseChange = (e) => {
-    setSelectedCourse(e.target.value);
-  };
-
+  /* ----------------------------- OTP STEP ----------------------------- */
   if (showOTPVerification) {
     return (
-      <div className="signup-page">
-        {isLoading && (
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p className="loading-text">Verifying and registering...</p>
-          </div>
-        )}
-        <div className="signup-container fade-in">
-          <div className="logo-container">
-            <h1 className="logo-text">NSEC</h1>
-            <p className="logo-subtext">Placement Portal</p>
-          </div>
-          
-          <h2 className="heading">Verify Your Email</h2>
-          <p className="otp-text">A 6-digit verification code has been sent to <strong>{registrationEmail}</strong></p>
-          <p className="otp-subtext">Please check your inbox and enter the code below</p>
-          
-          <form onSubmit={handleSubmit(onOTPSubmit)} className="signup-form">
-            <div className="otp-input-container">
+      <div className="ds-scope relative min-h-screen w-full overflow-hidden bg-[#05060a] font-body text-white flex items-center justify-center px-4 py-10">
+        <GlassBackground video={AUTH_VIDEO} overlay={0.55} />
+        <div className="relative z-10 w-full max-w-md">
+          <div className="liquid-glass-strong rounded-[1.75rem] p-8 sm:p-10 ds-reveal text-center">
+            <span className="liquid-glass mx-auto flex h-14 w-14 items-center justify-center rounded-full">
+              <FaEnvelope className="text-white text-xl" />
+            </span>
+            <h1 className="mt-6 font-heading italic text-4xl tracking-[-1.5px] leading-none">
+              Verify your email
+            </h1>
+            <p className="mt-3 text-sm text-white/70 font-light">
+              We sent a 6-digit code to<br />
+              <strong className="text-white">{registrationEmail}</strong>
+            </p>
+
+            <form onSubmit={handleSubmit(onOTPSubmit)} noValidate className="mt-8">
               <input
-                className="otp-input"
+                className="ds-field w-full liquid-glass rounded-2xl bg-transparent py-4 text-center text-2xl tracking-[0.5em] font-heading text-white placeholder-white/30 outline-none"
                 type="text"
-                placeholder="Enter 6-digit OTP"
+                placeholder="••••••"
                 maxLength="6"
                 autoFocus
                 autoComplete="one-time-code"
                 inputMode="numeric"
-                {...register('otp', { 
-                  required: 'OTP is required', 
-                  minLength: {
-                    value: 6,
-                    message: 'OTP must be 6 digits'
-                  },
-                  pattern: {
-                    value: /^[0-9]{6}$/,
-                    message: 'OTP must contain only numbers'
-                  }
+                {...register('otp', {
+                  required: 'OTP is required',
+                  pattern: { value: /^[0-9]{6}$/, message: 'OTP must be 6 digits' },
                 })}
               />
+              {errors.otp && <p className={errText}>{errors.otp.message}</p>}
+
+              <button
+                type="submit"
+                disabled={registerMutation.isPending}
+                className="ds-shimmer mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 text-sm font-semibold text-black transition-transform hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
+              >
+                {registerMutation.isPending ? (
+                  <>
+                    <span className="h-4 w-4 rounded-full border-2 border-black/25 border-t-black animate-spin" />
+                    Verifying…
+                  </>
+                ) : (
+                  'Verify & Create Account'
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 flex items-center justify-center gap-6 text-xs text-white/70">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={resendOTPMutation.isPending || resendCooldown > 0}
+                className="hover:text-white disabled:opacity-50 disabled:hover:text-white/70"
+              >
+                {resendCooldown > 0
+                  ? `Resend in ${resendCooldown}s`
+                  : resendOTPMutation.isPending
+                  ? 'Sending…'
+                  : 'Resend OTP'}
+              </button>
+              <button type="button" onClick={() => setShowOTPVerification(false)} className="hover:text-white">
+                Back to form
+              </button>
             </div>
-            {errors.otp && <p className="field-error">{errors.otp.message}</p>}
-            {registerMutation.isError && (
-              <p className="field-error">{registerMutation.error.message}</p>
-            )}
-            
-            <button 
-              type="submit" 
-              className="submit-button"
-              disabled={registerMutation.isPending}
-            >
-              {registerMutation.isPending ? 'Verifying...' : 'Verify OTP'}
-            </button>
-          </form>
-          
-          <div className="otp-actions">
-            <button 
-              className="text-button" 
-              onClick={handleResendOTP}
-              disabled={resendOTPMutation.isPending}
-            >
-              {resendOTPMutation.isPending ? 'Sending...' : 'Resend OTP'}
-            </button>
-            <button className="text-button" onClick={() => setShowOTPVerification(false)}>
-              Back to Registration
-            </button>
-          </div>
-          
-          <div className="footer">
-            <p>© {new Date().getFullYear()} NSEC Placement Portal</p>
           </div>
         </div>
-        <ToastContainer />
       </div>
     );
   }
 
+  /* --------------------------- REGISTER STEP -------------------------- */
   return (
-    <div className="signup-page">
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="loading-spinner"></div>
-          <p className="loading-text">Sending verification code...</p>
-        </div>
-      )}
-      <div className="signup-container">
-        <div className="logo-container">
-          <h1 className="logo-text">NSEC</h1>
-          <p className="logo-subtext">Placement Portal</p>
-        </div>
-        
-        <div className="header-container">
-          <h2 className="heading">Student Registration</h2>
-          <p className="subheading">Create your account to access the placement portal</p>
-        </div>
+    <div className="ds-scope relative min-h-screen w-full overflow-hidden bg-[#05060a] font-body text-white flex items-center justify-center px-4 py-12">
+      <GlassBackground video={AUTH_VIDEO} overlay={0.6} />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="signup-form">
-          <div className="input-group">
-            <FaUser className="input-icon" />
-            <input
-              className="form-input"
-              type="text"
-              placeholder="Full Name"
-              {...register('name', { required: 'Name is required' })}
-            />
-          </div>
-          {errors.name && <p className="field-error">{errors.name.message}</p>}
+      <div className="relative z-10 w-full max-w-xl">
+        <Link to="/" className="flex items-center justify-center gap-3 mb-6">
+          <span className="liquid-glass flex h-12 w-12 items-center justify-center rounded-full">
+            <span className="font-heading italic text-2xl text-white">{BRAND.monogram}</span>
+          </span>
+          <span className="flex flex-col items-start leading-none">
+            <span className="font-heading italic text-xl text-white">{BRAND.name}</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-white/55 mt-0.5">{BRAND.org}</span>
+          </span>
+        </Link>
 
-          <div className="input-group">
-            <FaEnvelope className="input-icon" />
-            <input
-              className="form-input"
-              type="email"
-              placeholder="Email Address (@nsec.ac.in)"
-              {...register('email', { 
-                required: 'Email is required',
-                pattern: {
-                  value: /@nsec\.ac\.in$/,
-                  message: 'Please use your @nsec.ac.in email address'
-                }
-              })}
-            />
-          </div>
-          {errors.email && <p className="field-error">{errors.email.message}</p>}
+        <div className="liquid-glass-strong rounded-[1.75rem] p-8 sm:p-10 ds-reveal">
+          <h1 className="font-heading italic text-4xl sm:text-5xl tracking-[-1.5px] leading-none">
+            Create your account
+          </h1>
+          <p className="mt-3 text-sm text-white/70 font-light">
+            Use your college email to join the placement portal.
+          </p>
 
-          <div className="input-group">
-            <FaPhone className="input-icon" />
-            <input
-              className="form-input"
-              type="tel"
-              placeholder="Phone Number (e.g., +91XXXXXXXXXX)"
-              {...register('phone', {
-                required: 'Phone number is required',
-                pattern: {
-                  value: /^\+\d{10,15}$/,
-                  message: 'Phone number must include country code',
-                },
-              })}
-            />
-          </div>
-          {errors.phone && <p className="field-error">{errors.phone.message}</p>}
-
-          <div className="form-row">
-            <div className="form-column">
-              <label className="select-label">
-                <FaGraduationCap className="select-icon" />
-                <span>Course</span>
-              </label>
-              <div className="select-container">
-                <select
-                  className="form-select"
-                  {...register('course', { required: 'Course is required' })}
-                  onChange={(e) => {
-                    handleCourseChange(e);
-                  }}
-                >
-                  <option value="">Select Course</option>
-                  {Object.keys(courseOptions).map(course => (
-                    <option key={course} value={course}>{course}</option>
-                  ))}
-                </select>
-                <div className="select-arrow"></div>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-8 space-y-4">
+            <div>
+              <div className={inputWrap}>
+                <FaUser className="text-white/50 shrink-0" />
+                <input
+                  className={inputField}
+                  type="text"
+                  placeholder="Full name"
+                  {...register('name', { required: 'Name is required' })}
+                />
               </div>
-              {errors.course && <p className="field-error">{errors.course.message}</p>}
+              {errors.name && <p className={errText}>{errors.name.message}</p>}
             </div>
-            
-            <div className="form-column">
-              <label className="select-label">
-                <FaGraduationCap className="select-icon" />
-                <span>Branch</span>
-              </label>
-              <div className="select-container">
-                <select
-                  className="form-select"
-                  {...register('branch', { required: 'Branch is required' })}
-                  disabled={!selectedCourse || courseOptions[selectedCourse]?.length === 0}
-                >
-                  <option value="">Select Branch</option>
-                  {selectedCourse && courseOptions[selectedCourse]?.map(branch => (
-                    <option key={branch} value={branch}>{branch}</option>
-                  ))}
-                </select>
-                <div className="select-arrow"></div>
-              </div>
-              {errors.branch && <p className="field-error">{errors.branch.message}</p>}
-            </div>
-          </div>
 
-          <div className="form-row">
-            <div className="form-column">
-              <label className="select-label">
-                <FaCalendarAlt className="select-icon" />
-                <span>Admission Year</span>
-              </label>
-              <div className="select-container">
-                <select
-                  className="form-select"
-                  {...register('admissionYear', { required: 'Admission year is required' })}
-                >
-                  <option value="">Select Year</option>
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                <div className="select-arrow"></div>
+            <div>
+              <div className={inputWrap}>
+                <FaEnvelope className="text-white/50 shrink-0" />
+                <input
+                  className={inputField}
+                  type="email"
+                  placeholder="Email (@nsec.ac.in)"
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /@nsec\.ac\.in$/,
+                      message: 'Use your @nsec.ac.in email address',
+                    },
+                  })}
+                />
               </div>
-              {errors.admissionYear && <p className="field-error">{errors.admissionYear.message}</p>}
+              {errors.email && <p className={errText}>{errors.email.message}</p>}
             </div>
-            
-            <div className="form-column">
-              <label className="select-label">
-                <FaCalendarAlt className="select-icon" />
-                <span>Passout Year</span>
-              </label>
-              <div className="select-container">
-                <select
-                  className="form-select"
-                  {...register('passoutYear', { required: 'Passout year is required' })}
-                >
-                  <option value="">Select Year</option>
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                <div className="select-arrow"></div>
-              </div>
-              {errors.passoutYear && <p className="field-error">{errors.passoutYear.message}</p>}
-            </div>
-          </div>
 
-          <div className="input-group">
-            <FaLock className="input-icon" />
-            <input
-              className="form-input"
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              autoComplete="new-password"
-              {...register('password', { 
-                required: 'Password is required',
-                minLength: {
-                  value: 8,
-                  message: 'Password must be at least 8 characters'
-                }
-              })}
-            />
-            <div 
-              className="password-toggle" 
-              onClick={() => setShowPassword(!showPassword)}
+            <div>
+              <div className={inputWrap}>
+                <FaPhone className="text-white/50 shrink-0" />
+                <input
+                  className={inputField}
+                  type="tel"
+                  placeholder="Phone (e.g. +91XXXXXXXXXX)"
+                  {...register('phone', {
+                    required: 'Phone number is required',
+                    pattern: {
+                      value: /^\+\d{10,15}$/,
+                      message: 'Include the country code',
+                    },
+                  })}
+                />
+              </div>
+              {errors.phone && <p className={errText}>{errors.phone.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-white/60 mb-1.5 pl-1">Course</label>
+                <div className={selectWrap}>
+                  <select
+                    className={selectField}
+                    {...register('course', { required: 'Course is required' })}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                  >
+                    <option value="">Select course</option>
+                    {Object.keys(courseOptions).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
+                </div>
+                {errors.course && <p className={errText}>{errors.course.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-xs text-white/60 mb-1.5 pl-1">Branch</label>
+                <div className={selectWrap}>
+                  <select
+                    className={selectField}
+                    disabled={!selectedCourse}
+                    {...register('branch', { required: 'Branch is required' })}
+                  >
+                    <option value="">Select branch</option>
+                    {selectedCourse &&
+                      courseOptions[selectedCourse]?.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
+                </div>
+                {errors.branch && <p className={errText}>{errors.branch.message}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-white/60 mb-1.5 pl-1">Admission year</label>
+                <div className={selectWrap}>
+                  <select
+                    className={selectField}
+                    {...register('admissionYear', { required: 'Required' })}
+                  >
+                    <option value="">Select year</option>
+                    {years.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
+                </div>
+                {errors.admissionYear && <p className={errText}>{errors.admissionYear.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-xs text-white/60 mb-1.5 pl-1">Passout year</label>
+                <div className={selectWrap}>
+                  <select
+                    className={selectField}
+                    {...register('passoutYear', { required: 'Required' })}
+                  >
+                    <option value="">Select year</option>
+                    {years.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
+                </div>
+                {errors.passoutYear && <p className={errText}>{errors.passoutYear.message}</p>}
+              </div>
+            </div>
+
+            <div>
+              <div className={inputWrap}>
+                <FaLock className="text-white/50 shrink-0" />
+                <input
+                  className={inputField}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  autoComplete="new-password"
+                  {...register('password', {
+                    required: 'Password is required',
+                    minLength: { value: 8, message: 'At least 8 characters' },
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-white/50 hover:text-white shrink-0"
+                  aria-label="Toggle password"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              {errors.password && <p className={errText}>{errors.password.message}</p>}
+              {passwordValue && (
+                <div className="mt-2 flex items-center gap-3 pl-1">
+                  <div className="ds-strength flex-1">
+                    <span
+                      style={{
+                        width: STRENGTH[strengthIdx].width,
+                        backgroundColor: STRENGTH[strengthIdx].color,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-medium" style={{ color: STRENGTH[strengthIdx].color }}>
+                    {STRENGTH[strengthIdx].label}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className={inputWrap}>
+                <FaLock className="text-white/50 shrink-0" />
+                <input
+                  className={inputField}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Confirm password"
+                  autoComplete="new-password"
+                  {...register('confirmPassword', {
+                    required: 'Please confirm your password',
+                    validate: (v) => v === watch('password') || 'Passwords do not match',
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="text-white/50 hover:text-white shrink-0"
+                  aria-label="Toggle confirm password"
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className={errText}>{errors.confirmPassword.message}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={otpSending || sendOTPMutation.isPending}
+              className="ds-shimmer group flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 text-sm font-semibold text-black transition-transform hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </div>
-          </div>
-          {errors.password && <p className="field-error">{errors.password.message}</p>}
+              {otpSending || sendOTPMutation.isPending ? (
+                <>
+                  <span className="h-4 w-4 rounded-full border-2 border-black/25 border-t-black animate-spin" />
+                  Sending OTP…
+                </>
+              ) : (
+                <>
+                  Send OTP &amp; Continue
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </button>
+          </form>
 
-          <div className="input-group">
-            <FaLock className="input-icon" />
-            <input
-              className="form-input"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              autoComplete="new-password"
-              {...register('confirmPassword', {
-                required: 'Confirm Password is required',
-                validate: (value) => value === watch('password') || 'Passwords do not match',
-              })}
-            />
-            <div 
-              className="password-toggle" 
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-            </div>
-          </div>
-          {errors.confirmPassword && <p className="field-error">{errors.confirmPassword.message}</p>}
-
-          <button 
-            type="submit" 
-            className={otpSending ? "green-button" : "submit-button"}
-            disabled={otpSending}
-          >
-            {otpSending ? 'Email Verification OTP sent' : 'Send OTP & Verify Email'}
-          </button>
-        </form>
-
-        <div className="login-link">
-          Already have an account? <Link to="/login" className="link">Login here</Link>
+          <p className="mt-7 text-center text-sm text-white/70">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-white hover:underline">
+              Sign in
+            </Link>
+          </p>
         </div>
-        
-        <div className="footer">
-          <p>© {new Date().getFullYear()} NSEC Placement Portal</p>
-        </div>
+
+        <p className="mt-6 text-center text-xs text-white/40">
+          © {new Date().getFullYear()} {BRAND.org}
+        </p>
       </div>
-      <ToastContainer />
     </div>
   );
 };

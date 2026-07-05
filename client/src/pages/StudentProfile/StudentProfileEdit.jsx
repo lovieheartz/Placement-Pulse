@@ -4,17 +4,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../../context/AuthContext';
-import Sidebar from '../../components/StudentSidebar';
-import Header from '../../components/StudentHeader';
-import Footer from '../../components/StudentFooter';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { UserCog } from 'lucide-react';
 import { FiCamera, FiUser } from 'react-icons/fi';
 import axios from 'axios';
 
 const StudentProfileEdit = () => {
-  const { user, logout, updateUser, refreshUser } = useContext(AuthContext);
+  const { user, updateUser, refreshUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -29,13 +29,11 @@ const StudentProfileEdit = () => {
 
   const { register, handleSubmit, reset, watch, setValue } = useForm();
 
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-
   const { data: profileData, isLoading } = useQuery({
     queryKey: ['studentProfile'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/student-profile/profile', {
+      const { data } = await axios.get('http://localhost:3001/student/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data.data;
@@ -116,11 +114,6 @@ const StudentProfileEdit = () => {
   const [showSubjectForm, setShowSubjectForm] = useState({ classX: false, classXII: false });
   const [subjectForm, setSubjectForm] = useState({ name: '', marksScored: '', totalMarks: '' });
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
-
   const onSubmit = (data) => {
     updateProfileMutation.mutate(data);
   };
@@ -160,21 +153,23 @@ const StudentProfileEdit = () => {
 
   const getProfilePicture = () => {
     if (imagePreview) return imagePreview;
-    
-    // Check user avatar first
-    if (user?.avatar) {
-      const avatarUrl = user.avatar.startsWith('http') ? user.avatar : `http://localhost:3001${user.avatar}`;
-      console.log('Using user avatar:', avatarUrl);
-      return avatarUrl;
-    }
-    
-    // Check profile data avatar
-    if (profileData?.avatar) {
-      const avatarUrl = profileData.avatar.startsWith('http') ? profileData.avatar : `http://localhost:3001${profileData.avatar}`;
+
+    // Check profile data avatar first (most up-to-date)
+    const avatarPath = profileData?.avatar || profileData?.profilePicture;
+    if (avatarPath) {
+      const avatarUrl = avatarPath.startsWith('http') ? avatarPath : `http://localhost:3001${avatarPath}`;
       console.log('Using profile data avatar:', avatarUrl);
       return avatarUrl;
     }
-    
+
+    // Fallback to user avatar from AuthContext
+    const userAvatarPath = user?.avatar || user?.profilePicture;
+    if (userAvatarPath) {
+      const avatarUrl = userAvatarPath.startsWith('http') ? userAvatarPath : `http://localhost:3001${userAvatarPath}`;
+      console.log('Using user avatar:', avatarUrl);
+      return avatarUrl;
+    }
+
     console.log('No avatar found, user:', user, 'profileData:', profileData);
     return null;
   };
@@ -227,23 +222,16 @@ const StudentProfileEdit = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-        
-        <main className="flex-1 p-4 md:p-6">
+    <PortalLayout role="student" title="Edit Profile" user={profileData}>
           <div className="max-w-6xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100/50">
-              <div className="p-6">
+            <PageHeader
+              title="Edit Profile"
+              subtitle="Keep your placement profile up to date"
+              icon={UserCog}
+            />
+            <GlassPanel className="overflow-hidden">
                 {/* Profile Header with Picture */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 -m-6 mb-6 p-6 text-white">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 -m-5 sm:-m-6 mb-6 p-6 text-white rounded-t-2xl">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-6">
                       <div className="relative group">
@@ -285,7 +273,7 @@ const StudentProfileEdit = () => {
                           }
                         </h1>
                         <p className="text-blue-100 text-lg">
-                          {user?.course || 'Course'} - {user?.branch || 'Branch'}
+                          {profileData?.course || user?.course || 'Course'} - {profileData?.branch || user?.branch || 'Branch'}
                         </p>
                         <div className="flex items-center mt-2 space-x-4">
                           <div className="flex items-center space-x-2">
@@ -303,20 +291,20 @@ const StudentProfileEdit = () => {
                       </div>
                     </div>
                     {profileImage && (
-                      <button
+                      <Button
                         type="button"
                         onClick={handleUploadAvatar}
                         disabled={uploadAvatarMutation.isPending}
-                        className="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                        className="bg-white text-blue-600 hover:bg-white/90"
                       >
                         {uploadAvatarMutation.isPending ? 'Uploading...' : 'Upload Photo'}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="border-b border-gray-200 mb-8">
+                <div className="border-b border-border mb-8">
                   <nav className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {tabs.map((tab) => (
                       <button
@@ -345,6 +333,24 @@ const StudentProfileEdit = () => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Full Name *</label>
+                            <input
+                              {...register('name')}
+                              placeholder="Enter your full name"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Email *</label>
+                            <input
+                              {...register('email')}
+                              type="email"
+                              placeholder="Enter your email"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50"
+                              readOnly
+                            />
+                          </div>
+                          <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">First Name *</label>
                             <input
                               {...register('firstName')}
@@ -357,6 +363,22 @@ const StudentProfileEdit = () => {
                             <input
                               {...register('lastName')}
                               placeholder="Enter your last name"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Course *</label>
+                            <input
+                              {...register('course')}
+                              placeholder="e.g., BTech, MCA, BCA"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Branch/Department *</label>
+                            <input
+                              {...register('branch')}
+                              placeholder="e.g., Computer Science, IT, Electronics"
                               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             />
                           </div>
@@ -419,16 +441,17 @@ const StudentProfileEdit = () => {
                           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                             <span className="text-2xl">📚</span> Class X Details
                           </h3>
-                          <button
+                          <Button
                             type="button"
+                            variant="gradient"
+                            size="sm"
                             onClick={() => toggleSubjectForm('classX')}
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
                             Add Subject
-                          </button>
+                          </Button>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -478,26 +501,28 @@ const StudentProfileEdit = () => {
                               />
                             </div>
                             <div className="flex gap-3 mt-4">
-                              <button
+                              <Button
                                 type="button"
+                                variant="success"
+                                className="flex-1"
                                 onClick={() => handleAddSubject('classX')}
-                                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:from-green-700 hover:to-green-800 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                                 Add Subject
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
+                                variant="outline"
+                                className="flex-1"
                                 onClick={() => toggleSubjectForm('classX')}
-                                className="flex-1 bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 border border-gray-300"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 Cancel
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -533,16 +558,17 @@ const StudentProfileEdit = () => {
                           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                             <span className="text-2xl">🎓</span> Class XII Details
                           </h3>
-                          <button
+                          <Button
                             type="button"
+                            variant="gradient"
+                            size="sm"
                             onClick={() => toggleSubjectForm('classXII')}
-                            className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-indigo-800 hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
                             Add Subject
-                          </button>
+                          </Button>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -592,26 +618,28 @@ const StudentProfileEdit = () => {
                               />
                             </div>
                             <div className="flex gap-3 mt-4">
-                              <button
+                              <Button
                                 type="button"
+                                variant="success"
+                                className="flex-1"
                                 onClick={() => handleAddSubject('classXII')}
-                                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:from-green-700 hover:to-green-800 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                                 Add Subject
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
+                                variant="outline"
+                                className="flex-1"
                                 onClick={() => toggleSubjectForm('classXII')}
-                                className="flex-1 bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-200 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 border border-gray-300"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 Cancel
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}
@@ -790,29 +818,29 @@ const StudentProfileEdit = () => {
                   )}
 
                   {/* Submit Button */}
-                  <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center pt-8 border-t border-gray-200 gap-4">
-                    <button
+                  <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center pt-8 border-t border-border gap-4">
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => navigate('/student/profile')}
-                      className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 hover:shadow-md transition-all duration-200 font-semibold flex items-center justify-center gap-2 border border-gray-300"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                       </svg>
                       <span>Back to Profile</span>
-                    </button>
+                    </Button>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
                         onClick={() => reset()}
-                        className="px-6 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-2 border-amber-200 rounded-xl hover:from-amber-100 hover:to-yellow-100 hover:shadow-md transition-all duration-200 font-semibold"
                       >
                         🔄 Reset Form
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="submit"
+                        variant="gradient"
                         disabled={updateProfileMutation.isPending}
-                        className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                       >
                         {updateProfileMutation.isPending ? (
                           <span className="flex items-center justify-center gap-2">
@@ -827,18 +855,13 @@ const StudentProfileEdit = () => {
                             <span>Save Changes</span>
                           </span>
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </form>
-              </div>
-            </div>
+            </GlassPanel>
           </div>
-        </main>
-        
-        <Footer />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 

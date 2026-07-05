@@ -1,33 +1,28 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/FacultySidebar';
-import Header from '../components/FacultyHeader';
-import Card from '../components/Card';
-import Footer from '../components/FacultyFooter';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  Users,
+  ClipboardList,
+  FilePlus2,
+  User,
+  Sparkles,
+} from "lucide-react";
+
+import { API_BASE } from "../lib/api";
+import PortalLayout from "@/components/app/PortalLayout";
+import { DashboardCard } from "@/components/app/DashboardCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const FacultyDashboard = () => {
   const navigate = useNavigate();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const token = sessionStorage.getItem('authToken');
+  const token = sessionStorage.getItem("authToken");
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
-
-  const handleLogout = () => {
-    sessionStorage.clear();
-    navigate('/login', { replace: true });
-  };
-
-  const {
-    data: profileData,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ['facultyProfile'],
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ["facultyProfile"],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/faculty/profile', {
+      const res = await axios.get(`${API_BASE}/faculty/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -35,48 +30,61 @@ const FacultyDashboard = () => {
     enabled: !!token,
   });
 
-  if (isLoading) {
-    return <div className="p-10 text-center">Loading profile...</div>;
-  }
-
-  if (isError) {
-    return (
-      <div className="p-10 text-center text-red-600">
-        Error: {error.message}
-      </div>
-    );
-  }
-
   const user = {
-    name: profileData.name,
-    email: profileData.email,
-    profilePicture: profileData.avatar
-      ? `http://localhost:3001${profileData.avatar}`
-      : null,
+    name: profileData?.name,
+    email: profileData?.email,
+    profilePicture: profileData?.avatar || null,
   };
+  const firstName = (user.name || "Faculty").split(" ")[0];
+
+  const tools = [
+    { title: "My Students", description: "View and manage your assigned students.", icon: Users, tone: "blue", to: "/faculty/students" },
+    { title: "Aptitude Tests", description: "Create and manage aptitude tests with AI.", icon: ClipboardList, tone: "violet", to: "/faculty/aptitude-tests" },
+    { title: "Create Test", description: "Build a new AI-assisted aptitude test.", icon: FilePlus2, tone: "emerald", to: "/faculty/aptitude-tests/create" },
+    { title: "Profile Settings", description: "Update your profile information.", icon: User, tone: "indigo", to: "/faculty/profile" },
+  ];
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-
-      <div className="main">
-        <Header
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-
-        <div className="card-container">
-          <Card title="Student Dashboard" />
-          <Card title="Faculty Dashboard" />
-          <Card title="Admin Dashboard" />
+    <PortalLayout role="faculty" title="Dashboard" user={user}>
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-700 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 size-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+            <Sparkles className="size-3.5" />
+            Faculty Workspace
+          </span>
+          <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+            Welcome, {firstName} 👋
+          </h2>
+          <p className="mt-1.5 max-w-xl text-sm text-blue-100">
+            Manage your students, build assessments, and keep everyone informed.
+          </p>
         </div>
-
-        <Footer />
       </div>
-    </div>
+
+      <h3 className="mb-4 text-lg font-semibold text-foreground">Quick access</h3>
+
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-36 rounded-2xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {tools.map((tool) => (
+            <DashboardCard
+              key={tool.title}
+              title={tool.title}
+              description={tool.description}
+              icon={tool.icon}
+              tone={tool.tone}
+              onClick={() => navigate(tool.to)}
+            />
+          ))}
+        </div>
+      )}
+    </PortalLayout>
   );
 };
 

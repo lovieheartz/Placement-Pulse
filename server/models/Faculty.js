@@ -25,10 +25,10 @@ const facultySchema = new mongoose.Schema({
     trim: true,
     match: [/^\+\d{10,15}$/, 'Please enter a valid phone number with country code'],
   },
-  specialization: {
+  course: {
     type: String,
     required: true,
-    trim: true,
+    enum: ['BTech', 'MTech', 'Diploma', 'BCA', 'MCA', 'BBA', 'MBA']
   },
   avatar: {
     type: String,
@@ -42,8 +42,22 @@ const facultySchema = new mongoose.Schema({
   resetTokenExpiry: Date,
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+    refPath: 'createdByModel',
     required: true
+  },
+  createdByModel: {
+    type: String,
+    required: true,
+    enum: ['Admin', 'HOD']
+  },
+  department: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  hodId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "HOD",
   },
 }, {
   timestamps: true

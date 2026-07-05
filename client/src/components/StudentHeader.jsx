@@ -94,12 +94,21 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
       ? safeUser.email.charAt(0).toUpperCase()
       : 'S';
 
-  // Compute the absolute URL safely for avatar
-  const profilePictureUrl = safeUser.avatar
-    ? safeUser.avatar.startsWith('http')
-      ? safeUser.avatar
-      : `http://localhost:3001${safeUser.avatar}`
+  // Compute the absolute URL safely for avatar (check both avatar and profilePicture fields)
+  const avatarPath = safeUser.profilePicture || safeUser.avatar;
+  const profilePictureUrl = avatarPath
+    ? avatarPath.startsWith('http')
+      ? avatarPath
+      : `http://localhost:3001${avatarPath}`
     : null;
+
+  // Debug logging
+  console.log('Student Header - User data:', {
+    name: safeUser.name,
+    avatar: safeUser.avatar,
+    profilePicture: safeUser.profilePicture,
+    constructedURL: profilePictureUrl
+  });
 
   return (
     <header className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-4 py-3 flex justify-between items-center relative z-10 shadow-md">
@@ -132,6 +141,16 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
                 src={profilePictureUrl}
                 alt="Profile"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.log('Student Image failed to load:', profilePictureUrl);
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.style.display = 'none'; // Hide broken image
+                  // Show fallback letter instead
+                  const parent = e.target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = `<div class="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">${profileLetter}</div>`;
+                  }
+                }}
               />
             ) : (
               <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">

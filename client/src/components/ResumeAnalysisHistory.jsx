@@ -10,10 +10,16 @@ import {
   FiTrash2,
   FiCalendar,
   FiAward,
-  FiActivity
+  FiActivity,
+  FiCheckCircle,
+  FiAlertCircle
 } from 'react-icons/fi';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { GlassPanel, EmptyState } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ResumeAnalysisHistory = () => {
   const [analyses, setAnalyses] = useState([]);
@@ -118,10 +124,12 @@ const ResumeAnalysisHistory = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[300px] sm:min-h-[400px]">
-        <div className="text-center px-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 border-3 sm:border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3 sm:mb-4"></div>
-          <p className="text-gray-600 text-sm sm:text-base">Loading analysis history...</p>
+      <div className="space-y-4 sm:space-y-6">
+        <Skeleton className="h-20 rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+          <Skeleton className="h-72 rounded-2xl" />
+          <Skeleton className="h-72 rounded-2xl" />
+          <Skeleton className="h-72 rounded-2xl" />
         </div>
       </div>
     );
@@ -129,300 +137,196 @@ const ResumeAnalysisHistory = () => {
 
   if (analyses.length === 0) {
     return (
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-6 sm:p-8 md:p-12 text-center animate-fade-in">
-        <FiClock className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-300 mx-auto mb-4 sm:mb-6 animate-float" />
-        <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">No Analysis History</h3>
-        <p className="text-gray-600 text-sm sm:text-base md:text-lg px-4">
-          You haven't analyzed any resumes yet. Upload a resume to get started!
-        </p>
-      </div>
+      <EmptyState
+        icon={FiClock}
+        title="No Analysis History"
+        description="You haven't analyzed any resumes yet. Upload a resume to get started!"
+      />
     );
   }
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 animate-fade-in">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 sm:p-3 rounded-lg sm:rounded-xl mr-3 sm:mr-4 flex-shrink-0">
-              <FiActivity className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Analysis History</h2>
-              <p className="text-gray-600 text-xs sm:text-sm md:text-base">View and manage your past resume analyses</p>
-            </div>
+      {/* Header row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+            <FiActivity className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Analysis History</h2>
+            <p className="text-sm text-muted-foreground">
+              {analyses.length} report{analyses.length === 1 ? '' : 's'} · manage your past resume analyses
+            </p>
           </div>
-          <button
-            onClick={fetchAnalysisHistory}
-            className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hover:shadow-lg text-sm sm:text-base self-end sm:self-auto"
-          >
-            <FiRefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-            Refresh
-          </button>
         </div>
+        <Button variant="outline" size="sm" onClick={fetchAnalysisHistory} className="self-start sm:self-auto">
+          <FiRefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
       {/* Analysis Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {analyses.map((analysis, index) => (
-          <div
+          <GlassPanel
             key={analysis._id}
-            className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] animate-fade-in"
+            className="group relative flex flex-col overflow-hidden p-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             style={{animationDelay: `${index * 50}ms`}}
           >
-            {/* Card Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 sm:p-4 text-white">
-              <div className="flex items-center justify-between mb-2">
-                <FiFileText className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium">
-                  {analysis.detected_industry?.replace(/_/g, ' ').toUpperCase() || 'GENERAL'}
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm opacity-90 truncate" title={analysis.resumeFileName}>
-                {analysis.resumeFileName}
-              </p>
-            </div>
+            {/* score-tinted accent */}
+            <span
+              className="pointer-events-none block h-1.5 w-full"
+              style={{ background: getScoreColor(analysis.atsScore) }}
+            />
+            {/* soft score glow */}
+            <span
+              className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full opacity-10 blur-2xl"
+              style={{ background: getScoreColor(analysis.atsScore) }}
+            />
 
-            {/* Card Body */}
-            <div className="p-4 sm:p-5 md:p-6">
-              {/* ATS Score */}
-              <div className="flex items-center justify-center mb-4 sm:mb-6">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32">
-                  <CircularProgressbar
-                    value={analysis.atsScore}
-                    text={`${analysis.atsScore}%`}
-                    styles={buildStyles({
-                      pathColor: getScoreColor(analysis.atsScore),
-                      textColor: getScoreColor(analysis.atsScore),
-                      trailColor: '#F3F4F6',
-                      textSize: '16px'
-                    })}
-                  />
+            {/* Header: ring + meta */}
+            <div className="flex items-start gap-4 p-4 sm:p-5">
+              <div className="size-20 shrink-0 sm:size-[88px]">
+                <CircularProgressbar
+                  value={analysis.atsScore}
+                  text={`${analysis.atsScore}%`}
+                  styles={buildStyles({
+                    pathColor: getScoreColor(analysis.atsScore),
+                    textColor: getScoreColor(analysis.atsScore),
+                    trailColor: '#EEF2F7',
+                    textSize: '18px',
+                    strokeLinecap: 'round',
+                  })}
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <FiFileText className="h-4 w-4" />
+                  </span>
+                  <p className="truncate text-sm font-semibold text-foreground" title={analysis.resumeFileName}>
+                    {analysis.resumeFileName}
+                  </p>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="capitalize">
+                    {analysis.detected_industry?.replace(/_/g, ' ').toLowerCase() || 'general'}
+                  </Badge>
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <FiCalendar className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{formatDate(analysis.createdAt)}</span>
                 </div>
               </div>
+            </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div className="bg-green-50 rounded-lg p-2.5 sm:p-3 text-center transition-transform hover:scale-105">
-                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+            {/* Metric chips */}
+            <div className="grid grid-cols-2 gap-3 px-4 sm:px-5">
+              <div className="flex items-center gap-2.5 rounded-xl bg-emerald-500/10 px-3 py-2.5">
+                <FiCheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+                <div className="leading-tight">
+                  <div className="text-lg font-bold text-emerald-600">
                     {analysis.matched_keywords?.length || 0}
                   </div>
-                  <div className="text-xs sm:text-sm text-green-700">Matched</div>
+                  <div className="text-[11px] text-muted-foreground">Matched</div>
                 </div>
-                <div className="bg-red-50 rounded-lg p-2.5 sm:p-3 text-center transition-transform hover:scale-105">
-                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+              </div>
+              <div className="flex items-center gap-2.5 rounded-xl bg-red-500/10 px-3 py-2.5">
+                <FiAlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                <div className="leading-tight">
+                  <div className="text-lg font-bold text-red-600">
                     {analysis.missing_keywords?.length || 0}
                   </div>
-                  <div className="text-xs sm:text-sm text-red-700">Missing</div>
+                  <div className="text-[11px] text-muted-foreground">Missing</div>
                 </div>
               </div>
-
-              {/* Date */}
-              <div className="flex items-center text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">
-                <FiCalendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{formatDate(analysis.createdAt)}</span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedAnalysis(selectedAnalysis?._id === analysis._id ? null : analysis)}
-                  className="flex-1 flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hover:shadow-lg text-xs sm:text-sm"
-                >
-                  <FiEye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  {selectedAnalysis?._id === analysis._id ? 'Hide' : 'View'}
-                </button>
-                <button
-                  onClick={() => deleteAnalysis(analysis._id)}
-                  className="px-2 py-2 sm:px-3 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all hover:shadow-lg"
-                >
-                  <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                </button>
-              </div>
             </div>
-          </div>
+
+            {/* Actions */}
+            <div className="mt-4 flex gap-2 border-t border-border/60 p-4 sm:px-5">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setSelectedAnalysis(selectedAnalysis?._id === analysis._id ? null : analysis)}
+                className="flex-1"
+              >
+                <FiEye className="h-4 w-4" />
+                {selectedAnalysis?._id === analysis._id ? 'Hide details' : 'View details'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => deleteAnalysis(analysis._id)}
+                className="text-red-600 hover:bg-red-500/10 hover:text-red-600"
+              >
+                <FiTrash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </GlassPanel>
         ))}
       </div>
 
       {/* Detailed View Modal */}
       {selectedAnalysis && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '2rem'
-        }}
-        onClick={() => setSelectedAnalysis(null)}
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-8"
+          onClick={() => setSelectedAnalysis(null)}
         >
-          <div style={{
-            background: 'white',
-            borderRadius: '20px',
-            maxWidth: '1000px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-            position: 'relative'
-          }}
-          onClick={(e) => e.stopPropagation()}
+          <div
+            className="modal-scrollbar relative max-h-[90vh] w-full max-w-[1000px] overflow-y-auto rounded-2xl border border-white/60 bg-white/80 shadow-2xl backdrop-blur-xl"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
             <button
               onClick={() => setSelectedAnalysis(null)}
-              style={{
-                position: 'absolute',
-                top: '1.5rem',
-                right: '1.5rem',
-                background: 'rgba(255,255,255,0.9)',
-                border: 'none',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#64748b',
-                fontWeight: 'bold',
-                zIndex: 10,
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#ef4444';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.9)';
-                e.currentTarget.style.color = '#64748b';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
+              className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full border border-border bg-card text-lg font-bold text-muted-foreground shadow-sm transition-all hover:bg-destructive hover:text-destructive-foreground"
             >×</button>
 
             {/* Modal Header */}
-            <div style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              padding: '2rem 2.5rem',
-              borderRadius: '20px 20px 0 0'
-            }}>
-              <h2 style={{
-                fontSize: '2rem',
-                fontWeight: 800,
-                color: 'white',
-                marginBottom: '0.5rem',
-                textShadow: '0 2px 10px rgba(0,0,0,0.2)'
-              }}>📄 Resume Analysis Report</h2>
-              <p style={{
-                fontSize: '1.1rem',
-                color: 'rgba(255,255,255,0.95)',
-                fontWeight: 500
-              }}>{selectedAnalysis.resumeFileName}</p>
+            <div className="border-b border-border px-6 py-6 sm:px-8">
+              <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <FiFileText className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Resume Analysis Report</h2>
+                  <p className="truncate text-sm text-muted-foreground">{selectedAnalysis.resumeFileName}</p>
+                </div>
+              </div>
             </div>
 
             {/* Modal Body */}
-            <div style={{
-              padding: '2.5rem',
-              background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)'
-            }}>
+            <div className="space-y-6 p-6 sm:p-8">
               {/* Score Summary */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '3rem',
-                marginBottom: '2.5rem',
-                padding: '2rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '15px',
-                color: 'white'
-              }}>
-                <div style={{
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: '50%',
-                  background: 'white',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{
-                    fontSize: '3rem',
-                    fontWeight: 800,
-                    color: getScoreColor(selectedAnalysis.atsScore)
-                  }}>{selectedAnalysis.atsScore}</div>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>/ 100</span>
+              <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-border bg-card/60 p-6 text-center sm:flex-row sm:gap-12 sm:text-left">
+                <div className="flex size-28 flex-col items-center justify-center rounded-full border-4 border-border bg-card">
+                  <div className="text-4xl font-extrabold" style={{ color: getScoreColor(selectedAnalysis.atsScore) }}>
+                    {selectedAnalysis.atsScore}
+                  </div>
+                  <span className="text-xs text-muted-foreground">/ 100</span>
                 </div>
                 <div>
-                  <div style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 700,
-                    marginBottom: '0.5rem'
-                  }}>ATS Compatibility Score</div>
-                  <div style={{
-                    fontSize: '1rem',
-                    opacity: 0.9
-                  }}>Resume Analysis Results</div>
+                  <div className="text-xl font-bold text-foreground">ATS Compatibility Score</div>
+                  <div className="text-sm text-muted-foreground">Resume Analysis Results</div>
                 </div>
               </div>
 
               {/* Score Breakdown */}
               {selectedAnalysis.score_breakdown && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
-                  borderRadius: '15px'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: 700,
-                    color: '#3730a3',
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <FiAward style={{ marginRight: '0.5rem' }} />
-                    📊 Score Breakdown
+                <div className="rounded-2xl border border-border bg-muted/40 p-5 sm:p-6">
+                  <h3 className="mb-4 flex items-center text-lg font-bold text-foreground">
+                    <FiAward className="mr-2 h-5 w-5 text-primary" />
+                    Score Breakdown
                   </h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                    gap: '1rem'
-                  }}>
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
                     {Object.entries(selectedAnalysis.score_breakdown).map(([key, value]) => (
-                      <div key={key} style={{
-                        padding: '1rem',
-                        background: 'white',
-                        borderRadius: '10px',
-                        textAlign: 'center',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                      }}>
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: '#64748b',
-                          marginBottom: '0.5rem',
-                          textTransform: 'capitalize',
-                          fontWeight: 600
-                        }}>
+                      <div key={key} className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                        <div className="mb-2 text-sm font-semibold capitalize text-muted-foreground">
                           {key.replace(/_/g, ' ')}
                         </div>
-                        <div style={{
-                          fontSize: '2rem',
-                          fontWeight: 800,
-                          color: getScoreColor(value)
-                        }}>
+                        <div className="text-2xl font-extrabold" style={{ color: getScoreColor(value) }}>
                           {value.toFixed(1)}%
                         </div>
                       </div>
@@ -433,33 +337,14 @@ const ResumeAnalysisHistory = () => {
 
               {/* Matched Keywords */}
               {selectedAnalysis.matched_keywords?.length > 0 && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                  borderRadius: '15px'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: 700,
-                    color: '#065f46',
-                    marginBottom: '1rem'
-                  }}>✅ Matched Keywords ({selectedAnalysis.matched_keywords.length})</h3>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem'
-                  }}>
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 sm:p-6">
+                  <h3 className="mb-4 flex items-center text-lg font-bold text-emerald-700">
+                    <FiCheckCircle className="mr-2 h-5 w-5" />
+                    Matched Keywords ({selectedAnalysis.matched_keywords.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
                     {selectedAnalysis.matched_keywords.map((keyword, idx) => (
-                      <span key={idx} style={{
-                        padding: '0.5rem 1rem',
-                        background: 'white',
-                        borderRadius: '8px',
-                        color: '#064e3b',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                      }}>
+                      <span key={idx} className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-700">
                         {keyword}
                       </span>
                     ))}
@@ -469,33 +354,14 @@ const ResumeAnalysisHistory = () => {
 
               {/* Missing Keywords */}
               {selectedAnalysis.missing_keywords?.length > 0 && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                  borderRadius: '15px'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: 700,
-                    color: '#92400e',
-                    marginBottom: '1rem'
-                  }}>⚠️ Missing Keywords ({selectedAnalysis.missing_keywords.length})</h3>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem'
-                  }}>
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 sm:p-6">
+                  <h3 className="mb-4 flex items-center text-lg font-bold text-amber-700">
+                    <FiAlertCircle className="mr-2 h-5 w-5" />
+                    Missing Keywords ({selectedAnalysis.missing_keywords.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
                     {selectedAnalysis.missing_keywords.map((keyword, idx) => (
-                      <span key={idx} style={{
-                        padding: '0.5rem 1rem',
-                        background: 'white',
-                        borderRadius: '8px',
-                        color: '#78350f',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                      }}>
+                      <span key={idx} className="rounded-lg bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-700">
                         {keyword}
                       </span>
                     ))}
@@ -505,57 +371,26 @@ const ResumeAnalysisHistory = () => {
 
               {/* Suggestions */}
               {selectedAnalysis.suggestions?.length > 0 && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
-                  borderRadius: '15px'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: 700,
-                    color: '#3730a3',
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <FiTrendingUp style={{ marginRight: '0.5rem' }} />
-                    💡 Recommendations
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+                  <h3 className="mb-4 flex items-center text-lg font-bold text-foreground">
+                    <FiTrendingUp className="mr-2 h-5 w-5 text-primary" />
+                    Recommendations
                   </h3>
-                  <ul style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0
-                  }}>
+                  <ul className="m-0 list-none space-y-2 p-0">
                     {selectedAnalysis.suggestions.map((suggestion, idx) => (
-                      <li key={idx} style={{
-                        padding: '0.75rem',
-                        marginBottom: '0.5rem',
-                        background: 'white',
-                        borderRadius: '8px',
-                        color: '#312e81',
-                        fontSize: '0.95rem'
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          gap: '1rem'
-                        }}>
-                          <span style={{ flex: 1 }}>
+                      <li key={idx} className="rounded-lg border border-border bg-card p-3 text-sm text-foreground">
+                        <div className="flex items-start justify-between gap-4">
+                          <span className="flex-1">
                             → {suggestion.suggestion || suggestion}
                           </span>
                           {suggestion.priority && (
-                            <span style={{
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '6px',
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              flexShrink: 0,
-                              background: suggestion.priority === 'high' ? '#ef4444' :
-                                         suggestion.priority === 'medium' ? '#f59e0b' : '#10b981',
-                              color: 'white'
-                            }}>
+                            <span
+                              className="shrink-0 rounded-md px-2 py-1 text-[0.7rem] font-bold text-white"
+                              style={{
+                                background: suggestion.priority === 'high' ? '#ef4444' :
+                                           suggestion.priority === 'medium' ? '#f59e0b' : '#10b981'
+                              }}
+                            >
                               {suggestion.priority.toUpperCase()}
                             </span>
                           )}

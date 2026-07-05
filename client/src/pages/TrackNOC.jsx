@@ -1,23 +1,36 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AuthContext } from '../context/AuthContext';
-import Sidebar from '../components/StudentSidebar';
-import Header from '../components/StudentHeader';
-import Footer from '../components/StudentFooter';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FileText } from 'lucide-react';
 import axios from 'axios';
+import { resolveFileUrl } from '../lib/api';
 
 const TrackNOC = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const token = sessionStorage.getItem('authToken');
+
+  // Fetch profile with avatar
+  const { data: profileData } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:3001/student/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data;
+    },
+    enabled: !!token,
+  });
 
   const { data: nocRequests = [], isLoading } = useQuery({
     queryKey: ['nocRequests'],
     queryFn: async () => {
-      const token = sessionStorage.getItem('authToken');
       const { data } = await axios.get('http://localhost:3001/noc/student', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -25,11 +38,6 @@ const TrackNOC = () => {
     },
     enabled: !!user,
   });
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -48,6 +56,16 @@ const TrackNOC = () => {
       case 'reply_soon': return 'Reply Soon';
       case 'completed': return 'Completed';
       default: return status;
+    }
+  };
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'sent': return 'warning';
+      case 'read': return 'default';
+      case 'reply_soon': return 'warning';
+      case 'completed': return 'success';
+      default: return 'default';
     }
   };
 
@@ -71,26 +89,14 @@ const TrackNOC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-        
-        <main className="flex-1 p-4 md:p-6">
+    <PortalLayout role="student" title="Track NOC" user={profileData}>
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100/50">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h1 className="text-xl font-bold text-white">Track NOC Requests</h1>
-                <p className="text-blue-100 text-sm">Monitor your NOC application status</p>
-              </div>
-              
-              <div className="p-6">
+            <PageHeader
+              title="Track NOC Requests"
+              subtitle="Monitor your NOC application status"
+              icon={FileText}
+            />
+            <GlassPanel>
                 {isLoading ? (
                   <div className="flex justify-center items-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
@@ -98,18 +104,18 @@ const TrackNOC = () => {
                 ) : nocRequests.length > 0 ? (
                   <div className="space-y-6">
                     {nocRequests.map((request) => (
-                      <div key={request._id} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                      <div key={request._id} className="bg-muted/40 rounded-xl p-6 border border-border">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-800">{request.name}</h3>
-                            <p className="text-sm text-gray-600">Roll: {request.universityRoll} | {request.course} - {request.branch}</p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <h3 className="text-lg font-semibold text-foreground">{request.name}</h3>
+                            <p className="text-sm text-muted-foreground">Roll: {request.universityRoll} | {request.course} - {request.branch}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
                               Submitted: {new Date(request.createdAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                          <Badge variant={getStatusVariant(request.status)}>
                             {getStatusText(request.status)}
-                          </span>
+                          </Badge>
                         </div>
 
                         {/* Timeline */}
@@ -133,28 +139,28 @@ const TrackNOC = () => {
                           </div>
                         </div>
 
-                        <div className="bg-white rounded p-4 mb-4">
-                          <h4 className="font-medium text-gray-800 mb-2">Subject:</h4>
-                          <p className="text-sm text-gray-600 mb-3">{request.subject}</p>
-                          <h4 className="font-medium text-gray-800 mb-2">Application:</h4>
-                          <p className="text-sm text-gray-600">{request.applicationText}</p>
+                        <div className="bg-card rounded-lg border border-border p-4 mb-4">
+                          <h4 className="font-medium text-foreground mb-2">Subject:</h4>
+                          <p className="text-sm text-muted-foreground mb-3">{request.subject}</p>
+                          <h4 className="font-medium text-foreground mb-2">Application:</h4>
+                          <p className="text-sm text-muted-foreground">{request.applicationText}</p>
                         </div>
 
-                        <div className="bg-white rounded p-4 mb-4">
-                          <h4 className="font-medium text-gray-800 mb-2">Contact Details:</h4>
-                          <p className="text-sm text-gray-600">College Email: {request.collegeEmail}</p>
-                          <p className="text-sm text-gray-600">Personal Email: {request.personalEmail}</p>
-                          <p className="text-sm text-gray-600">Course: {request.course} - {request.branch}</p>
+                        <div className="bg-card rounded-lg border border-border p-4 mb-4">
+                          <h4 className="font-medium text-foreground mb-2">Contact Details:</h4>
+                          <p className="text-sm text-muted-foreground">College Email: {request.collegeEmail}</p>
+                          <p className="text-sm text-muted-foreground">Personal Email: {request.personalEmail}</p>
+                          <p className="text-sm text-muted-foreground">Course: {request.course} - {request.branch}</p>
                         </div>
 
                         {request.attachment && (
                           <div className="mb-4">
-                            <p className="text-sm text-gray-600 mb-2">
+                            <p className="text-sm text-muted-foreground mb-2">
                               <span className="font-medium">Attachment:</span> {request.attachment.filename}
                             </p>
                             <div className="flex space-x-2">
                               <a
-                                href={`http://localhost:3001/uploads/noc/${request.attachment.path.split('/').pop()}`}
+                                href={resolveFileUrl(request.attachment.path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition"
@@ -162,7 +168,7 @@ const TrackNOC = () => {
                                 View PDF
                               </a>
                               <a
-                                href={`http://localhost:3001/uploads/noc/${request.attachment.path.split('/').pop()}`}
+                                href={resolveFileUrl(request.attachment.path)}
                                 download={request.attachment.filename}
                                 className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition"
                               >
@@ -173,11 +179,11 @@ const TrackNOC = () => {
                         )}
 
                         {request.adminRemarks && (
-                          <div className="bg-blue-50 rounded p-4">
-                            <h4 className="font-medium text-blue-800 mb-2">Admin Remarks:</h4>
-                            <p className="text-sm text-blue-700">{request.adminRemarks}</p>
+                          <div className="bg-primary/5 rounded-lg border border-primary/15 p-4">
+                            <h4 className="font-medium text-foreground mb-2">Admin Remarks:</h4>
+                            <p className="text-sm text-muted-foreground">{request.adminRemarks}</p>
                             {request.processedAt && (
-                              <p className="text-xs text-blue-600 mt-2">
+                              <p className="text-xs text-muted-foreground mt-2">
                                 Updated: {new Date(request.processedAt).toLocaleDateString()}
                               </p>
                             )}
@@ -187,30 +193,20 @@ const TrackNOC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <div className="bg-gray-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
-                      <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">No NOC requests found</h3>
-                    <p className="text-gray-600 mb-4">You haven't submitted any NOC requests yet.</p>
-                    <button
-                      onClick={() => navigate('/student/apply-noc')}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Apply for NOC
-                    </button>
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title="No NOC requests found"
+                    description="You haven't submitted any NOC requests yet."
+                    action={
+                      <Button onClick={() => navigate('/student/apply-noc')}>
+                        Apply for NOC
+                      </Button>
+                    }
+                  />
                 )}
-              </div>
-            </div>
+            </GlassPanel>
           </div>
-        </main>
-        
-        <Footer />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 

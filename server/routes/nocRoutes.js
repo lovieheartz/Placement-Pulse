@@ -1,25 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
 const nocController = require('../controllers/nocController');
 
-// Set up storage for NOC attachments
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/noc');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
-});
+// NOC attachments are held in memory, then uploaded to Supabase Storage by the controller.
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {

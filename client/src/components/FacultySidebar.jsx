@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBookOpen, FiCheckSquare } from 'react-icons/fi';
+import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBookOpen, FiCheckSquare, FiUsers } from 'react-icons/fi';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +12,11 @@ const Sidebar = () => {
 
   const handleDashboardClick = () => {
     navigate("/faculty-dashboard");
+    setIsOpen(false);
+  };
+
+  const handleStudentListClick = () => {
+    navigate("/faculty/students");
     setIsOpen(false);
   };
 
@@ -64,6 +69,17 @@ const Sidebar = () => {
               >
                 <FiHome className="w-5 h-5 mr-3" />
                 Dashboard
+              </button>
+            </li>
+
+            {/* Students Button */}
+            <li className="w-full">
+              <button
+                onClick={handleStudentListClick}
+                className="w-full flex items-center px-4 py-3 text-left text-white hover:bg-blue-700 rounded-lg transition-all duration-200 font-medium"
+              >
+                <FiUsers className="w-5 h-5 mr-3" />
+                Students
               </button>
             </li>
 

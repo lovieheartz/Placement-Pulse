@@ -41,6 +41,8 @@ import {
   PieChart,
   Pie
 } from 'recharts';
+import { GlassPanel } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
 
 const ResumeAnalyzer = () => {
   const [file, setFile] = useState(null);
@@ -225,10 +227,10 @@ const ResumeAnalyzer = () => {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
-      case 'medium': return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white';
-      case 'low': return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white';
-      default: return 'bg-gradient-to-r from-gray-500 to-slate-500 text-white';
+      case 'high': return 'bg-red-500/10 text-red-600';
+      case 'medium': return 'bg-amber-500/10 text-amber-600';
+      case 'low': return 'bg-emerald-500/10 text-emerald-600';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -301,20 +303,24 @@ const ResumeAnalyzer = () => {
           <div className="space-y-0">
 
             {/* File Upload Card */}
-            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-blue-200 transition-all duration-300">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-5">
-                <div className="flex items-center">
-                  <FiUpload className="w-6 h-6 text-white mr-3 flex-shrink-0" />
-                  <h3 className="text-xl font-bold text-white">Upload Resume</h3>
+            <GlassPanel className="overflow-hidden p-0">
+              <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+              <div className="p-5 sm:p-6">
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <FiUpload className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Upload Resume</h3>
+                    <p className="text-xs text-muted-foreground">PDF or DOCX, up to 10MB</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-6">
                 <div
-                  className={`border-3 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+                  className={`rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300 ${
                     dragActive
-                      ? 'border-blue-500 bg-blue-50 scale-[1.02] shadow-lg'
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary hover:bg-primary/5'
                   }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -322,36 +328,33 @@ const ResumeAnalyzer = () => {
                   onDrop={handleDrop}
                 >
                   {file ? (
-                    <div className="space-y-3 sm:space-y-4 animate-fade-in">
-                      <div className="text-green-500 animate-bounce-once">
-                        <FiCheckCircle className="mx-auto w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                        <FiCheckCircle className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800 text-xs sm:text-sm md:text-base break-all px-2">{file.name}</p>
-                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                        <p className="break-all px-2 text-xs font-medium text-foreground sm:text-sm md:text-base">{file.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
-                      <button
-                        onClick={removeFile}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs sm:text-sm md:text-base rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                      >
+                      <Button variant="destructive" size="sm" onClick={removeFile}>
                         Remove File
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <div className="space-y-2 sm:space-y-3 md:space-y-4">
-                      <div className="text-gray-400 animate-float">
-                        <FiFileText className="mx-auto w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                        <FiFileText className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="text-sm sm:text-base md:text-lg font-medium text-gray-800">
+                        <p className="text-sm font-medium text-foreground sm:text-base md:text-lg">
                           Drop your resume here
                         </p>
-                        <p className="text-xs sm:text-sm md:text-base text-gray-500 mt-1">PDF or DOCX format (Max 10MB)</p>
+                        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">PDF or DOCX format (Max 10MB)</p>
                       </div>
-                      <label className="cursor-pointer">
-                        <span className="px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs sm:text-sm md:text-base rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 inline-block">
+                      <label className="inline-block cursor-pointer">
+                        <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
                           Choose File
                         </span>
                         <input
@@ -365,60 +368,66 @@ const ResumeAnalyzer = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </GlassPanel>
 
           </div>
 
           {/* Job Description Card (Right Column) */}
           <div className="space-y-5 md:space-y-6">
             {/* Job Description Card */}
-            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-purple-200 transition-all duration-300">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-5">
-                <div className="flex items-center">
-                  <FiTarget className="w-6 h-6 text-white mr-3 flex-shrink-0" />
-                  <h3 className="text-xl font-bold text-white">Job Description</h3>
+            <GlassPanel className="overflow-hidden p-0">
+              <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+              <div className="p-5 sm:p-6">
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <FiTarget className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Job Description</h3>
+                    <p className="text-xs text-muted-foreground">Paste the role you're targeting</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-6">
                 <textarea
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
                   placeholder="Paste the complete job description here for accurate ATS analysis..."
-                  className="w-full h-48 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-base leading-relaxed transition-all"
+                  className="h-48 w-full resize-none rounded-xl border border-input bg-card p-4 text-sm leading-relaxed text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs sm:text-sm text-gray-500">
+                  <span className="text-xs text-muted-foreground sm:text-sm">
                     {jobDescription.length} characters
                   </span>
                   {jobDescription.length > 0 && (
-                    <span className="text-xs sm:text-sm text-purple-600 font-medium">
+                    <span className="text-xs font-medium text-primary sm:text-sm">
                       {jobDescription.split(/\s+/).length} words
                     </span>
                   )}
                 </div>
               </div>
-            </div>
+            </GlassPanel>
 
             {/* Analyze Button */}
-            <button
+            <Button
+              variant="gradient"
+              size="xl"
               onClick={analyzeResume}
               disabled={!file || !jobDescription.trim() || isAnalyzing}
-              className="w-full px-6 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg rounded-xl hover:shadow-2xl disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] disabled:transform-none disabled:opacity-50"
+              className="w-full"
             >
               {isAnalyzing ? (
-                <div className="flex items-center justify-center space-x-3">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <>
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                   <span>Analyzing Resume...</span>
-                  <FiZap className="w-5 h-5 animate-pulse" />
-                </div>
+                  <FiZap className="h-5 w-5 animate-pulse" />
+                </>
               ) : (
-                <div className="flex items-center justify-center space-x-3">
-                  <FiCpu className="w-6 h-6" />
+                <>
+                  <FiCpu className="h-5 w-5" />
                   <span>Analyze with AI</span>
-                </div>
+                </>
               )}
-            </button>
+            </Button>
           </div>
       </div>
 
@@ -427,9 +436,9 @@ const ResumeAnalyzer = () => {
 
             {/* Analysis Progress */}
             {isAnalyzing && (
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 md:p-8 animate-fade-in">
+              <GlassPanel className="p-4 sm:p-6 md:p-8">
                 <div className="text-center">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mx-auto mb-4 sm:mb-6">
+                  <div className="mx-auto mb-4 h-24 w-24 sm:mb-6 sm:h-32 sm:w-32 md:h-40 md:w-40">
                     <CircularProgressbar
                       value={analysisProgress}
                       text={`${Math.round(analysisProgress)}%`}
@@ -443,16 +452,16 @@ const ResumeAnalyzer = () => {
                     />
                   </div>
                   <div className="space-y-2 sm:space-y-3">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">AI Analysis in Progress</h3>
-                    <p className="text-blue-600 font-medium text-sm sm:text-base px-2">{currentAnalysisStep}</p>
-                    <div className="flex justify-center space-x-2 mt-3 sm:mt-4">
-                      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                    <h3 className="text-lg font-bold text-foreground sm:text-xl md:text-2xl">AI Analysis in Progress</h3>
+                    <p className="px-2 text-sm font-medium text-primary sm:text-base">{currentAnalysisStep}</p>
+                    <div className="mt-3 flex justify-center space-x-2 sm:mt-4">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary sm:h-2.5 sm:w-2.5" style={{animationDelay: '0ms'}}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary sm:h-2.5 sm:w-2.5" style={{animationDelay: '150ms'}}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-primary sm:h-2.5 sm:w-2.5" style={{animationDelay: '300ms'}}></div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </GlassPanel>
             )}
 
             {/* Analysis Results */}
@@ -460,18 +469,21 @@ const ResumeAnalyzer = () => {
               <div className="space-y-8">
 
                 {/* Enhanced ATS Score Overview */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-6 sm:mb-8 lg:mb-10">
-                  <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-4 sm:p-6 lg:p-8 text-white">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                      <div className="mb-3 sm:mb-0">
-                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">ATS Compatibility Score</h2>
-                        <p className="text-blue-100 text-sm sm:text-base lg:text-lg">Applicant Tracking System Analysis</p>
+                <GlassPanel className="mb-6 overflow-hidden p-0 sm:mb-8 lg:mb-10">
+                  <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+                  <div className="flex items-center justify-between p-4 sm:p-6 lg:p-8">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <FiAward className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h2 className="text-lg font-bold text-foreground sm:text-xl lg:text-2xl">ATS Compatibility Score</h2>
+                        <p className="text-sm text-muted-foreground">Applicant Tracking System Analysis</p>
                       </div>
-                      <FiAward className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white opacity-20 self-end sm:self-auto" />
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-6 lg:p-8 xl:p-10">
+                  <div className="p-4 pt-0 sm:p-6 sm:pt-0 lg:p-8 lg:pt-0 xl:p-10 xl:pt-0">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 items-center">
                       <div className="text-center lg:text-left order-2 lg:order-1">
                         <div className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 mx-auto lg:mx-0 mb-4 sm:mb-6 lg:mb-8">
@@ -495,10 +507,10 @@ const ResumeAnalyzer = () => {
                           <div className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3" style={{color: getScoreColor(analysisResult.atsScore)}}>
                             {getScoreGrade(analysisResult.atsScore).grade}
                           </div>
-                          <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-2">
+                          <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground mb-2">
                             {getScoreGrade(analysisResult.atsScore).desc}
                           </h3>
-                          <p className="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">
+                          <p className="text-muted-foreground text-sm sm:text-base lg:text-lg leading-relaxed">
                             Your resume has been analyzed against industry standards and ATS requirements.
                             {analysisResult.atsScore >= 85 ? 'Excellent work! Your resume is highly optimized for ATS systems and should pass most screening processes.' :
                              analysisResult.atsScore >= 70 ? 'Good foundation! Your resume meets most ATS requirements with room for minor improvements.' :
@@ -507,106 +519,107 @@ const ResumeAnalyzer = () => {
                           </p>
                         </div>
 
-                        <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                          <h4 className="font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                            <FiTarget className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                        <div className="rounded-xl border border-border bg-muted/40 p-4 sm:rounded-2xl sm:p-6">
+                          <h4 className="mb-3 flex items-center text-sm font-semibold text-foreground sm:mb-4 sm:text-base">
+                            <FiTarget className="mr-2 h-4 w-4 text-primary sm:h-5 sm:w-5" />
                             Key Metrics
                           </h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                            <div className="text-center bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                              <div className="text-xl sm:text-2xl font-bold text-green-600">{analysisResult.matched_keywords?.length || 0}</div>
-                              <div className="text-xs sm:text-sm text-gray-600">Keywords Matched</div>
+                            <div className="rounded-lg bg-emerald-500/10 p-3 text-center sm:rounded-xl sm:p-4">
+                              <div className="text-xl font-bold text-emerald-600 sm:text-2xl">{analysisResult.matched_keywords?.length || 0}</div>
+                              <div className="text-xs text-muted-foreground sm:text-sm">Keywords Matched</div>
                             </div>
-                            <div className="text-center bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-                              <div className="text-xl sm:text-2xl font-bold text-red-600">{analysisResult.missing_keywords?.length || 0}</div>
-                              <div className="text-xs sm:text-sm text-gray-600">Missing Keywords</div>
+                            <div className="rounded-lg bg-red-500/10 p-3 text-center sm:rounded-xl sm:p-4">
+                              <div className="text-xl font-bold text-red-600 sm:text-2xl">{analysisResult.missing_keywords?.length || 0}</div>
+                              <div className="text-xs text-muted-foreground sm:text-sm">Missing Keywords</div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </GlassPanel>
 
                 {/* Industry Analysis Card */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 lg:mb-10">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center mb-6 sm:mb-8">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-3 sm:p-4 rounded-xl sm:rounded-2xl mr-0 sm:mr-4 lg:mr-6 mb-3 sm:mb-0">
-                      <FiLayers className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
-                    </div>
+                <GlassPanel className="mb-6 p-4 sm:mb-8 sm:p-6 lg:mb-10 lg:p-8">
+                  <div className="mb-6 flex items-center gap-3 sm:mb-8">
+                    <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <FiLayers className="h-5 w-5" />
+                    </span>
                     <div>
-                      <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Industry & Role Analysis</h3>
-                      <p className="text-gray-600 text-sm sm:text-base lg:text-lg">Detected classification and alignment</p>
+                      <h3 className="text-lg font-bold text-foreground sm:text-xl lg:text-2xl">Industry &amp; Role Analysis</h3>
+                      <p className="text-sm text-muted-foreground">Detected classification and alignment</p>
                     </div>
                   </div>
 
-                  <div className="text-center mb-6 sm:mb-8">
-                    <div className="inline-block bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
-                      <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-700 mb-1 sm:mb-2 capitalize">
+                  <div className="mb-6 text-center sm:mb-8">
+                    <div className="inline-flex flex-col items-center rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 sm:rounded-2xl sm:px-6 sm:py-4 lg:px-8">
+                      <div className="mb-1 text-xl font-bold capitalize text-primary sm:mb-2 sm:text-2xl lg:text-3xl">
                         {analysisResult.detected_industry?.replace(/_/g, ' ') || 'General'}
                       </div>
-                      <p className="text-indigo-600 text-sm sm:text-base lg:text-lg">Primary Industry Classification</p>
+                      <p className="text-sm text-muted-foreground">Primary Industry Classification</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-green-200">
-                      <div className="flex items-center mb-3 sm:mb-4">
-                        <FiCheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mr-2 sm:mr-3" />
-                        <h4 className="font-semibold text-green-800 text-sm sm:text-base">Keywords Matched</h4>
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 sm:rounded-2xl sm:p-6">
+                      <div className="mb-3 flex items-center sm:mb-4">
+                        <FiCheckCircle className="mr-2 h-5 w-5 text-emerald-600 sm:mr-3 sm:h-6 sm:w-6" />
+                        <h4 className="text-sm font-semibold text-emerald-700 sm:text-base">Keywords Matched</h4>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1 sm:mb-2">{analysisResult.matched_keywords?.length || 0}</div>
-                      <p className="text-green-700 text-xs sm:text-sm">Successfully identified relevant terms</p>
+                      <div className="mb-1 text-2xl font-bold text-emerald-600 sm:mb-2 sm:text-3xl">{analysisResult.matched_keywords?.length || 0}</div>
+                      <p className="text-xs text-muted-foreground sm:text-sm">Successfully identified relevant terms</p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-red-200">
-                      <div className="flex items-center mb-3 sm:mb-4">
-                        <FiAlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 mr-2 sm:mr-3" />
-                        <h4 className="font-semibold text-red-800 text-sm sm:text-base">Missing Keywords</h4>
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 sm:rounded-2xl sm:p-6">
+                      <div className="mb-3 flex items-center sm:mb-4">
+                        <FiAlertCircle className="mr-2 h-5 w-5 text-red-600 sm:mr-3 sm:h-6 sm:w-6" />
+                        <h4 className="text-sm font-semibold text-red-700 sm:text-base">Missing Keywords</h4>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-1 sm:mb-2">{analysisResult.missing_keywords?.length || 0}</div>
-                      <p className="text-red-700 text-xs sm:text-sm">Keywords to consider adding</p>
+                      <div className="mb-1 text-2xl font-bold text-red-600 sm:mb-2 sm:text-3xl">{analysisResult.missing_keywords?.length || 0}</div>
+                      <p className="text-xs text-muted-foreground sm:text-sm">Keywords to consider adding</p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-200 sm:col-span-2 lg:col-span-1">
-                      <div className="flex items-center mb-3 sm:mb-4">
-                        <FiTrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mr-2 sm:mr-3" />
-                        <h4 className="font-semibold text-blue-800 text-sm sm:text-base">Match Rate</h4>
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 sm:col-span-2 sm:rounded-2xl sm:p-6 lg:col-span-1">
+                      <div className="mb-3 flex items-center sm:mb-4">
+                        <FiTrendingUp className="mr-2 h-5 w-5 text-primary sm:mr-3 sm:h-6 sm:w-6" />
+                        <h4 className="text-sm font-semibold text-primary sm:text-base">Match Rate</h4>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1 sm:mb-2">
+                      <div className="mb-1 text-2xl font-bold text-primary sm:mb-2 sm:text-3xl">
                         {analysisResult.matched_keywords?.length && analysisResult.missing_keywords?.length ?
                           Math.round((analysisResult.matched_keywords.length / (analysisResult.matched_keywords.length + analysisResult.missing_keywords.length)) * 100) : 0}%
                       </div>
-                      <p className="text-blue-700 text-xs sm:text-sm">Keyword coverage ratio</p>
+                      <p className="text-xs text-muted-foreground sm:text-sm">Keyword coverage ratio</p>
                     </div>
                   </div>
-                </div>
+                </GlassPanel>
 
                 {/* Score Breakdown Visualization */}
                 {analysisResult.score_breakdown && (
-                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center">
-                        <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-3 rounded-xl mr-4">
-                          <FiBarChart2 className="w-6 h-6 text-white" />
-                        </div>
+                  <GlassPanel className="p-6 sm:p-8">
+                    <div className="mb-6 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <FiBarChart2 className="h-5 w-5" />
+                        </span>
                         <div>
-                          <h3 className="text-xl font-semibold text-gray-800">Detailed Score Analysis</h3>
-                          <p className="text-gray-600">Performance breakdown across key factors</p>
+                          <h3 className="text-lg font-semibold text-foreground sm:text-xl">Detailed Score Analysis</h3>
+                          <p className="text-sm text-muted-foreground">Performance breakdown across key factors</p>
                         </div>
                       </div>
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setShowDetailedAnalysis(!showDetailedAnalysis)}
-                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                       >
                         {showDetailedAnalysis ? 'Hide Details' : 'Show Details'}
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       {/* Radar Chart */}
                       <div>
-                        <h4 className="font-semibold text-gray-800 mb-4">Performance Radar</h4>
+                        <h4 className="mb-4 font-semibold text-foreground">Performance Radar</h4>
                         <ResponsiveContainer width="100%" height={300}>
                           <RadarChart cx="50%" cy="50%" outerRadius="80%" data={prepareRadarData()}>
                             <PolarGrid />
@@ -625,7 +638,7 @@ const ResumeAnalyzer = () => {
 
                       {/* Bar Chart */}
                       <div>
-                        <h4 className="font-semibold text-gray-800 mb-4">Score Breakdown</h4>
+                        <h4 className="mb-4 font-semibold text-foreground">Score Breakdown</h4>
                         <ResponsiveContainer width="100%" height={300}>
                           <BarChart data={prepareBarData()}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -646,8 +659,8 @@ const ResumeAnalyzer = () => {
                     {showDetailedAnalysis && (
                       <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
                         {Object.entries(analysisResult.score_breakdown).map(([key, value]) => (
-                          <div key={key} className="bg-gray-50 rounded-lg p-4">
-                            <div className="text-sm font-medium text-gray-600 mb-1 capitalize">
+                          <div key={key} className="rounded-lg border border-border bg-muted/40 p-4">
+                            <div className="mb-1 text-sm font-medium capitalize text-muted-foreground">
                               {key.replace(/_/g, ' ')}
                             </div>
                             <div className="text-2xl font-bold" style={{color: getScoreColor(value)}}>
@@ -657,70 +670,71 @@ const ResumeAnalyzer = () => {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </GlassPanel>
                 )}
 
                 {/* Enhanced AI Recommendations */}
                 {analysisResult.suggestions?.length > 0 && (
-                  <div className="bg-white rounded-3xl shadow-xl border border-orange-100 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-500 to-red-600 p-8 text-white">
-                      <div className="flex items-center justify-between">
+                  <GlassPanel className="overflow-hidden p-0">
+                    <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+                    <div className="flex items-center justify-between p-6 sm:p-8">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <FiTrendingUp className="h-5 w-5" />
+                        </span>
                         <div>
-                          <h3 className="text-2xl font-bold mb-2 flex items-center">
-                            <FiTrendingUp className="w-8 h-8 mr-3" />
-                            AI-Powered Optimization Recommendations
-                          </h3>
-                          <p className="text-orange-100 text-lg">
+                          <h3 className="text-lg font-bold text-foreground sm:text-xl">AI-Powered Optimization Recommendations</h3>
+                          <p className="text-sm text-muted-foreground">
                             {analysisResult.suggestions.length} professional improvement strategies identified
                           </p>
                         </div>
-                        <div className="text-right">
-                          <div className="text-4xl font-bold">{analysisResult.suggestions.length}</div>
-                          <div className="text-orange-200">Suggestions</div>
-                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-foreground">{analysisResult.suggestions.length}</div>
+                        <div className="text-xs text-muted-foreground">Suggestions</div>
                       </div>
                     </div>
 
-                    <div className="p-10">
+                    <div className="p-6 pt-0 sm:p-8 sm:pt-0 lg:p-10 lg:pt-0">
                       <div className="mb-8">
-                        <h4 className="text-xl font-semibold text-gray-800 mb-3">Strategic Improvements for Maximum Impact:</h4>
-                        <p className="text-gray-600 text-lg leading-relaxed">
+                        <h4 className="mb-3 text-lg font-semibold text-foreground sm:text-xl">Strategic Improvements for Maximum Impact:</h4>
+                        <p className="leading-relaxed text-muted-foreground">
                           Our AI has analyzed your resume and identified specific areas for enhancement.
                           Implementing these recommendations will significantly improve your ATS score and recruiter appeal.
                         </p>
                       </div>
 
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         {analysisResult.suggestions.map((suggestion, index) => {
                           const priorityColors = {
-                            high: 'from-red-50 to-pink-50 border-red-200',
-                            medium: 'from-yellow-50 to-orange-50 border-orange-200',
-                            low: 'from-green-50 to-emerald-50 border-green-200'
+                            high: 'border-red-500/20 bg-red-500/5',
+                            medium: 'border-amber-500/20 bg-amber-500/5',
+                            low: 'border-emerald-500/20 bg-emerald-500/5'
                           };
                           const priorityTextColors = {
-                            high: 'text-red-800',
-                            medium: 'text-orange-800',
-                            low: 'text-green-800'
+                            high: 'text-red-700',
+                            medium: 'text-amber-700',
+                            low: 'text-emerald-700'
                           };
                           const priorityBadgeColors = {
-                            high: 'bg-red-100 text-red-800',
-                            medium: 'bg-orange-100 text-orange-800',
-                            low: 'bg-green-100 text-green-800'
+                            high: 'bg-red-500/10 text-red-600',
+                            medium: 'bg-amber-500/10 text-amber-600',
+                            low: 'bg-emerald-500/10 text-emerald-600'
                           };
 
                           return (
-                            <div key={index} className={`bg-gradient-to-br ${priorityColors[suggestion.priority] || priorityColors.low} border-2 rounded-2xl p-8 hover:shadow-lg transition-all duration-300`}>
-                              <div className="flex items-start justify-between mb-6">
-                                <div className="flex items-center space-x-4">
-                                  <div className={`p-3 rounded-xl ${getPriorityColor(suggestion.priority)}`}>
+                            <div key={index} className={`rounded-2xl border ${priorityColors[suggestion.priority] || priorityColors.low} p-6 transition-all duration-300 hover:shadow-md sm:p-8`}>
+                              <div className="mb-6 flex items-start justify-between">
+                                <div className="flex items-center gap-4">
+                                  <div className={`rounded-xl p-3 ${getPriorityColor(suggestion.priority)}`}>
                                     {getPriorityIcon(suggestion.priority)}
                                   </div>
                                   <div>
-                                    <h5 className={`text-xl font-bold ${priorityTextColors[suggestion.priority] || priorityTextColors.low}`}>
+                                    <h5 className={`text-lg font-bold sm:text-xl ${priorityTextColors[suggestion.priority] || priorityTextColors.low}`}>
                                       {suggestion.title || `Improvement Suggestion ${index + 1}`}
                                     </h5>
-                                    <div className="flex items-center mt-2">
-                                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${priorityBadgeColors[suggestion.priority] || priorityBadgeColors.low}`}>
+                                    <div className="mt-2 flex items-center">
+                                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityBadgeColors[suggestion.priority] || priorityBadgeColors.low}`}>
                                         {suggestion.priority?.toUpperCase() || 'LOW'} PRIORITY
                                       </span>
                                     </div>
@@ -729,27 +743,27 @@ const ResumeAnalyzer = () => {
                               </div>
 
                               <div className="space-y-4">
-                                <p className="text-gray-800 text-lg leading-relaxed">{suggestion.suggestion}</p>
+                                <p className="leading-relaxed text-foreground">{suggestion.suggestion}</p>
 
                                 {suggestion.impact && (
-                                  <div className="bg-white bg-opacity-70 rounded-xl p-4">
-                                    <h6 className="font-semibold text-gray-800 mb-2 flex items-center">
-                                      <FiTarget className="w-4 h-4 mr-2" />
+                                  <div className="rounded-xl border border-border bg-card/70 p-4">
+                                    <h6 className="mb-2 flex items-center font-semibold text-foreground">
+                                      <FiTarget className="mr-2 h-4 w-4" />
                                       Expected Impact:
                                     </h6>
-                                    <p className="text-blue-700 font-medium">{suggestion.impact}</p>
+                                    <p className="font-medium text-primary">{suggestion.impact}</p>
                                   </div>
                                 )}
 
                                 {suggestion.keywords && suggestion.keywords.length > 0 && (
-                                  <div className="bg-white bg-opacity-70 rounded-xl p-4">
-                                    <h6 className="font-semibold text-gray-800 mb-3 flex items-center">
-                                      <FiStar className="w-4 h-4 mr-2" />
+                                  <div className="rounded-xl border border-border bg-card/70 p-4">
+                                    <h6 className="mb-3 flex items-center font-semibold text-foreground">
+                                      <FiStar className="mr-2 h-4 w-4" />
                                       Recommended Keywords:
                                     </h6>
                                     <div className="flex flex-wrap gap-2">
                                       {suggestion.keywords.map((keyword, idx) => (
-                                        <span key={idx} className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium border border-blue-200">
+                                        <span key={idx} className="rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
                                           {keyword}
                                         </span>
                                       ))}
@@ -762,36 +776,37 @@ const ResumeAnalyzer = () => {
                         })}
                       </div>
                     </div>
-                  </div>
+                  </GlassPanel>
                 )}
 
                 {/* Enhanced Keywords Analysis */}
                 <div className="space-y-10">
                   {/* Missing Keywords - High Priority */}
                   {analysisResult.missing_keywords?.length > 0 && (
-                    <div className="bg-white rounded-3xl shadow-xl border border-red-100 overflow-hidden">
-                      <div className="bg-gradient-to-r from-red-500 to-pink-600 p-8 text-white">
-                        <div className="flex items-center justify-between">
+                    <GlassPanel className="overflow-hidden p-0">
+                      <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-red-500 to-rose-600" />
+                      <div className="flex items-center justify-between p-6 sm:p-8">
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-10 items-center justify-center rounded-xl bg-red-500/10 text-red-600">
+                            <FiAlertCircle className="h-5 w-5" />
+                          </span>
                           <div>
-                            <h3 className="text-2xl font-bold mb-2 flex items-center">
-                              <FiAlertCircle className="w-8 h-8 mr-3" />
-                              Critical Missing Keywords
-                            </h3>
-                            <p className="text-red-100 text-lg">
+                            <h3 className="text-lg font-bold text-foreground sm:text-xl">Critical Missing Keywords</h3>
+                            <p className="text-sm text-muted-foreground">
                               {analysisResult.missing_keywords.length} important terms not found in your resume
                             </p>
                           </div>
-                          <div className="text-right">
-                            <div className="text-4xl font-bold">{analysisResult.missing_keywords.length}</div>
-                            <div className="text-red-200">Missing</div>
-                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold text-red-600">{analysisResult.missing_keywords.length}</div>
+                          <div className="text-xs text-muted-foreground">Missing</div>
                         </div>
                       </div>
 
-                      <div className="p-8">
+                      <div className="p-6 pt-0 sm:p-8 sm:pt-0">
                         <div className="mb-6">
-                          <h4 className="text-xl font-semibold text-gray-800 mb-3">Priority Keywords to Add:</h4>
-                          <p className="text-gray-600 text-lg leading-relaxed">
+                          <h4 className="mb-3 text-lg font-semibold text-foreground sm:text-xl">Priority Keywords to Add:</h4>
+                          <p className="leading-relaxed text-muted-foreground">
                             These keywords were frequently mentioned in the job description but are missing from your resume.
                             Adding them could significantly improve your ATS score and visibility to recruiters.
                           </p>
@@ -801,14 +816,14 @@ const ResumeAnalyzer = () => {
                           {analysisResult.missing_keywords.map((keyword, index) => (
                             <div
                               key={index}
-                              className="group bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-red-300 cursor-pointer"
+                              className="group cursor-pointer rounded-xl border border-red-500/20 bg-red-500/5 p-4 transition-all duration-300 hover:border-red-500/40 hover:shadow-md"
                             >
                               <div className="flex items-center justify-between">
-                                <span className="font-semibold text-red-800 text-lg">{keyword}</span>
-                                <FiTrendingUp className="w-5 h-5 text-red-600 group-hover:scale-110 transition-transform" />
+                                <span className="text-lg font-semibold text-red-700">{keyword}</span>
+                                <FiTrendingUp className="h-5 w-5 text-red-600 transition-transform group-hover:scale-110" />
                               </div>
                               <div className="mt-2">
-                                <span className="text-sm text-red-600 bg-red-100 px-2 py-1 rounded-full">
+                                <span className="rounded-full bg-red-500/10 px-2 py-1 text-sm text-red-600">
                                   High Impact
                                 </span>
                               </div>
@@ -818,38 +833,39 @@ const ResumeAnalyzer = () => {
 
                         {analysisResult.missing_keywords.length > 12 && (
                           <div className="mt-6 text-center">
-                            <p className="text-gray-500">Showing top priority keywords. Focus on these first for maximum impact.</p>
+                            <p className="text-muted-foreground">Showing top priority keywords. Focus on these first for maximum impact.</p>
                           </div>
                         )}
                       </div>
-                    </div>
+                    </GlassPanel>
                   )}
 
                   {/* Matched Keywords - Success Section */}
                   {analysisResult.matched_keywords?.length > 0 && (
-                    <div className="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-white">
-                        <div className="flex items-center justify-between">
+                    <GlassPanel className="overflow-hidden p-0">
+                      <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-emerald-500 to-green-600" />
+                      <div className="flex items-center justify-between p-6 sm:p-8">
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                            <FiCheckCircle className="h-5 w-5" />
+                          </span>
                           <div>
-                            <h3 className="text-2xl font-bold mb-2 flex items-center">
-                              <FiCheckCircle className="w-8 h-8 mr-3" />
-                              Successfully Matched Keywords
-                            </h3>
-                            <p className="text-green-100 text-lg">
+                            <h3 className="text-lg font-bold text-foreground sm:text-xl">Successfully Matched Keywords</h3>
+                            <p className="text-sm text-muted-foreground">
                               {analysisResult.matched_keywords.length} relevant terms found in your resume
                             </p>
                           </div>
-                          <div className="text-right">
-                            <div className="text-4xl font-bold">{analysisResult.matched_keywords.length}</div>
-                            <div className="text-green-200">Matched</div>
-                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold text-emerald-600">{analysisResult.matched_keywords.length}</div>
+                          <div className="text-xs text-muted-foreground">Matched</div>
                         </div>
                       </div>
 
-                      <div className="p-8">
+                      <div className="p-6 pt-0 sm:p-8 sm:pt-0">
                         <div className="mb-6">
-                          <h4 className="text-xl font-semibold text-gray-800 mb-3">Strong Keyword Alignment:</h4>
-                          <p className="text-gray-600 text-lg leading-relaxed">
+                          <h4 className="mb-3 text-lg font-semibold text-foreground sm:text-xl">Strong Keyword Alignment:</h4>
+                          <p className="leading-relaxed text-muted-foreground">
                             Excellent! These keywords from the job description are already present in your resume,
                             demonstrating strong alignment with the role requirements.
                           </p>
@@ -859,11 +875,11 @@ const ResumeAnalyzer = () => {
                           {analysisResult.matched_keywords.slice(0, 16).map((keyword, index) => (
                             <div
                               key={index}
-                              className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-3 text-center hover:shadow-md transition-all duration-300"
+                              className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center transition-all duration-300 hover:shadow-md"
                             >
-                              <span className="font-semibold text-green-800">{keyword}</span>
+                              <span className="font-semibold text-emerald-700">{keyword}</span>
                               <div className="mt-2">
-                                <FiStar className="w-4 h-4 text-green-600 mx-auto" />
+                                <FiStar className="mx-auto h-4 w-4 text-emerald-600" />
                               </div>
                             </div>
                           ))}
@@ -871,130 +887,99 @@ const ResumeAnalyzer = () => {
 
                         {analysisResult.matched_keywords.length > 16 && (
                           <div className="mt-6 text-center">
-                            <div className="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full">
+                            <div className="inline-block rounded-full bg-emerald-500/10 px-4 py-2 text-emerald-600">
                               +{analysisResult.matched_keywords.length - 16} more matched keywords
                             </div>
                           </div>
                         )}
                       </div>
-                    </div>
+                    </GlassPanel>
                   )}
                 </div>
 
 
                 {/* Analysis Metadata */}
                 {analysisResult.analysis_metadata && (
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
-                    <div className="flex items-center mb-4">
-                      <FiActivity className="w-5 h-5 text-blue-600 mr-2" />
-                      <h4 className="font-semibold text-gray-800">Analysis Summary</h4>
+                  <GlassPanel className="p-6">
+                    <div className="mb-4 flex items-center">
+                      <FiActivity className="mr-2 h-5 w-5 text-primary" />
+                      <h4 className="font-semibold text-foreground">Analysis Summary</h4>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="text-center">
-                        <div className="font-semibold text-gray-800">Keywords Analyzed</div>
-                        <div className="text-blue-600 text-lg">{analysisResult.analysis_metadata.total_keywords_analyzed}</div>
+                        <div className="font-semibold text-foreground">Keywords Analyzed</div>
+                        <div className="text-lg text-primary">{analysisResult.analysis_metadata.total_keywords_analyzed}</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-semibold text-gray-800">Resume Words</div>
-                        <div className="text-purple-600 text-lg">{analysisResult.analysis_metadata.resume_word_count}</div>
+                        <div className="font-semibold text-foreground">Resume Words</div>
+                        <div className="text-lg text-primary">{analysisResult.analysis_metadata.resume_word_count}</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-semibold text-gray-800">Job Desc Words</div>
-                        <div className="text-green-600 text-lg">{analysisResult.analysis_metadata.job_description_word_count}</div>
+                        <div className="font-semibold text-foreground">Job Desc Words</div>
+                        <div className="text-lg text-emerald-600">{analysisResult.analysis_metadata.job_description_word_count}</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-semibold text-gray-800">Processing Time</div>
-                        <div className="text-orange-600 text-lg">{analysisResult.processingTime ? `${(analysisResult.processingTime / 1000).toFixed(1)}s` : 'N/A'}</div>
+                        <div className="font-semibold text-foreground">Processing Time</div>
+                        <div className="text-lg text-amber-600">{analysisResult.processingTime ? `${(analysisResult.processingTime / 1000).toFixed(1)}s` : 'N/A'}</div>
                       </div>
                     </div>
-                  </div>
+                  </GlassPanel>
                 )}
 
               </div>
             )}
 
-            {/* Enhanced Empty State */}
+            {/* Empty State — compact, professional "how it works" */}
             {!analysisResult && !isAnalyzing && (
-              <div className="bg-white rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden">
-                {/* Header Section */}
-                <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-6 md:p-8 lg:p-10 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-white bg-opacity-20 backdrop-blur-sm rounded-full mb-4 md:mb-5 animate-pulse-slow">
-                    <FiCpu className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 md:mb-3">
-                    Ready for Advanced AI Analysis
-                  </h3>
-                  <p className="text-blue-100 text-sm md:text-base max-w-2xl mx-auto leading-relaxed px-4">
-                    Upload your resume and provide a detailed job description to receive comprehensive ATS analysis with industry-specific insights
-                  </p>
-                </div>
-
-                {/* Feature Cards Section */}
-                <div className="p-6 md:p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-                    {/* AI-Powered Analysis Card */}
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-4 md:p-5 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-blue-200 h-full flex flex-col">
-                      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                        <FiCpu className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                      </div>
-                      <h4 className="text-base md:text-lg font-bold text-gray-800 mb-2 text-center">
-                        AI-Powered Analysis
-                      </h4>
-                      <p className="text-gray-600 text-xs md:text-sm leading-relaxed text-center flex-1">
-                        Advanced ML algorithms analyze your resume
-                      </p>
-                    </div>
-
-                    {/* Smart Industry Detection Card */}
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl p-4 md:p-5 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-purple-200 h-full flex flex-col">
-                      <div className="bg-gradient-to-br from-purple-500 to-pink-600 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                        <FiTarget className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                      </div>
-                      <h4 className="text-base md:text-lg font-bold text-gray-800 mb-2 text-center">
-                        Smart Industry Detection
-                      </h4>
-                      <p className="text-gray-600 text-xs md:text-sm leading-relaxed text-center flex-1">
-                        Auto-identifies industry & recommendations
-                      </p>
-                    </div>
-
-                    {/* Professional Optimization Card */}
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-4 md:p-5 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-green-200 h-full flex flex-col">
-                      <div className="bg-gradient-to-br from-green-500 to-emerald-600 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                        <FiStar className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                      </div>
-                      <h4 className="text-base md:text-lg font-bold text-gray-800 mb-2 text-center">
-                        Professional Optimization
-                      </h4>
-                      <p className="text-gray-600 text-xs md:text-sm leading-relaxed text-center flex-1">
-                        Get actionable suggestions to improve ATS score
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Additional Info Section */}
-                  <div className="mt-6 pt-5 border-t-2 border-gray-200">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-center">
-                      <div className="bg-blue-50 rounded-xl p-3 md:p-4">
-                        <div className="text-xl md:text-2xl font-bold text-blue-600">100%</div>
-                        <div className="text-xs md:text-sm text-gray-600 mt-1">AI-Powered</div>
-                      </div>
-                      <div className="bg-purple-50 rounded-xl p-3 md:p-4">
-                        <div className="text-xl md:text-2xl font-bold text-purple-600">ATS</div>
-                        <div className="text-xs md:text-sm text-gray-600 mt-1">Compatible</div>
-                      </div>
-                      <div className="bg-green-50 rounded-xl p-3 md:p-4">
-                        <div className="text-xl md:text-2xl font-bold text-green-600">Fast</div>
-                        <div className="text-xs md:text-sm text-gray-600 mt-1">Analysis</div>
-                      </div>
-                      <div className="bg-orange-50 rounded-xl p-3 md:p-4">
-                        <div className="text-xl md:text-2xl font-bold text-orange-600">Smart</div>
-                        <div className="text-xs md:text-sm text-gray-600 mt-1">Insights</div>
-                      </div>
-                    </div>
+              <GlassPanel className="p-5 sm:p-6 lg:p-7">
+                <div className="mb-6 flex items-center gap-3">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                    <FiActivity className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">How it works</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Get a comprehensive ATS report in three quick steps
+                    </p>
                   </div>
                 </div>
-              </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {[
+                    { n: 1, icon: FiUpload, chip: 'bg-blue-500/10 text-blue-600', title: 'Upload your resume', desc: 'Drop a PDF or DOCX file — up to 10MB.' },
+                    { n: 2, icon: FiTarget, chip: 'bg-violet-500/10 text-violet-600', title: 'Add the job description', desc: 'Paste the role you are targeting.' },
+                    { n: 3, icon: FiCpu, chip: 'bg-emerald-500/10 text-emerald-600', title: 'Get AI insights', desc: 'ATS score, keyword gaps & fixes.' },
+                  ].map((s) => (
+                    <div
+                      key={s.n}
+                      className="group relative overflow-hidden rounded-2xl border border-border bg-card/70 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                    >
+                      <span className="absolute right-4 top-2 select-none text-5xl font-black leading-none text-foreground/[0.06]">
+                        {s.n}
+                      </span>
+                      <span className={`mb-4 flex size-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 ${s.chip}`}>
+                        <s.icon className="h-5 w-5" />
+                      </span>
+                      <h4 className="text-[15px] font-semibold text-foreground">{s.title}</h4>
+                      <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{s.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-5 sm:grid-cols-4">
+                  {[
+                    { k: '100%', v: 'AI-Powered', c: 'text-primary' },
+                    { k: 'ATS', v: 'Compatible', c: 'text-violet-600' },
+                    { k: 'Fast', v: 'Analysis', c: 'text-emerald-600' },
+                    { k: 'Smart', v: 'Insights', c: 'text-amber-600' },
+                  ].map((f) => (
+                    <div key={f.v} className="rounded-xl bg-muted/40 p-3 text-center">
+                      <div className={`text-xl font-bold md:text-2xl ${f.c}`}>{f.k}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{f.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </GlassPanel>
             )}
 
       </div>

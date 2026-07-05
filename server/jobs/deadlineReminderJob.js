@@ -1,8 +1,5 @@
 const cron = require('node-cron');
-const Notification = require('../models/Notification');
-const Student = require('../models/Student');
-const Faculty = require('../models/Faculty');
-const Admin = require('../models/Admin');
+const prisma = require('../lib/prisma');
 const mailService = require('../services/mailService');
 
 // Function to send deadline reminders for notifications
@@ -23,10 +20,12 @@ const sendDeadlineReminders = async () => {
     tomorrowEnd.setHours(23, 59, 59, 999);
     
     // Find notifications with deadlines tomorrow that haven't had reminders sent
-    const notificationsWithDeadlineTomorrow = await Notification.find({
-      deadline: { $gte: tomorrowStart, $lte: tomorrowEnd },
-      reminderSent: { $ne: true },
-      expired: { $ne: true }
+    const notificationsWithDeadlineTomorrow = await prisma.notification.findMany({
+      where: {
+        deadline: { gte: tomorrowStart, lte: tomorrowEnd },
+        reminderSent: { not: true },
+        expired: { not: true }
+      }
     });
     
     if (notificationsWithDeadlineTomorrow.length > 0) {
@@ -39,60 +38,58 @@ const sendDeadlineReminders = async () => {
         
         // Get student emails
         if (recipients.students) {
-          let studentQuery = {};
-          
+          let studentWhere = {};
+
           if (!recipients.students.all) {
             const filters = [];
-            
+
             if (recipients.students.courses && recipients.students.courses.length > 0) {
-              filters.push({ course: { $in: recipients.students.courses } });
+              filters.push({ course: { in: recipients.students.courses } });
             }
-            
+
             if (recipients.students.branches && recipients.students.branches.length > 0) {
-              filters.push({ branch: { $in: recipients.students.branches } });
+              filters.push({ branch: { in: recipients.students.branches } });
             }
-            
+
             if (recipients.students.passoutYears && recipients.students.passoutYears.length > 0) {
-              filters.push({ passoutYear: { $in: recipients.students.passoutYears } });
+              filters.push({ passoutYear: { in: recipients.students.passoutYears } });
             }
-            
+
             if (filters.length > 0) {
-              studentQuery = { $and: filters };
+              studentWhere = { AND: filters };
             }
           }
-          
-          const students = await Student.find(studentQuery).select('email');
+
+          const students = await prisma.student.findMany({ where: studentWhere, select: { email: true } });
           emailList = [...emailList, ...students.map(s => s.email)];
         }
-        
+
         // Get faculty emails
         if (recipients.faculty) {
           if (recipients.faculty.all) {
-            const faculty = await Faculty.find().select('email');
+            const faculty = await prisma.faculty.findMany({ select: { email: true } });
             emailList = [...emailList, ...faculty.map(f => f.email)];
           } else {
-            let facultyQuery = {};
             const filters = [];
-            
+
             if (recipients.faculty.specializations && recipients.faculty.specializations.length > 0) {
-              filters.push({ specialization: { $in: recipients.faculty.specializations } });
+              filters.push({ specialization: { in: recipients.faculty.specializations } });
             }
-            
+
             if (filters.length > 0) {
-              facultyQuery = { $or: filters };
-              const faculty = await Faculty.find(facultyQuery).select('email');
+              const faculty = await prisma.faculty.findMany({ where: { OR: filters }, select: { email: true } });
               emailList = [...emailList, ...faculty.map(f => f.email)];
             }
           }
         }
-        
+
         // Get admin emails
         if (recipients.admins) {
           if (recipients.admins.all) {
-            const admins = await Admin.find().select('email');
+            const admins = await prisma.admin.findMany({ select: { email: true } });
             emailList = [...emailList, ...admins.map(a => a.email)];
           } else if (recipients.admins.names && recipients.admins.names.length > 0) {
-            const admins = await Admin.find({ name: { $in: recipients.admins.names } }).select('email');
+            const admins = await prisma.admin.findMany({ where: { name: { in: recipients.admins.names } }, select: { email: true } });
             emailList = [...emailList, ...admins.map(a => a.email)];
           }
         }
@@ -105,10 +102,12 @@ const sendDeadlineReminders = async () => {
           await sendReminderEmails(emailList, notification);
           
           // Mark notification as having had reminders sent
-          notification.reminderSent = true;
-          await notification.save();
-          
-          console.log(`Sent deadline reminders for notification ${notification._id} to ${emailList.length} recipients`);
+          await prisma.notification.update({
+            where: { id: notification.id },
+            data: { reminderSent: true }
+          });
+
+          console.log(`Sent deadline reminders for notification ${notification.id} to ${emailList.length} recipients`);
         }
       }
     } else {

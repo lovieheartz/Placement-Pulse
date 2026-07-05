@@ -1,29 +1,38 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import StudentSidebar from '../components/StudentSidebar';
-import StudentHeader from '../components/StudentHeader';
-import StudentFooter from '../components/StudentFooter';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { History, Inbox, Mic, Eye, Trash2 } from 'lucide-react';
 import './Dashboard.css';
 
 const API_BASE = 'http://localhost:3001';
 
 const InterviewHistoryPage = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInterview, setSelectedInterview] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
+  const token = sessionStorage.getItem('authToken');
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
+  // Fetch profile with avatar
+  const { data: profileData } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:3001/student/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data;
+    },
+    enabled: !!token,
+  });
 
   useEffect(() => {
     if (!user) {
@@ -92,36 +101,14 @@ const InterviewHistoryPage = () => {
   }
 
   return (
-    <div className="dashboard">
-      <StudentSidebar />
-      <div className="main">
-        <StudentHeader
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-
-        <div className="px-6 md:px-8 py-6 md:py-8" style={{
-          background: 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%)',
-          minHeight: 'calc(100vh - 150px)'
-        }}>
+    <PortalLayout role="student" title="Interview History" user={profileData}>
+        <div>
           {/* Header */}
-          <div style={{
-            marginBottom: '2rem'
-          }}>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: 800,
-              color: '#1e293b',
-              marginBottom: '0.5rem'
-            }}>📜 Interview History</h1>
-            <p style={{
-              fontSize: '1.1rem',
-              color: '#64748b'
-            }}>View your past interviews and performance reports</p>
-          </div>
+          <PageHeader
+            title="Interview History"
+            subtitle="View your past interviews and performance reports"
+            icon={History}
+          />
 
           {loading ? (
             <div style={{
@@ -146,37 +133,16 @@ const InterviewHistoryPage = () => {
               </div>
             </div>
           ) : interviews.length === 0 ? (
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              padding: '4rem 2rem',
-              textAlign: 'center',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.08)'
-            }}>
-              <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>📭</div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>
-                No Interviews Yet
-              </h2>
-              <p style={{ fontSize: '1.1rem', color: '#64748b', marginBottom: '2rem' }}>
-                Start your first AI mock interview to see your history here
-              </p>
-              <button
-                onClick={() => navigate('/realtime-mock-interview')}
-                style={{
-                  padding: '1rem 2rem',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
-                }}
-              >
-                🎙️ Start First Interview
-              </button>
-            </div>
+            <EmptyState
+              icon={Inbox}
+              title="No Interviews Yet"
+              description="Start your first AI mock interview to see your history here"
+              action={
+                <Button variant="gradient" onClick={() => navigate('/realtime-mock-interview')}>
+                  <Mic className="size-4" /> Start First Interview
+                </Button>
+              }
+            />
           ) : (
             <div style={{
               display: 'grid',
@@ -229,16 +195,9 @@ const InterviewHistoryPage = () => {
                     }}>
                       {interview.overallScore || 'N/A'}
                     </div>
-                    <div style={{
-                      padding: '0.5rem 0.75rem',
-                      background: interview.status === 'completed' ? '#d1fae5' : '#fef3c7',
-                      color: interview.status === 'completed' ? '#065f46' : '#92400e',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600
-                    }}>
-                      {interview.status === 'completed' ? '✅ Completed' : '⏸️ In Progress'}
-                    </div>
+                    <Badge variant={interview.status === 'completed' ? 'success' : 'warning'}>
+                      {interview.status === 'completed' ? 'Completed' : 'In Progress'}
+                    </Badge>
                   </div>
 
                   {/* Interview Details */}
@@ -283,47 +242,27 @@ const InterviewHistoryPage = () => {
                   </p>
 
                   {/* Actions */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.75rem'
-                  }}>
-                    <button
+                  <div className="flex gap-3">
+                    <Button
+                      variant="gradient"
+                      className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedInterview(interview);
                       }}
-                      style={{
-                        flex: 1,
-                        padding: '0.65rem',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
                     >
-                      👁️ View Report
-                    </button>
-                    <button
+                      <Eye className="size-4" /> View Report
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowDeleteConfirm(interview._id);
                       }}
-                      style={{
-                        padding: '0.65rem 1rem',
-                        background: '#fef2f2',
-                        color: '#ef4444',
-                        border: '1px solid #fecaca',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
                     >
-                      🗑️
-                    </button>
+                      <Trash2 className="size-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -347,65 +286,29 @@ const InterviewHistoryPage = () => {
           }}
           onClick={() => setShowDeleteConfirm(null)}
           >
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              padding: '2rem',
-              maxWidth: '400px',
-              width: '90%',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-            }}
-            onClick={(e) => e.stopPropagation()}
+            <div
+              className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl p-8 w-[90%] max-w-md"
+              onClick={(e) => e.stopPropagation()}
             >
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1e293b',
-                marginBottom: '1rem'
-              }}>Delete Interview?</h3>
-              <p style={{
-                fontSize: '1rem',
-                color: '#64748b',
-                marginBottom: '2rem'
-              }}>
+              <h3 className="text-xl font-bold text-foreground mb-4">Delete Interview?</h3>
+              <p className="text-sm text-muted-foreground mb-8">
                 This action cannot be undone. All interview data and analysis will be permanently deleted.
               </p>
-              <div style={{
-                display: 'flex',
-                gap: '1rem'
-              }}>
-                <button
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
                   onClick={() => setShowDeleteConfirm(null)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: '#f1f5f9',
-                    color: '#334155',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
                   onClick={() => deleteInterview(showDeleteConfirm)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -429,36 +332,14 @@ const InterviewHistoryPage = () => {
           }}
           onClick={() => setSelectedInterview(null)}
           >
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              padding: '2.5rem',
-              maxWidth: '900px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-            }}
-            onClick={(e) => e.stopPropagation()}
+            <div
+              className="relative rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl p-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
                 onClick={() => setSelectedInterview(null)}
-                style={{
-                  position: 'absolute',
-                  top: '1.5rem',
-                  right: '1.5rem',
-                  background: '#f1f5f9',
-                  border: 'none',
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-xl text-muted-foreground hover:bg-accent transition-colors"
               >×</button>
 
               {/* Header */}
@@ -663,10 +544,7 @@ const InterviewHistoryPage = () => {
             </div>
           </div>
         )}
-
-        <StudentFooter />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 

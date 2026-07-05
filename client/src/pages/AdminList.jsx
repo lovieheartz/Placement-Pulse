@@ -4,24 +4,37 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import { resolveFileUrl } from '../lib/api';
 import './Dashboard.css';
 
 const AdminList = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
 
   const { register: registerSearch, watch } = useForm();
   const searchTerm = watch('search') || '';
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
+  const {
+    data: profileData,
+  } = useQuery({
+    queryKey: ['adminProfile'],
+    queryFn: async () => {
+      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
+      });
+      return data.data;
+    },
+    enabled: !!user,
+  });
 
   const {
     data: adminData = [],
@@ -96,11 +109,6 @@ const AdminList = () => {
 
   const handleAddAdmin = () => navigate('/admin/add-admin');
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
-
   const filteredAdmins = adminData.filter((admin) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -114,42 +122,42 @@ const AdminList = () => {
   const DeleteAdminModal = () => (
     showDeleteModal && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
-          <div className="flex justify-between items-center border-b p-4">
-            <h3 className="text-xl font-semibold text-red-600">Delete Admin Account</h3>
-            <button 
+          <div className="flex justify-between items-center border-b border-border p-4">
+            <h3 className="text-xl font-semibold text-destructive">Delete Admin Account</h3>
+            <button
               onClick={() => setShowDeleteModal(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-muted-foreground hover:text-foreground"
             >
               ✕
             </button>
           </div>
-          
+
           {/* Body */}
-          <div className="p-4">
+          <div className="p-4 text-foreground">
             {selectedAdmin && (
               <>
                 <p className="mb-2">You are about to delete <strong>{selectedAdmin.name}</strong>'s admin account.</p>
-                <p className="mb-4">This action cannot be undone.</p>
+                <p className="mb-4 text-muted-foreground">This action cannot be undone.</p>
               </>
             )}
           </div>
-          
+
           {/* Footer */}
-          <div className="flex justify-end gap-2 border-t p-4">
-            <button
+          <div className="flex justify-end gap-2 border-t border-border p-4">
+            <Button
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              variant="outline"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={confirmDeleteAdmin}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              variant="destructive"
             >
               Delete Admin
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -188,100 +196,89 @@ const AdminList = () => {
   }
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="main">
-        <Header 
-          user={user} 
-          toggleDropdown={toggleDropdown} 
-          isDropdownOpen={isDropdownOpen} 
-          handleLogout={handleLogout} 
-          navigate={navigate} 
-        />
-
-        <div className="content-container px-3 py-4 w-full mx-auto max-w-full">
-          <div className="bg-white rounded-xl shadow-sm px-4 py-4 w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-              <h1 className="text-xl font-semibold text-gray-800">Admin Management</h1>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+    <PortalLayout role="admin" title="Admins" user={profileData || user}>
+          <PageHeader
+            title="Admin Management"
+            subtitle="Manage administrator accounts"
+            icon={ShieldCheck}
+            actions={
+              <>
                 <form className="w-full sm:w-64">
-                  <input
+                  <Input
                     {...registerSearch('search')}
                     type="text"
                     placeholder="Search admins..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </form>
-                <button
-                  onClick={handleAddAdmin}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm md:text-base whitespace-nowrap"
-                >
-                  ➕ Add Admin
-                </button>
-              </div>
-            </div>
-
+                <Button onClick={handleAddAdmin} className="whitespace-nowrap">
+                  <UserPlus /> Add Admin
+                </Button>
+              </>
+            }
+          />
+          <GlassPanel className="p-0 sm:p-0">
             <div className="w-full overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Avatar</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Name</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Email</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Phone</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Actions</th>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2.5 font-semibold">Avatar</th>
+                    <th className="px-3 py-2.5 font-semibold">Name</th>
+                    <th className="px-3 py-2.5 font-semibold">Email</th>
+                    <th className="px-3 py-2.5 font-semibold">Phone</th>
+                    <th className="px-3 py-2.5 font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {filteredAdmins.length > 0 ? (
                     filteredAdmins.map((admin) => (
-                      <tr key={admin._id} className="hover:bg-gray-50">
+                      <tr key={admin._id} className="border-b border-border/60 hover:bg-accent/40 transition-colors">
                         <td className="px-3 py-3">
                           {admin.avatar ? (
                             <img
-                              src={`http://localhost:3001${admin.avatar}`}
+                              src={resolveFileUrl(admin.avatar)}
                               alt={admin.name}
-                              className="w-10 h-10 rounded-full object-cover border"
+                              className="w-10 h-10 rounded-full object-cover border border-border"
                             />
                           ) : (
-                            <div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded-full text-xs text-gray-600">
+                            <div className="w-10 h-10 flex items-center justify-center bg-muted rounded-full text-xs text-muted-foreground">
                               {admin.name?.charAt(0)?.toUpperCase() || 'N/A'}
                             </div>
                           )}
                         </td>
-                        <td className="px-3 py-3 text-gray-900">{admin.name}</td>
-                        <td className="px-3 py-3 text-gray-600">{admin.email}</td>
-                        <td className="px-3 py-3 text-gray-600">{admin.phone || '-'}</td>
-                        <td className="px-3 py-3 text-gray-600">
+                        <td className="px-3 py-3 font-medium text-foreground">{admin.name}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{admin.email}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{admin.phone || '-'}</td>
+                        <td className="px-3 py-3 text-muted-foreground">
                           <div className="flex flex-wrap gap-2">
-                            <button
+                            <Button
                               onClick={() => handleDeleteAdmin(admin)}
-                              className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                              variant="destructive"
+                              size="sm"
                               disabled={isDeleting || user.email === admin.email} // Prevent deleting yourself
                             >
-                              {isDeleting ? '⏳ Deleting...' : '🗑️ Remove'}
-                            </button>
+                              <Trash2 /> {isDeleting ? 'Deleting...' : 'Remove'}
+                            </Button>
                           </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="px-3 py-3 text-center text-gray-500">
-                        {searchTerm ? 'No matching admins found' : 'No admins found'}
+                      <td colSpan="5" className="px-3 py-8">
+                        <EmptyState
+                          icon={ShieldCheck}
+                          title={searchTerm ? 'No matching admins found' : 'No admins found'}
+                          description={searchTerm ? 'Try a different search term.' : 'Add your first admin to get started.'}
+                        />
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
-
-        <Footer />
-      </div>
+          </GlassPanel>
       <DeleteAdminModal />
-    </div>
+    </PortalLayout>
   );
 };
 

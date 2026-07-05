@@ -1,8 +1,7 @@
-const NOC = require('../models/NOC');
-const Student = require('../models/Student');
-const Admin = require('../models/Admin');
+const prisma = require('../lib/prisma');
 const { sendNOCNotificationEmail } = require('../services/mailService');
 const mailService = require('../services/mailService');
+const storageService = require('../services/storageService');
 
 // Submit NOC request
 exports.submitNOCRequest = async (req, res) => {
@@ -14,7 +13,7 @@ exports.submitNOCRequest = async (req, res) => {
     const studentId = req.user.id;
 
     // Get student details from database
-    const student = await Student.findById(studentId);
+    const student = await prisma.student.findUnique({ where: { id: studentId } });
     if (!student) {
       return res.status(404).json({
         success: false,
@@ -36,24 +35,27 @@ exports.submitNOCRequest = async (req, res) => {
       applicationText
     };
 
-    // Add attachment if file was uploaded
+    // Upload attachment to Supabase Storage if a file was provided
     if (req.file) {
+      const uploaded = await storageService.uploadMulterFile(
+        req.file,
+        storageService.FOLDERS.NOC
+      );
       nocData.attachment = {
         filename: req.file.originalname,
-        path: req.file.path.replace(/\\/g, '/'),
+        path: uploaded.publicUrl,
         mimetype: req.file.mimetype,
         size: req.file.size
       };
     }
 
     console.log('Creating NOC with data:', nocData);
-    const nocRequest = new NOC(nocData);
-    await nocRequest.save();
+    const nocRequest = await prisma.nOC.create({ data: nocData });
     console.log('NOC saved successfully');
 
     // Send email to all admins
     try {
-      const admins = await Admin.find().select('email');
+      const admins = await prisma.admin.findMany({ select: { email: true } });
       const adminEmails = admins.map(admin => admin.email);
       
       if (adminEmails.length > 0) {
@@ -65,8 +67,8 @@ exports.submitNOCRequest = async (req, res) => {
           day: 'numeric' 
         });
         
-        const downloadUrl = nocRequest.attachment ? 
-          `http://localhost:3001/${nocRequest.attachment.path}` : null;
+        const downloadUrl = nocRequest.attachment ?
+          nocRequest.attachment.path : null;
         
         const emailContent = `
           <!DOCTYPE html>
@@ -190,14 +192,32 @@ exports.submitNOCRequest = async (req, res) => {
 exports.getStudentNOCRequests = async (req, res) => {
   try {
     const studentId = req.user.id;
-    
-    const nocRequests = await NOC.find({ studentId })
-      .populate('processedBy', 'name')
-      .sort({ createdAt: -1 });
+
+    const nocRequests = await prisma.nOC.findMany({
+      where: { studentId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Manually populate processedBy (Admin) -> { name }
+    const processedByIds = [
+      ...new Set(nocRequests.map(n => n.processedBy).filter(Boolean))
+    ];
+    let adminMap = {};
+    if (processedByIds.length) {
+      const admins = await prisma.admin.findMany({
+        where: { id: { in: processedByIds } },
+        select: { id: true, name: true }
+      });
+      adminMap = Object.fromEntries(admins.map(a => [a.id, { name: a.name }]));
+    }
+    const data = nocRequests.map(n => ({
+      ...n,
+      processedBy: n.processedBy ? (adminMap[n.processedBy] || null) : n.processedBy
+    }));
 
     res.status(200).json({
       success: true,
-      data: nocRequests
+      data
     });
   } catch (error) {
     console.error('Get student NOC requests error:', error);
@@ -212,14 +232,47 @@ exports.getStudentNOCRequests = async (req, res) => {
 // Get all NOC requests (Admin)
 exports.getAllNOCRequests = async (req, res) => {
   try {
-    const nocRequests = await NOC.find()
-      .populate('studentId', 'name email')
-      .populate('processedBy', 'name')
-      .sort({ createdAt: -1 });
+    const nocRequests = await prisma.nOC.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Manually populate studentId (Student) -> { name, email }
+    const studentIds = [
+      ...new Set(nocRequests.map(n => n.studentId).filter(Boolean))
+    ];
+    let studentMap = {};
+    if (studentIds.length) {
+      const students = await prisma.student.findMany({
+        where: { id: { in: studentIds } },
+        select: { id: true, name: true, email: true }
+      });
+      studentMap = Object.fromEntries(
+        students.map(s => [s.id, { name: s.name, email: s.email }])
+      );
+    }
+
+    // Manually populate processedBy (Admin) -> { name }
+    const processedByIds = [
+      ...new Set(nocRequests.map(n => n.processedBy).filter(Boolean))
+    ];
+    let adminMap = {};
+    if (processedByIds.length) {
+      const admins = await prisma.admin.findMany({
+        where: { id: { in: processedByIds } },
+        select: { id: true, name: true }
+      });
+      adminMap = Object.fromEntries(admins.map(a => [a.id, { name: a.name }]));
+    }
+
+    const data = nocRequests.map(n => ({
+      ...n,
+      studentId: n.studentId ? (studentMap[n.studentId] || null) : n.studentId,
+      processedBy: n.processedBy ? (adminMap[n.processedBy] || null) : n.processedBy
+    }));
 
     res.status(200).json({
       success: true,
-      data: nocRequests
+      data
     });
   } catch (error) {
     console.error('Get all NOC requests error:', error);
@@ -238,22 +291,27 @@ exports.updateNOCStatus = async (req, res) => {
     const { status, adminRemarks } = req.body;
     const adminId = req.user.id;
 
-    const nocRequest = await NOC.findById(id);
-    if (!nocRequest) {
+    const existing = await prisma.nOC.findUnique({ where: { id } });
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'NOC request not found'
       });
     }
 
-    nocRequest.status = status;
+    const updateData = {
+      status,
+      processedBy: adminId,
+      processedAt: new Date()
+    };
     if (adminRemarks) {
-      nocRequest.adminRemarks = adminRemarks;
+      updateData.adminRemarks = adminRemarks;
     }
-    nocRequest.processedBy = adminId;
-    nocRequest.processedAt = new Date();
 
-    await nocRequest.save();
+    const nocRequest = await prisma.nOC.update({
+      where: { id },
+      data: updateData
+    });
 
     res.status(200).json({
       success: true,

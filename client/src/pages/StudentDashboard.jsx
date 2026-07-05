@@ -1,33 +1,35 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../components/StudentSidebar";
-import Header from "../components/StudentHeader";
-import Card from "../components/Card";
-import Footer from "../components/StudentFooter";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import "./Dashboard.css";
+import {
+  FileText,
+  Video,
+  History,
+  ClipboardList,
+  BarChart3,
+  FilePlus2,
+  FileCheck2,
+  Bell,
+  User,
+  Sparkles,
+} from "lucide-react";
+
+import { API_BASE } from "../lib/api";
+import PortalLayout from "@/components/app/PortalLayout";
+import { DashboardCard } from "@/components/app/DashboardCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const StudentDashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
-
   const token = sessionStorage.getItem("authToken");
 
-  // ✅ Fetch profile with avatar
-  const { data: profileData, isLoading, isError, error } = useQuery({
+  const { data: profileData, isLoading } = useQuery({
     queryKey: ["studentProfile"],
     queryFn: async () => {
-      const res = await axios.get("http://localhost:3001/student/profile", {
+      const res = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -35,119 +37,126 @@ const StudentDashboard = () => {
     enabled: !!token,
   });
 
-  if (!user) {
-    return (
-      <div style={styles.container}>
-        <h1 style={styles.heading}>You are not logged in</h1>
-        <p style={styles.subheading}>Please login to access your dashboard.</p>
-      </div>
-    );
-  }
+  const displayUser = profileData || user || {};
+  const firstName = (displayUser.name || "Student").split(" ")[0];
 
-  if (isLoading) {
-    return (
-      <div style={styles.container}>
-        <h2 style={styles.heading}>Loading profile...</h2>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div style={styles.container}>
-        <h2 style={styles.heading}>Error loading profile</h2>
-        <p style={styles.subheading}>{error.message}</p>
-      </div>
-    );
-  }
+  const tools = [
+    {
+      title: "AI Resume Analyzer",
+      description: "Get AI-powered resume analysis with ATS scoring.",
+      icon: FileText,
+      tone: "violet",
+      badge: "AI",
+      to: "/student/resume-analyzer",
+    },
+    {
+      title: "AI Mock Interview",
+      description: "Practice interviews with an AI voice assistant.",
+      icon: Video,
+      tone: "indigo",
+      badge: "AI",
+      to: "/student/mock-interview",
+    },
+    {
+      title: "Interview History",
+      description: "Review your past AI interview sessions and feedback.",
+      icon: History,
+      tone: "blue",
+      to: "/student/interview-history",
+    },
+    {
+      title: "Enrolled Tests",
+      description: "View and attempt your enrolled aptitude tests.",
+      icon: ClipboardList,
+      tone: "emerald",
+      to: "/student/tests",
+    },
+    {
+      title: "Test History",
+      description: "View your test results and performance analytics.",
+      icon: BarChart3,
+      tone: "amber",
+      to: "/student/test-history",
+    },
+    {
+      title: "Apply for NOC",
+      description: "Submit new NOC applications for placements.",
+      icon: FilePlus2,
+      tone: "blue",
+      to: "/student/apply-noc",
+    },
+    {
+      title: "Track NOC",
+      description: "Track the status of your NOC applications.",
+      icon: FileCheck2,
+      tone: "emerald",
+      to: "/student/track-noc",
+    },
+    {
+      title: "Notifications",
+      description: "View notifications from TPO and faculty.",
+      icon: Bell,
+      tone: "rose",
+      to: "/student/notifications",
+    },
+    {
+      title: "Update Profile",
+      description: "Manage your profile and personal information.",
+      icon: User,
+      tone: "indigo",
+      to: "/student/profile",
+    },
+  ];
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-
-      <div className="main">
-        <Header
-          user={profileData}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
-        />
-
-        <div className="card-container">
-          <Card
-            title="AI Resume Analyzer"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            }
-            description="Get AI-powered resume analysis with ATS scoring"
-            onClick={() => navigate('/student/resume-analyzer')}
-          />
-
-          <Card
-            title="AI Mock Interview"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            }
-            description="Practice interviews with AI voice assistant"
-            onClick={() => navigate('/student/mock-interview')}
-          />
-
-          <Card
-            title="Apply for NOC"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            }
-            description="Submit and track your NOC applications"
-            onClick={() => navigate('/student/apply-noc')}
-          />
-
-          <Card
-            title="Enrolled Tests"
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-            }
-            description="View and attempt your enrolled tests"
-            onClick={() => navigate('/student/tests')}
-          />
+    <PortalLayout role="student" title="Dashboard" user={displayUser}>
+      {/* Welcome hero */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-700 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 size-52 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-16 right-24 size-40 rounded-full bg-indigo-400/20 blur-3xl" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+            <Sparkles className="size-3.5" />
+            Placement Suite
+          </span>
+          <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+            Welcome back, {firstName} 👋
+          </h2>
+          <p className="mt-1.5 max-w-xl text-sm text-blue-100">
+            Prepare smarter with AI tools, track your NOC applications, and stay
+            on top of every placement opportunity — all in one place.
+          </p>
         </div>
-
-        <Footer />
       </div>
-    </div>
-  );
-};
 
-const styles = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100vh",
-    backgroundColor: "#f0f4f8",
-    padding: "20px",
-  },
-  heading: {
-    fontSize: "32px",
-    color: "#333",
-    marginBottom: "10px",
-    textAlign: "center",
-  },
-  subheading: {
-    fontSize: "18px",
-    color: "#666",
-    marginBottom: "30px",
-    textAlign: "center",
-  },
+      {/* Tools */}
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-foreground">Quick access</h3>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-36 rounded-2xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {tools.map((tool) => (
+            <DashboardCard
+              key={tool.title}
+              title={tool.title}
+              description={tool.description}
+              icon={tool.icon}
+              tone={tool.tone}
+              badge={tool.badge}
+              onClick={() => navigate(tool.to)}
+            />
+          ))}
+        </div>
+      )}
+    </PortalLayout>
+  );
 };
 
 export default StudentDashboard;

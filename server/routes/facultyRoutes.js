@@ -11,9 +11,13 @@ const {
   getSingleFaculty,
   updateFacultyById,
   getAllStudents,
+  blockStudent,
+  unblockStudent,
+  getBlockedStudents,
 } = require("../controllers/facultyController");
 
 const { authenticateToken } = require("../middleware/auth");
+const { facultyOnly } = require("../middleware/roleCheck");
 const upload = require("../middleware/upload_multer");
 
 // ✅ Create faculty with avatar upload
@@ -34,13 +38,16 @@ router.post("/upload-avatar", authenticateToken, upload.single("avatar"), update
 // ✅ DELETE faculty by ID (used in FacultyList.jsx)
 router.delete("/delete/:id", deleteFaculty);
 
+// ✅ Student management routes (faculty access - must come before /:id route)
+router.get("/students/blocked", authenticateToken, facultyOnly, getBlockedStudents);
+router.get("/students", authenticateToken, facultyOnly, getAllStudents);
+router.put("/students/:id/block", authenticateToken, facultyOnly, blockStudent);
+router.put("/students/:id/unblock", authenticateToken, facultyOnly, unblockStudent);
+
 // ✅ GET single faculty by ID (for edit)
 router.get("/:id", getSingleFaculty);
 
 // ✅ PUT update faculty by ID (for edit)
 router.put("/update/:id", upload.single("avatar"), updateFacultyById);
-
-// ✅ GET all students (faculty access)
-router.get("/students", authenticateToken, getAllStudents);
 
 module.exports = router;

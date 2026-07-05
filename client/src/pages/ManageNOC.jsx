@@ -1,25 +1,36 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FileText, Filter } from 'lucide-react';
 import axios from 'axios';
+import { resolveFileUrl } from '../lib/api';
 
 const ManageNOC = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const queryClient = useQueryClient();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [adminRemarks, setAdminRemarks] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const {
+    data: profileData,
+  } = useQuery({
+    queryKey: ['adminProfile'],
+    queryFn: async () => {
+      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
+      });
+      return data.data;
+    },
+    enabled: !!user,
+  });
 
   const { data: nocRequests = [], isLoading } = useQuery({
     queryKey: ['adminNocRequests'],
@@ -76,11 +87,6 @@ const ManageNOC = () => {
     });
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'sent': return 'bg-blue-100 text-blue-800';
@@ -88,6 +94,16 @@ const ManageNOC = () => {
       case 'reply_soon': return 'bg-orange-100 text-orange-800';
       case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'sent': return 'default';
+      case 'read': return 'warning';
+      case 'reply_soon': return 'warning';
+      case 'completed': return 'success';
+      default: return 'default';
     }
   };
 
@@ -126,29 +142,18 @@ const ManageNOC = () => {
   }
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="main">
-        <Header 
-          user={user} 
-          toggleDropdown={toggleDropdown} 
-          isDropdownOpen={isDropdownOpen} 
-          handleLogout={handleLogout} 
-          navigate={navigate} 
-        />
-
-        <div className="content-container px-3 py-4 w-full mx-auto max-w-full">
-          <div className="bg-white rounded-xl shadow-sm px-4 py-4 w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-              <h1 className="text-xl font-semibold text-gray-800">Manage NOC Requests</h1>
+    <PortalLayout role="admin" title="NOC Requests" user={profileData || user}>
+          <PageHeader
+            title="Manage NOC Requests"
+            subtitle="Review and update student NOC applications"
+            icon={FileText}
+            actions={
               <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
+                <Filter className="w-4 h-4 text-muted-foreground" />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="all">All Status</option>
                   <option value="sent">Pending</option>
@@ -157,52 +162,54 @@ const ManageNOC = () => {
                   <option value="completed">Completed</option>
                 </select>
               </div>
-            </div>
-
+            }
+          />
+          <GlassPanel>
             {isLoading ? (
               <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
               </div>
             ) : filteredRequests.length > 0 ? (
               <div className="space-y-4">
                 {filteredRequests.map((request) => (
-                  <div key={request._id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
-                    <div className="p-4 border-b border-gray-100">
+                  <div key={request._id} className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200">
+                    <div className="p-4">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{request.name}</h3>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                            <h3 className="text-lg font-semibold text-foreground">{request.name}</h3>
+                            <Badge variant={getStatusVariant(request.status)}>
                               {getStatusText(request.status)}
-                            </span>
+                            </Badge>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                             <div>
-                              <span className="font-medium">Roll:</span> {request.universityRoll}
+                              <span className="font-medium text-foreground">Roll:</span> {request.universityRoll}
                             </div>
                             <div>
-                              <span className="font-medium">Course:</span> {request.course} - {request.branch}
+                              <span className="font-medium text-foreground">Course:</span> {request.course} - {request.branch}
                             </div>
                             <div>
-                              <span className="font-medium">College:</span> {request.collegeEmail}
+                              <span className="font-medium text-foreground">College:</span> {request.collegeEmail}
                             </div>
                             <div>
-                              <span className="font-medium">Personal:</span> {request.personalEmail}
+                              <span className="font-medium text-foreground">Personal:</span> {request.personalEmail}
                             </div>
                           </div>
                           <div className="mt-3">
-                            <p className="text-sm text-gray-700 font-medium">Subject: {request.subject}</p>
+                            <p className="text-sm text-foreground font-medium">Subject: {request.subject}</p>
                           </div>
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleStatusUpdate(request)}
-                          className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                          size="sm"
+                          className="ml-4"
                         >
                           View Details
-                        </button>
+                        </Button>
                       </div>
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-                        <div className="text-xs text-gray-500">
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                        <div className="text-xs text-muted-foreground">
                           Submitted: {new Date(request.createdAt).toLocaleDateString()}
                           {request.processedAt && (
                             <span className="ml-4">Updated: {new Date(request.processedAt).toLocaleDateString()}</span>
@@ -211,7 +218,7 @@ const ManageNOC = () => {
                         {request.attachment && (
                           <div className="flex gap-2">
                             <a
-                              href={`http://localhost:3001/uploads/noc/${request.attachment.path.split('/').pop()}`}
+                              href={resolveFileUrl(request.attachment.path)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition"
@@ -220,7 +227,7 @@ const ManageNOC = () => {
                               View PDF
                             </a>
                             <a
-                              href={`http://localhost:3001/uploads/noc/${request.attachment.path.split('/').pop()}`}
+                              href={resolveFileUrl(request.attachment.path)}
                               download={request.attachment.filename}
                               className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition"
                               onClick={(e) => e.stopPropagation()}
@@ -235,28 +242,20 @@ const ManageNOC = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="bg-gray-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
-                  <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No NOC requests found</h3>
-                <p className="text-gray-600">No students have submitted NOC requests yet.</p>
-              </div>
+              <EmptyState
+                icon={FileText}
+                title="No NOC requests found"
+                description="No students have submitted NOC requests yet."
+              />
             )}
-          </div>
-        </div>
-
-        <Footer />
-      </div>
+          </GlassPanel>
 
       {/* Status Update Modal */}
       {showModal && selectedRequest && (
         <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-[9999]">
           <div className="flex items-center justify-center min-h-full p-4 md:pl-64">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center border-b p-6 bg-gradient-to-r from-blue-600 to-blue-700">
+            <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              <div className="flex justify-between items-center border-b border-border p-6 bg-gradient-to-r from-blue-600 to-blue-700">
               <h3 className="text-xl font-semibold text-white">NOC Request Details</h3>
               <button 
                 onClick={() => setShowModal(false)}
@@ -268,32 +267,32 @@ const ManageNOC = () => {
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
               <div className="mb-4">
-                <h4 className="font-medium text-gray-800 mb-2">{selectedRequest.name}</h4>
-                <p className="text-sm text-gray-600">Roll: {selectedRequest.universityRoll}</p>
-                <p className="text-sm text-gray-600">{selectedRequest.course} - {selectedRequest.branch}</p>
-                <p className="text-sm text-gray-600">College: {selectedRequest.collegeEmail}</p>
-                <p className="text-sm text-gray-600">Personal: {selectedRequest.personalEmail}</p>
+                <h4 className="font-medium text-foreground mb-2">{selectedRequest.name}</h4>
+                <p className="text-sm text-muted-foreground">Roll: {selectedRequest.universityRoll}</p>
+                <p className="text-sm text-muted-foreground">{selectedRequest.course} - {selectedRequest.branch}</p>
+                <p className="text-sm text-muted-foreground">College: {selectedRequest.collegeEmail}</p>
+                <p className="text-sm text-muted-foreground">Personal: {selectedRequest.personalEmail}</p>
               </div>
 
               <div className="mb-4">
-                <h4 className="font-medium text-gray-800 mb-2">Subject:</h4>
-                <p className="text-sm text-gray-600">{selectedRequest.subject}</p>
+                <h4 className="font-medium text-foreground mb-2">Subject:</h4>
+                <p className="text-sm text-muted-foreground">{selectedRequest.subject}</p>
               </div>
 
               <div className="mb-4">
-                <h4 className="font-medium text-gray-800 mb-2">Application:</h4>
-                <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 max-h-40 overflow-y-auto">
+                <h4 className="font-medium text-foreground mb-2">Application:</h4>
+                <div className="bg-muted/40 p-3 rounded text-sm text-foreground max-h-40 overflow-y-auto">
                   {selectedRequest.applicationText}
                 </div>
               </div>
 
               {selectedRequest.attachment && (
                 <div className="mb-4">
-                  <h4 className="font-medium text-gray-800 mb-2">Attachment:</h4>
-                  <p className="text-sm text-gray-600 mb-2">{selectedRequest.attachment.filename}</p>
+                  <h4 className="font-medium text-foreground mb-2">Attachment:</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{selectedRequest.attachment.filename}</p>
                   <div className="flex space-x-2">
                     <a
-                      href={`http://localhost:3001/uploads/noc/${selectedRequest.attachment.path.split('/').pop()}`}
+                      href={resolveFileUrl(selectedRequest.attachment.path)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition"
@@ -301,7 +300,7 @@ const ManageNOC = () => {
                       View PDF
                     </a>
                     <a
-                      href={`http://localhost:3001/uploads/noc/${selectedRequest.attachment.path.split('/').pop()}`}
+                      href={resolveFileUrl(selectedRequest.attachment.path)}
                       download={selectedRequest.attachment.filename}
                       className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition"
                     >
@@ -312,11 +311,11 @@ const ManageNOC = () => {
               )}
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Status</label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="read" disabled={getStatusOrder(selectedRequest.status) > 1}>Read</option>
                   <option value="reply_soon" disabled={getStatusOrder(selectedRequest.status) > 2}>Reply Soon</option>
@@ -325,37 +324,36 @@ const ManageNOC = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Admin Remarks</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Admin Remarks</label>
                 <textarea
                   value={adminRemarks}
                   onChange={(e) => setAdminRemarks(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   placeholder="Add remarks for the student..."
                 />
               </div>
             </div>
-            
-              <div className="flex justify-between items-center border-t p-6 bg-gray-50">
-                <button
+
+              <div className="flex justify-between items-center border-t border-border p-6 bg-muted/40">
+                <Button
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  variant="outline"
                 >
                   ← Back to List
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSubmitUpdate}
                   disabled={isUpdating}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   {isUpdating ? 'Updating...' : 'Update Status'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PortalLayout>
   );
 };
 

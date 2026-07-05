@@ -1,15 +1,15 @@
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
-const Faculty = require("../models/Faculty");
-const Student = require("../models/Student");
+const prisma = require("../lib/prisma");
 const { sendFacultyWelcomeEmail, transporter } = require("../services/mailService");
+const storageService = require("../services/storageService");
 
 exports.createFaculty = async (req, res) => {
   try {
-    const { name, email, password, phone, specialization, createdBy } = req.body;
+    const { name, email, password, phone, course, department, createdBy } = req.body;
 
-    if (!name || !email || !password || !phone || !specialization || !createdBy) {
+    if (!name || !email || !password || !phone || !course || !department || !createdBy) {
       return res.status(400).json({
         success: false,
         message: "All fields are required, including createdBy.",
@@ -18,7 +18,7 @@ exports.createFaculty = async (req, res) => {
 
     console.log(`Creating faculty with email: ${email}, password: ${password.substring(0, 3)}***`);
 
-    const duplicate = await Faculty.findOne({ email });
+    const duplicate = await prisma.faculty.findUnique({ where: { email } });
     if (duplicate) {
       return res.status(409).json({
         success: false,
@@ -28,25 +28,31 @@ exports.createFaculty = async (req, res) => {
 
     let avatarPath = null;
     if (req.file) {
-      avatarPath = `/uploads/Avatar_Faculty/${req.file.filename}`;
+      const uploaded = await storageService.uploadMulterFile(
+        req.file,
+        storageService.FOLDERS.AVATAR_FACULTY
+      );
+      avatarPath = uploaded.publicUrl;
     }
 
-    // Don't hash the password here, let the model's pre-save hook handle it
-    const newFaculty = new Faculty({
-      name,
-      email,
-      phone,
-      specialization,
-      password, // Use the plain password, the model will hash it
-      role: "faculty",
-      avatar: avatarPath,
-      createdBy,
+    // Hash the password (no more pre-save hook in Prisma)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let savedFaculty = await prisma.faculty.create({
+      data: {
+        name,
+        email,
+        phone,
+        course,
+        department,
+        password: hashedPassword,
+        role: "faculty",
+        avatar: avatarPath,
+        createdBy,
+        createdByModel: 'Admin', // Faculty created by admin
+      },
     });
-    
-    console.log(`Faculty object created, about to save: ${newFaculty.email}`);
 
-
-    const savedFaculty = await newFaculty.save();
     console.log(`Faculty saved successfully: ${savedFaculty.email}`);
     console.log(`Saved password hash: ${savedFaculty.password.substring(0, 20)}...`);
 
@@ -54,17 +60,18 @@ exports.createFaculty = async (req, res) => {
     const testPassword = password;
     const passwordMatch = await bcrypt.compare(testPassword, savedFaculty.password);
     console.log(`Password comparison test: ${passwordMatch ? 'SUCCESS' : 'FAILED'}`);
-    
+
     // Send welcome email with password reset link
     try {
       // Generate email with reset token
       const { mailOptions, resetToken, resetTokenExpiry } = await sendFacultyWelcomeEmail(savedFaculty, password);
-      
+
       // Update faculty with reset token
-      savedFaculty.resetToken = resetToken;
-      savedFaculty.resetTokenExpiry = resetTokenExpiry;
-      await savedFaculty.save();
-      
+      savedFaculty = await prisma.faculty.update({
+        where: { id: savedFaculty.id },
+        data: { resetToken, resetTokenExpiry },
+      });
+
       // Send the email
       await transporter.sendMail(mailOptions);
       console.log(`Welcome email sent to faculty: ${savedFaculty.email}`);
@@ -77,10 +84,11 @@ exports.createFaculty = async (req, res) => {
       success: true,
       message: "Faculty created successfully",
       data: {
-        id: savedFaculty._id,
+        id: savedFaculty.id,
         name: savedFaculty.name,
         email: savedFaculty.email,
-        specialization: savedFaculty.specialization,
+        course: savedFaculty.course,
+        department: savedFaculty.department,
         avatar: savedFaculty.avatar,
       },
     });
@@ -96,7 +104,18 @@ exports.createFaculty = async (req, res) => {
 
 exports.getAllFaculties = async (req, res) => {
   try {
-    const faculties = await Faculty.find({}, 'name email specialization phone createdAt avatar');
+    const faculties = await prisma.faculty.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+        avatar: true,
+        course: true,
+        department: true,
+      },
+    });
     res.status(200).json({
       success: true,
       count: faculties.length,
@@ -114,7 +133,7 @@ exports.getAllFaculties = async (req, res) => {
 
 exports.deleteFaculty = async (req, res) => {
   try {
-    const faculty = await Faculty.findByIdAndDelete(req.params.id);
+    const faculty = await prisma.faculty.findUnique({ where: { id: req.params.id } });
 
     if (!faculty) {
       return res.status(404).json({
@@ -123,20 +142,17 @@ exports.deleteFaculty = async (req, res) => {
       });
     }
 
+    await prisma.faculty.delete({ where: { id: req.params.id } });
+
     if (faculty.avatar) {
-      const avatarPath = path.join(__dirname, "..", faculty.avatar);
-      fs.unlink(avatarPath, (err) => {
-        if (err) {
-          console.error("Error deleting avatar during faculty deletion:", err.message);
-        }
-      });
+      await storageService.remove(faculty.avatar);
     }
 
     res.status(200).json({
       success: true,
       message: "Faculty deleted successfully",
       data: {
-        id: faculty._id,
+        id: faculty.id,
         name: faculty.name
       }
     });
@@ -154,7 +170,10 @@ exports.getFacultyProfile = async (req, res) => {
   try {
     const facultyId = req.user.id;
 
-    const faculty = await Faculty.findById(facultyId).select("-password");
+    const faculty = await prisma.faculty.findUnique({
+      where: { id: facultyId },
+      omit: { password: true },
+    });
 
     if (!faculty) {
       return res.status(404).json({
@@ -180,9 +199,9 @@ exports.getFacultyProfile = async (req, res) => {
 exports.updateFacultyProfile = async (req, res) => {
   try {
     const facultyId = req.user.id;
-    const { name, email, phone, specialization } = req.body;
+    const { name, email, phone, course, department } = req.body;
 
-    const faculty = await Faculty.findById(facultyId);
+    const faculty = await prisma.faculty.findUnique({ where: { id: facultyId } });
 
     if (!faculty) {
       return res.status(404).json({
@@ -191,12 +210,17 @@ exports.updateFacultyProfile = async (req, res) => {
       });
     }
 
-    if (name) faculty.name = name;
-    if (email) faculty.email = email;
-    if (phone) faculty.phone = phone;
-    if (specialization) faculty.specialization = specialization;
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (course) updateData.course = course;
+    if (department) updateData.department = department;
 
-    const updatedFaculty = await faculty.save();
+    const updatedFaculty = await prisma.faculty.update({
+      where: { id: facultyId },
+      data: updateData,
+    });
 
     res.status(200).json({
       success: true,
@@ -224,7 +248,7 @@ exports.updateAvatar = async (req, res) => {
       });
     }
 
-    const faculty = await Faculty.findById(facultyId);
+    const faculty = await prisma.faculty.findUnique({ where: { id: facultyId } });
 
     if (!faculty) {
       return res.status(404).json({
@@ -234,17 +258,17 @@ exports.updateAvatar = async (req, res) => {
     }
 
     if (faculty.avatar) {
-      const oldPath = path.join(__dirname, "..", faculty.avatar);
-      fs.unlink(oldPath, (err) => {
-        if (err) {
-          console.error("Error deleting previous avatar:", err.message);
-        }
-      });
+      await storageService.remove(faculty.avatar);
     }
 
-    const avatarPath = `/uploads/Avatar_Faculty/${req.file.filename}`;
-    faculty.avatar = avatarPath;
-    await faculty.save();
+    const { publicUrl: avatarPath } = await storageService.uploadMulterFile(
+      req.file,
+      storageService.FOLDERS.AVATAR_FACULTY
+    );
+    await prisma.faculty.update({
+      where: { id: facultyId },
+      data: { avatar: avatarPath },
+    });
 
     res.status(200).json({
       success: true,
@@ -263,7 +287,10 @@ exports.updateAvatar = async (req, res) => {
 // GET SINGLE FACULTY BY ID
 exports.getSingleFaculty = async (req, res) => {
   try {
-    const faculty = await Faculty.findById(req.params.id).select("-password");
+    const faculty = await prisma.faculty.findUnique({
+      where: { id: req.params.id },
+      omit: { password: true },
+    });
     if (!faculty) {
       return res.status(404).json({ success: false, message: "Faculty not found" });
     }
@@ -277,33 +304,38 @@ exports.getSingleFaculty = async (req, res) => {
 // UPDATE FACULTY BY ID
 exports.updateFacultyById = async (req, res) => {
   try {
-    const faculty = await Faculty.findById(req.params.id);
+    const faculty = await prisma.faculty.findUnique({ where: { id: req.params.id } });
     if (!faculty) {
       return res.status(404).json({ success: false, message: "Faculty not found" });
     }
 
+    const updateData = {};
+
     // ✅ Defensive checks: Only update if value is provided
-    if (req.body.name !== undefined) faculty.name = req.body.name;
-    if (req.body.email !== undefined) faculty.email = req.body.email;
-    if (req.body.phone !== undefined) faculty.phone = req.body.phone;
-    if (req.body.specialization !== undefined) faculty.specialization = req.body.specialization;
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.email !== undefined) updateData.email = req.body.email;
+    if (req.body.phone !== undefined) updateData.phone = req.body.phone;
+    if (req.body.course !== undefined) updateData.course = req.body.course;
+    if (req.body.department !== undefined) updateData.department = req.body.department;
 
     // ✅ Handle avatar upload safely
     if (req.file) {
-      const newAvatarPath = `/uploads/Avatar_Faculty/${req.file.filename}`;
-
       // Delete old avatar
       if (faculty.avatar) {
-        const oldPath = path.join(__dirname, "..", faculty.avatar);
-        fs.unlink(oldPath, (err) => {
-          if (err) console.error("Error deleting old avatar:", err.message);
-        });
+        await storageService.remove(faculty.avatar);
       }
 
-      faculty.avatar = newAvatarPath;
+      const { publicUrl } = await storageService.uploadMulterFile(
+        req.file,
+        storageService.FOLDERS.AVATAR_FACULTY
+      );
+      updateData.avatar = publicUrl;
     }
 
-    const updated = await faculty.save();
+    const updated = await prisma.faculty.update({
+      where: { id: req.params.id },
+      data: updateData,
+    });
     res.status(200).json({ success: true, message: "Faculty updated", data: updated });
   } catch (err) {
     console.error("Update faculty error:", err);
@@ -311,15 +343,217 @@ exports.updateFacultyById = async (req, res) => {
   }
 };
 
-// GET ALL STUDENTS (Faculty access)
+// GET ALL STUDENTS (Faculty access - filtered by faculty's course and department)
 exports.getAllStudents = async (req, res) => {
   try {
-    const students = await Student.find({ isVerified: true }).select("-password -otp -otpExpiry");
-    res.status(200).json({ success: true, data: students });
+    const facultyId = req.user.id;
+
+    // Get faculty details to filter students
+    const faculty = await prisma.faculty.findUnique({ where: { id: facultyId } });
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: "Faculty not found"
+      });
+    }
+
+    // Find students with same course and branch as faculty's department
+    const students = await prisma.student.findMany({
+      where: {
+        isVerified: true,
+        course: faculty.course,
+        branch: faculty.department
+      },
+      omit: { password: true },
+    });
+
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students
+    });
   } catch (err) {
     console.error("Get all students error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
   }
 };
 
+// Block a student (Faculty can block students in their department)
+exports.blockStudent = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+    const studentId = req.params.id;
+    const { reason } = req.body;
 
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Reason for blocking is required"
+      });
+    }
+
+    // Get faculty details
+    const faculty = await prisma.faculty.findUnique({ where: { id: facultyId } });
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: "Faculty not found"
+      });
+    }
+
+    // Find the student
+    const student = await prisma.student.findUnique({ where: { id: studentId } });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found"
+      });
+    }
+
+    // Check if student belongs to faculty's course and department
+    if (student.course !== faculty.course || student.branch !== faculty.department) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only block students from your course and department"
+      });
+    }
+
+    if (student.isBlocked) {
+      return res.status(400).json({
+        success: false,
+        message: "Student is already blocked"
+      });
+    }
+
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        isBlocked: true,
+        blockReason: reason,
+        blockedBy: facultyId,
+        blockedByModel: 'Faculty',
+        blockedAt: new Date(),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Student blocked successfully",
+      data: updatedStudent
+    });
+  } catch (err) {
+    console.error("Block student error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to block student",
+      error: err.message
+    });
+  }
+};
+
+// Unblock a student
+exports.unblockStudent = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+    const studentId = req.params.id;
+
+    // Get faculty details
+    const faculty = await prisma.faculty.findUnique({ where: { id: facultyId } });
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: "Faculty not found"
+      });
+    }
+
+    const student = await prisma.student.findUnique({ where: { id: studentId } });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found"
+      });
+    }
+
+    // Check if student belongs to faculty's course and department
+    if (student.course !== faculty.course || student.branch !== faculty.department) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only unblock students from your course and department"
+      });
+    }
+
+    if (!student.isBlocked) {
+      return res.status(400).json({
+        success: false,
+        message: "Student is not blocked"
+      });
+    }
+
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        isBlocked: false,
+        blockReason: null,
+        blockedBy: null,
+        blockedByModel: null,
+        blockedAt: null,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Student unblocked successfully",
+      data: updatedStudent
+    });
+  } catch (err) {
+    console.error("Unblock student error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to unblock student",
+      error: err.message
+    });
+  }
+};
+
+// Get blocked students in faculty's department
+exports.getBlockedStudents = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+
+    // Get faculty details
+    const faculty = await prisma.faculty.findUnique({ where: { id: facultyId } });
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: "Faculty not found"
+      });
+    }
+
+    const blockedStudents = await prisma.student.findMany({
+      where: {
+        isBlocked: true,
+        isVerified: true,
+        course: faculty.course,
+        branch: faculty.department
+      },
+      omit: { password: true },
+    });
+
+    res.status(200).json({
+      success: true,
+      count: blockedStudents.length,
+      data: blockedStudents
+    });
+  } catch (err) {
+    console.error("Get blocked students error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch blocked students",
+      error: err.message
+    });
+  }
+};

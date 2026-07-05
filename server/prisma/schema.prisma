@@ -1,0 +1,444 @@
+// Prisma schema — Supabase Postgres mirror of the existing Mongoose models.
+// Design choices:
+//  - IDs are Strings holding the original Mongo _id (new rows get a uuid), so existing
+//    references and JWTs keep working during/after migration.
+//  - Embedded sub-documents/arrays-of-objects become JSONB (Json) columns.
+//  - Arrays of scalars/ids become String[] columns.
+//  - Enum-like fields are Strings (values documented in comments) to match Mongoose.
+//  - Cross-collection references are plain String columns (no hard FKs) to mirror
+//    Mongoose's loose refs and keep the data migration simple.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooled (6543, pgbouncer) — used at runtime
+  directUrl = env("DIRECT_URL")     // direct (5432) — used by prisma migrate/db push
+}
+
+// ============================ USERS / ROLES ============================
+
+model Admin {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  phone            String
+  password         String
+  avatar           String    @default("")
+  role             String    @default("admin")
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  facultyManaged   String[]  @default([]) // faculty ids
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Faculty {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String
+  phone            String
+  course           String
+  department       String
+  avatar           String    @default("")
+  role             String    @default("faculty")
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdBy        String?   // Admin or HOD id
+  createdByModel   String?   // 'Admin' | 'HOD'
+  hodId            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model HOD {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String
+  phone            String
+  course           String
+  department       String
+  avatar           String    @default("")
+  role             String    @default("hod")
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdBy        String?   // Admin id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Student {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  phone            String
+  course           String
+  branch           String
+  admissionYear    Int
+  passoutYear      Int
+  password         String
+  avatar           String    @default("")
+  role             String    @default("student")
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  isVerified       Boolean   @default(false)
+  isBlocked        Boolean   @default(false)
+  blockReason      String?
+  blockedBy        String?
+  blockedByModel   String?   // 'Admin' | 'Faculty' | 'HOD'
+  blockedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// Legacy/simple model (kept for completeness)
+model Employee {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  password  String
+  role      String   @default("student")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================ STUDENT PROFILE ============================
+
+model StudentProfile {
+  id                   String   @id @default(uuid())
+  studentId            String   @unique
+
+  // Basic info
+  firstName            String?
+  middleName           String?
+  lastName             String?
+  fullName             String?
+  gender               String?
+  dateOfBirth          String?
+  bloodGroup           String?
+  category             String?
+  religion             String?
+  nationality          String?
+  placeOfDomicile      String?
+
+  // Contact
+  primaryMobile        String?
+  alternativeMobile    String?
+  guardianMobile       String?
+  primaryEmail         String?
+  secondaryEmail       String?
+
+  // Academic
+  course               String?
+  stream               String?
+  universityRoll       String?
+  universityRegistration String?
+  yearOfEntry          String?
+  yearOfPassOut        String?
+  mediumOfInstruction  String?
+
+  // Skills / experience
+  technicalStrength    String?
+  projectTitle         String?
+  organizationName     String?
+  projectDuration      String?
+  seminarsAttended     String?
+  workExperience       String?
+  workOrganization     String?
+  computerLanguages    String[] @default([])
+
+  // Achievements
+  academicAchievements       String?
+  nonAcademicAchievements    String?
+  academicCertifications     String?
+  nonAcademicCertifications  String?
+
+  // Placement
+  finalOffered         String?
+  placedIn             String?
+  offerLetterStatus    String?
+  photoStatus          String?
+  updatedStatus        String?
+  tcsReference         String?
+  codingPlatform       String?
+  codingPlatformId     String?
+
+  // Academic status
+  hasBacklogs          Boolean?
+  numberOfBacklogs     Int?
+  hasYearGap           Boolean?
+  totalYearGap         Int?
+  yearGapDuration      String?
+
+  cvPath               String?
+  completionPercentage Int      @default(0)
+
+  // Embedded groups -> JSONB
+  classX               Json?
+  classXII             Json?
+  diploma              Json?
+  entranceExam         Json?
+  semesterMarks        Json?
+  father               Json?
+  mother               Json?
+  guardian             Json?
+  permanentAddress     Json?
+  presentAddress       Json?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+// ============================ APTITUDE TEST DOMAIN ============================
+
+model AptitudeTest {
+  id             String   @id @default(uuid())
+  title          String
+  description    String?
+  instructions   String?
+  duration       Int
+  totalMarks     Int
+  totalQuestions Int      @default(0)
+  passPercentage Int      @default(40)
+  version        Int      @default(1)
+  isDeleted      Boolean  @default(false)
+  status         String   @default("draft") // draft|published|ongoing|completed|archived
+
+  markingScheme  Json?
+  settings       Json?
+  recipients     Json?
+  schedule       Json?    // { startDate, endDate }
+  sourcePDF      Json?
+  stats          Json?
+  assignedBatches String[] @default([])
+
+  createdBy      String
+  createdByModel String   // 'Admin' | 'HOD'
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdBy])
+}
+
+model TestQuestion {
+  id             String   @id @default(uuid())
+  testId         String
+  questionNumber Int
+  questionText   String
+  questionType   String   @default("single-choice")
+  marks          Int      @default(1)
+  negativeMarks  Int      @default(0)
+  difficultyLevel String  @default("medium")
+  category       String   @default("General")
+  topic          String?
+  explanation    String?
+  isActive       Boolean  @default(true)
+
+  questionImage  Json?
+  options        Json     // array of { optionLabel, optionText, optionImage }
+  correctAnswer  String[] @default([])
+  stats          Json?
+  tags           String[] @default([])
+
+  createdBy      String?
+  createdByModel String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([testId, questionNumber])
+  @@index([testId, isActive])
+}
+
+model TestAttempt {
+  id             String   @id @default(uuid())
+  testId         String
+  studentId      String
+  batchId        String?
+  sessionToken   String   @unique
+  startedAt      DateTime @default(now())
+  submittedAt    DateTime?
+  timeTaken      Float    @default(0)
+  timeRemaining  Float    @default(0)
+  score          Float    @default(0)
+  percentage     Float    @default(0)
+  totalCorrect   Int      @default(0)
+  totalWrong     Int      @default(0)
+  totalSkipped   Int      @default(0)
+  totalAttempted Int      @default(0)
+  passed         Boolean  @default(false)
+  rank           Int?
+  status         String   @default("not-started")
+  submissionType String   @default("manual")
+  lastActivityAt DateTime @default(now())
+  isDeleted      Boolean  @default(false)
+
+  responses         Json?  // array of response objects
+  navigationHistory Json?  // append-only log
+  proctoring        Json?  // tabSwitches/cameraSnapshots/etc
+  reviewStatus      Json?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([testId, studentId])
+  @@index([status])
+  @@index([batchId, testId])
+  @@index([score])
+}
+
+model TestAnalytics {
+  id                String   @id @default(uuid())
+  testId            String   @unique
+  lastCalculated    DateTime @default(now())
+  calculationStatus String   @default("pending")
+  calculationError  String?
+
+  overallStats         Json?
+  scoreStats           Json?
+  scoreDistribution    Json?
+  timeStats            Json?
+  batchPerformance     Json?
+  questionAnalytics    Json?
+  topPerformers        Json?
+  proctoringStats      Json?
+  violationDistribution Json?
+  submissionTimeline   Json?
+  performanceTrends    Json?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model TestBatch {
+  id            String   @id @default(uuid())
+  batchName     String   @unique
+  batchCode     String   @unique
+  description   String?
+  academicYear  String
+  course        String
+  department    String?
+  semester      Int?
+  passoutYear   Int
+  studentCount  Int      @default(0)
+  status        String   @default("active")
+  isDeleted     Boolean  @default(false)
+
+  students              String[] @default([]) // student ids
+  autoEnrollmentCriteria Json?
+  assignedTests         Json?    // array of { testId, assignedAt, customSchedule }
+  settings              Json?
+  stats                 Json?
+
+  createdBy      String
+  createdByModel String
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([passoutYear])
+  @@index([status, isDeleted])
+}
+
+// ============================ AI FEATURES ============================
+
+model MockInterview {
+  id                  String   @id @default(uuid())
+  studentId           String
+  jobRole             String
+  experienceLevel     String   @default("fresher")
+  industry            String?
+  difficulty          String   @default("medium")
+  overallScore        Float?
+  technicalScore      Float?
+  communicationScore  Float?
+  confidenceScore     Float?
+  status              String   @default("in_progress")
+  startedAt           DateTime @default(now())
+  completedAt         DateTime?
+  totalQuestions      Int      @default(5)
+  currentQuestionIndex Int     @default(0)
+  aiModel             String   @default("gemini-2.0-flash-exp")
+
+  questions           Json?    // array of question/answer/scoring objects
+  overallFeedback     Json?
+  resumeData          Json?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([studentId, createdAt])
+  @@index([status])
+}
+
+model ResumeAnalysis {
+  id             String   @id @default(uuid())
+  student        String
+  extractedText  String   @default("")
+  jobDescription String
+  status         String   @default("processing")
+  processingTime Int      @default(0)
+  errorMessage   String?
+
+  resumeFile     Json?    // { filename, originalName, filePath, fileSize, mimeType }
+  analysis       Json?    // { atsScore, missingKeywords, suggestions, optimizedResume }
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([student, createdAt])
+  @@index([status])
+}
+
+// ============================ NOC / NOTIFICATIONS ============================
+
+model NOC {
+  id              String   @id @default(uuid())
+  studentId       String
+  name            String
+  universityRoll  String
+  branch          String
+  course          String
+  personalEmail   String
+  collegeEmail    String
+  passoutYear     Int
+  subject         String
+  applicationText String
+  status          String   @default("sent") // sent|read|reply_soon|completed
+  adminRemarks    String   @default("")
+  processedAt     DateTime?
+  processedBy     String?
+  attachment      Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Notification {
+  id             String   @id @default(uuid())
+  title          String
+  description    String
+  type           String   @default("text") // message|text|form
+  formLink       String?
+  deadline       DateTime?
+  expired        Boolean  @default(false)
+  reminderSent   Boolean  @default(false)
+  extraInfo      String?
+
+  attachment     Json?
+  recipients     Json?    // complex targeting
+  isRead         Json?    // array of { user, userModel, readAt }
+
+  createdBy      String
+  createdByModel String   // 'Admin' | 'Faculty' | 'HOD'
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

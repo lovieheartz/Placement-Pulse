@@ -4,24 +4,33 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Footer from "../components/StudentFooter";
-import Header from "../components/StudentHeader";
-import Sidebar from "../components/StudentSidebar";
+import {
+  Camera,
+  Mail,
+  Phone,
+  User as UserIcon,
+  Sparkles,
+  Pencil,
+  Save,
+  X,
+} from "lucide-react";
+
+import { API_BASE, resolveFileUrl } from "../lib/api";
+import PortalLayout from "@/components/app/PortalLayout";
+import { GlassPanel } from "@/components/ui/surface";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const StudentProfile = () => {
   const token = sessionStorage.getItem("authToken");
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const profileEndpoint = `http://localhost:3001/student/profile`;
-  const avatarEndpoint = `http://localhost:3001/student/upload-avatar`;
+  const profileEndpoint = `${API_BASE}/student/profile`;
+  const avatarEndpoint = `${API_BASE}/student/upload-avatar`;
 
-  const {
-    data: profileData,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const { data: profileData, isLoading, isError, error } = useQuery({
     queryKey: ["profile", "student"],
     queryFn: async () => {
       const res = await axios.get(profileEndpoint, {
@@ -51,7 +60,8 @@ const StudentProfile = () => {
     },
     onError: (err) => {
       toast.error(
-        err.response?.data?.message || "Failed to update profile. Please try again."
+        err.response?.data?.message ||
+          "Failed to update profile. Please try again."
       );
     },
   });
@@ -73,7 +83,8 @@ const StudentProfile = () => {
     },
     onError: (err) => {
       toast.error(
-        err.response?.data?.message || "Failed to upload avatar. Please try again."
+        err.response?.data?.message ||
+          "Failed to upload avatar. Please try again."
       );
     },
   });
@@ -89,155 +100,180 @@ const StudentProfile = () => {
     }
   };
 
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl">Loading profile...</div>
-      </div>
-    );
-
-  if (isError)
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h2 className="text-2xl text-red-600 mb-4">Error: {error.message}</h2>
-        <button
-          onClick={() => queryClient.invalidateQueries(["profile", "student"])}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Try Again
-        </button>
-      </div>
-    );
+  const avatarUrl = profileData?.avatar
+    ? resolveFileUrl(profileData.avatar)
+    : null;
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="main">
-        <Header user={profileData} />
-        <div className="content-container px-3 py-4 w-full mx-auto max-w-full">
-          <div className="bg-white rounded-xl shadow-sm px-6 py-6 w-full">
+    <PortalLayout role="student" title="My Profile" user={profileData}>
+      {isLoading ? (
+        <div className="mx-auto max-w-3xl space-y-4">
+          <Skeleton className="h-52 rounded-2xl" />
+          <Skeleton className="h-72 rounded-2xl" />
+        </div>
+      ) : isError ? (
+        <GlassPanel className="mx-auto max-w-md text-center">
+          <p className="mb-4 text-destructive">Error: {error.message}</p>
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries(["profile", "student"])
+            }
+          >
+            Try Again
+          </Button>
+        </GlassPanel>
+      ) : (
+        <div className="mx-auto max-w-3xl space-y-6">
+          {/* Hero banner */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-700 to-indigo-700 p-6 text-white shadow-lg">
+            <div className="pointer-events-none absolute -right-10 -top-12 size-52 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:items-end">
+              <div className="group relative">
+                <div className="size-28 overflow-hidden rounded-full ring-4 ring-white/30 shadow-xl">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center bg-white/20 text-3xl font-bold">
+                      {(profileData?.name || "S").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <label
+                  htmlFor="avatarUpload"
+                  className="absolute bottom-1 right-1 flex size-8 cursor-pointer items-center justify-center rounded-full bg-white text-blue-700 shadow-md ring-2 ring-blue-700 transition-transform hover:scale-110"
+                  title="Upload avatar"
+                >
+                  <Camera className="size-4" />
+                </label>
+                <input
+                  type="file"
+                  id="avatarUpload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
 
-            {/* Avatar Centered */}
-            <div className="flex justify-center mb-6">
-              <Avatar avatar={profileData.avatar} />
+              <div className="flex-1 text-center sm:pb-2 sm:text-left">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                  <Sparkles className="size-3.5" /> Student
+                </span>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {profileData?.name || "Student"}
+                </h2>
+                <p className="text-sm text-blue-100">{profileData?.email}</p>
+              </div>
+
+              <div className="sm:pb-2">
+                {!isEditing ? (
+                  <Button
+                    variant="secondary"
+                    className="bg-white text-blue-700 hover:bg-white/90"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Pencil className="size-4" /> Edit Profile
+                  </Button>
+                ) : (
+                  <Badge variant="warning" className="text-sm">
+                    Editing…
+                  </Badge>
+                )}
+              </div>
             </div>
+            {uploadAvatarMutation.isLoading && (
+              <p className="relative mt-3 text-center text-xs text-blue-100 sm:text-left">
+                Uploading avatar…
+              </p>
+            )}
+          </div>
 
-            {/* Avatar Upload */}
-            <div className="flex justify-center mb-6">
-              <label
-                htmlFor="avatarUpload"
-                className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-sm"
-              >
-                {uploadAvatarMutation.isLoading ? "Uploading..." : "Upload Avatar"}
-              </label>
-              <input
-                type="file"
-                id="avatarUpload"
-                className="hidden"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-              />
-            </div>
-
-            {/* Form */}
+          {/* Details form */}
+          <GlassPanel>
             <form
-              className="flex flex-col gap-4 max-w-md mx-auto"
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2"
               onSubmit={handleSubmit(onSubmit)}
             >
-              <InputField
+              <Field
+                icon={UserIcon}
                 label="Name"
                 register={register("name")}
                 disabled={!isEditing}
               />
-              <InputField
+              <Field
+                icon={Mail}
                 label="Email"
                 register={register("email")}
                 disabled={!isEditing}
               />
               {profileData?.phone && (
-                <InputField
+                <Field
+                  icon={Phone}
                   label="Phone"
                   register={register("phone")}
                   disabled={!isEditing}
                 />
               )}
               {profileData?.specialization && (
-                <InputField
+                <Field
+                  icon={Sparkles}
                   label="Specialization"
                   register={register("specialization")}
                   disabled={!isEditing}
                 />
               )}
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-between gap-2 mt-4">
-                {!isEditing ? (
-                  <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsEditing(true);
-                    }}
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <button
+              {isEditing && (
+                <div className="col-span-full mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <Button
                     type="button"
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 w-full sm:w-auto"
+                    variant="outline"
                     onClick={() => {
                       reset(profileData);
                       setIsEditing(false);
                     }}
                   >
-                    Cancel
-                  </button>
-                )}
-
-                {isEditing && (
-                  <button
+                    <X className="size-4" /> Cancel
+                  </Button>
+                  <Button
                     type="submit"
+                    variant="success"
                     disabled={updateProfileMutation.isLoading}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 w-full sm:w-auto"
                   >
-                    {updateProfileMutation.isLoading ? "Saving..." : "Save Changes"}
-                  </button>
-                )}
-              </div>
+                    <Save className="size-4" />
+                    {updateProfileMutation.isLoading
+                      ? "Saving…"
+                      : "Save Changes"}
+                  </Button>
+                </div>
+              )}
             </form>
-          </div>
+          </GlassPanel>
         </div>
-        <Footer />
-      </div>
-    </div>
+      )}
+    </PortalLayout>
   );
 };
 
 export default StudentProfile;
 
-const Avatar = ({ avatar }) => (
-  <div className="w-24 h-24 rounded-full overflow-hidden border border-gray-300">
-    <img
-      src={
-        avatar
-          ? `http://localhost:3001${avatar}`
-          : "https://via.placeholder.com/150"
-      }
-      alt="Avatar"
-      className="w-full h-full object-cover"
-    />
-  </div>
-);
-
-const InputField = ({ label, register, disabled }) => (
+const Field = ({ icon: Icon, label, register, disabled }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700">{label}</label>
-    <input
-      {...register}
-      disabled={disabled}
-      className={`w-full border px-3 py-2 rounded ${
-        disabled ? "bg-gray-100" : "bg-white"
-      }`}
-    />
+    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {label}
+    </label>
+    <div className="relative">
+      <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        {...register}
+        disabled={disabled}
+        className={`w-full rounded-lg border border-input py-2.5 pl-9 pr-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          disabled ? "bg-muted/50 text-foreground/80" : "bg-card text-foreground"
+        }`}
+      />
+    </div>
   </div>
 );

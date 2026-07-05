@@ -4,9 +4,8 @@ const { login, me, registerStudent, verifyOTP, resendOTP, generateOTP, verifyAcc
 const { authenticateToken } = require("../middleware/auth");
 const { sendOTPEmail } = require("../services/mailService");
 const upload = require("../middleware/upload_multer");
-const Student = require("../models/Student");
-const Admin = require("../models/Admin");
-const Faculty = require("../models/Faculty");
+const storageService = require("../services/storageService");
+const prisma = require("../lib/prisma");
 const path = require("path");
 
 router.post("/login", login);
@@ -50,19 +49,31 @@ router.post("/upload-avatar", authenticateToken, upload.single('avatar'), async 
     }
 
     const { role, id } = req.user;
-    const avatarPath = `/uploads/${path.basename(path.dirname(req.file.path))}/${req.file.filename}`;
+
+    // Pick the Supabase Storage folder based on role
+    const folderByRole = {
+      student: storageService.FOLDERS.AVATAR_STUDENT,
+      faculty: storageService.FOLDERS.AVATAR_FACULTY,
+      admin: storageService.FOLDERS.AVATAR_ADMIN,
+    };
+    const folder = folderByRole[role];
+    if (!folder) {
+      return res.status(400).json({ message: 'Invalid user role' });
+    }
+
+    const { publicUrl: avatarPath } = await storageService.uploadMulterFile(req.file, folder);
 
     // Update user avatar based on role
     let user;
     switch (role) {
       case 'student':
-        user = await Student.findByIdAndUpdate(id, { avatar: avatarPath }, { new: true });
+        user = await prisma.student.update({ where: { id }, data: { avatar: avatarPath } });
         break;
       case 'faculty':
-        user = await Faculty.findByIdAndUpdate(id, { avatar: avatarPath }, { new: true });
+        user = await prisma.faculty.update({ where: { id }, data: { avatar: avatarPath } });
         break;
       case 'admin':
-        user = await Admin.findByIdAndUpdate(id, { avatar: avatarPath }, { new: true });
+        user = await prisma.admin.update({ where: { id }, data: { avatar: avatarPath } });
         break;
       default:
         return res.status(400).json({ message: 'Invalid user role' });
@@ -76,7 +87,7 @@ router.post("/upload-avatar", authenticateToken, upload.single('avatar'), async 
       message: 'Avatar uploaded successfully',
       avatar: avatarPath,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         avatar: user.avatar,
@@ -95,21 +106,20 @@ router.get("/check-verification/:email", async (req, res) => {
     const email = req.params.email;
     console.log(`Checking verification status for: ${email}`);
     
-    const student = await Student.findOne({ email });
+    let student = await prisma.student.findUnique({ where: { email } });
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
-    
+
     console.log(`Current verification status: ${student.isVerified}`);
-    
+
     // Force set verification to true if needed
     if (!student.isVerified) {
-      student.isVerified = true;
-      await student.save();
+      student = await prisma.student.update({ where: { id: student.id }, data: { isVerified: true } });
       console.log(`Fixed verification status for ${email}`);
     }
-    
-    res.json({ 
+
+    res.json({
       email: student.email,
       isVerified: student.isVerified,
       message: "Verification status checked and fixed if needed"
@@ -133,7 +143,7 @@ router.post("/send-otp", async (req, res) => {
     }
     
     // Check if student already exists
-    const existingStudent = await Student.findOne({ email });
+    const existingStudent = await prisma.student.findUnique({ where: { email } });
     if (existingStudent && existingStudent.isVerified) {
       return res.status(400).json({ message: 'Email is already registered and verified. Please login.' });
     }

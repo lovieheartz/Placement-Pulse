@@ -1,29 +1,47 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { UserCog } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { courseOptions, courseToDepartments } from '../constants/departments';
 import './Dashboard.css';
 
 const EditFaculty = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, logout } = useContext(AuthContext);
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const { user } = useContext(AuthContext);
   const [avatar, setAvatar] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState('');
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { isSubmitting, errors },
   } = useForm();
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
+  const course = watch('course');
+
+  const {
+    data: profileData,
+  } = useQuery({
+    queryKey: ['adminProfile'],
+    queryFn: async () => {
+      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
+      });
+      return data.data;
+    },
+    enabled: !!user,
+  });
 
   useEffect(() => {
     const fetchFaculty = async () => {
@@ -31,6 +49,10 @@ const EditFaculty = () => {
         const { data } = await axios.get(`http://localhost:3001/faculty/${id}`);
         if (data.success && data.data) {
           reset(data.data);
+          // Set the selectedCourse state when data is loaded
+          if (data.data.course) {
+            setSelectedCourse(data.data.course);
+          }
         } else {
           toast.error('Invalid faculty data');
         }
@@ -41,8 +63,20 @@ const EditFaculty = () => {
     fetchFaculty();
   }, [id, reset]);
 
+  // Update selectedCourse when course changes
+  useEffect(() => {
+    if (course) {
+      setSelectedCourse(course);
+    }
+  }, [course]);
+
   const handleAvatarChange = (e) => {
     setAvatar(e.target.files[0]);
+  };
+
+  const handleCourseChange = (e) => {
+    setSelectedCourse(e.target.value);
+    setValue('department', ''); // Reset department when course changes
   };
 
   const onSubmit = async (formData) => {
@@ -69,32 +103,23 @@ const EditFaculty = () => {
 
   if (!user) {
     return (
-      <div style={styles.container}>
-        <h1 style={styles.heading}>You are not logged in</h1>
-        <p style={styles.subheading}>Please login to access your dashboard.</p>
+      <div className="flex h-screen flex-col items-center justify-center bg-background p-5 text-center">
+        <h1 className="mb-2 text-3xl font-bold text-foreground">You are not logged in</h1>
+        <p className="text-lg text-muted-foreground">Please login to access your dashboard.</p>
       </div>
     );
   }
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="main">
-        <Header
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={() => {
-            logout();
-            navigate('/login', { replace: true });
-          }}
-          navigate={navigate}
+    <PortalLayout role="admin" title="Edit Faculty" user={profileData || user}>
+      <div className="mx-auto max-w-2xl">
+        <PageHeader
+          title="Edit Faculty"
+          subtitle="Update this faculty member's details"
+          icon={UserCog}
         />
-
-        <div className="form-container">
-          <div className="form-wrapper">
-            <h2 className="form-heading">Edit Faculty</h2>
-
+        <GlassPanel>
+        <div className="form-wrapper">
             <form onSubmit={handleSubmit(onSubmit)} className="faculty-form" encType="multipart/form-data">
               <div className="form-group">
                 <input
@@ -124,16 +149,45 @@ const EditFaculty = () => {
               </div>
 
               <div className="form-group">
-                <input
-                  type="text"
-                  placeholder="Specialization"
-                  {...register('specialization', { required: 'Specialization is required' })}
-                />
-                {errors.specialization && <p className="error-text">{errors.specialization.message}</p>}
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Course *
+                </label>
+                <select
+                  {...register('course', { required: 'Course is required' })}
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onChange={handleCourseChange}
+                >
+                  <option value="">Select Course</option>
+                  {Object.keys(courseOptions).map((courseKey) => (
+                    <option key={courseKey} value={courseKey}>
+                      {courseKey}
+                    </option>
+                  ))}
+                </select>
+                {errors.course && <p className="error-text">{errors.course.message}</p>}
               </div>
 
               <div className="form-group">
-                <label htmlFor="avatar" className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Department *
+                </label>
+                <select
+                  {...register('department', { required: 'Department is required' })}
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!selectedCourse}
+                >
+                  <option value="">Select Department</option>
+                  {selectedCourse && courseToDepartments[selectedCourse]?.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
+                {errors.department && <p className="error-text">{errors.department.message}</p>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="avatar" className="block text-sm font-medium text-foreground">
                   Upload New Profile Image (optional)
                 </label>
                 <input
@@ -147,49 +201,23 @@ const EditFaculty = () => {
               </div>
 
               <div className="flex justify-between">
-                <button
+                <Button
                   onClick={() => navigate('/admin/faculty')}
-                  className="text-blue-600 hover:text-blue-800 px-4 py-2"
+                  variant="outline"
                   type="button"
                 >
                   ← Back to Faculty List
-                </button>
-                <button type="submit" className="submit-button" disabled={isSubmitting}>
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? 'Updating...' : 'Update Faculty'}
-                </button>
+                </Button>
               </div>
             </form>
-          </div>
         </div>
-
-        <Footer />
+        </GlassPanel>
       </div>
-    </div>
+    </PortalLayout>
   );
-};
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    backgroundColor: '#f0f4f8',
-    padding: '20px',
-  },
-  heading: {
-    fontSize: '32px',
-    color: '#333',
-    marginBottom: '10px',
-    textAlign: 'center',
-  },
-  subheading: {
-    fontSize: '18px',
-    color: '#666',
-    marginBottom: '30px',
-    textAlign: 'center',
-  },
 };
 
 export default EditFaculty;

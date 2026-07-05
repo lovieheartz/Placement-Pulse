@@ -1,28 +1,31 @@
 const cron = require('node-cron');
-const Notification = require('../models/Notification');
-const mongoose = require('mongoose');
+const prisma = require('../lib/prisma');
 
 // Function to check and expire notifications past their deadline
 const expireNotifications = async () => {
   try {
     console.log('Running notification expiration job...');
-    
+
     const now = new Date();
-    
+
     // Find notifications with deadlines in the past
-    const expiredNotifications = await Notification.find({
-      deadline: { $lt: now },
-      expired: { $ne: true }
+    const expiredNotifications = await prisma.notification.findMany({
+      where: {
+        deadline: { lt: now },
+        expired: { not: true }
+      }
     });
-    
+
     if (expiredNotifications.length > 0) {
       console.log(`Found ${expiredNotifications.length} expired notifications`);
-      
+
       // Mark notifications as expired
       for (const notification of expiredNotifications) {
-        notification.expired = true;
-        await notification.save();
-        console.log(`Marked notification ${notification._id} as expired`);
+        await prisma.notification.update({
+          where: { id: notification.id },
+          data: { expired: true }
+        });
+        console.log(`Marked notification ${notification.id} as expired`);
       }
     } else {
       console.log('No expired notifications found');

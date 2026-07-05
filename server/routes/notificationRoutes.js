@@ -3,24 +3,9 @@ const router = express.Router();
 const notificationController = require('../controllers/notificationController');
 const { authenticateToken: authenticateUser, authorizeRoles } = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// Set up storage for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/notifications');
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
-});
+// Attachments are held in memory, then uploaded to Supabase Storage by the controller.
+const storage = multer.memoryStorage();
 
 // File filter to limit file types and size
 const fileFilter = (req, file, cb) => {
@@ -46,14 +31,12 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Log middleware configuration
-console.log('Multer configured for file uploads with destination:', path.join(__dirname, '../uploads/notifications'));
 
-// Create notification - only admin and faculty can create
+// Create notification - admin, faculty, and hod can create
 router.post(
   '/create',
   authenticateUser,
-  authorizeRoles('admin', 'faculty'),
+  authorizeRoles('admin', 'faculty', 'hod'),
   upload.single('attachment'),
   notificationController.createNotification
 );
@@ -77,6 +60,14 @@ router.get(
   '/unread-count',
   authenticateUser,
   notificationController.getUnreadCount
+);
+
+// Get notification history (admin and hod only)
+router.get(
+  '/history',
+  authenticateUser,
+  authorizeRoles('admin', 'hod'),
+  notificationController.getNotificationHistory
 );
 
 module.exports = router;

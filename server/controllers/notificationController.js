@@ -1,21 +1,24 @@
-const Notification = require('../models/Notification');
-const Student = require('../models/Student');
-const Admin = require('../models/Admin');
-const Faculty = require('../models/Faculty');
+const prisma = require('../lib/prisma');
 const mailService = require('../services/mailService');
+const storageService = require('../services/storageService');
 
 // Create a new notification
 exports.createNotification = async (req, res) => {
   try {
-    console.log('Creating notification with data:', { 
+    console.log('Creating notification with data:', {
       title: req.body.title,
       type: req.body.type,
       hasFile: !!req.file
     });
-    
+
+    console.log('📧 Raw recipients from request:', req.body.recipients);
+    console.log('📧 Recipients type:', typeof req.body.recipients);
+
     // Parse recipients if it's a string (from FormData)
     if (req.body.recipients && typeof req.body.recipients === 'string') {
+      console.log('📧 Parsing recipients string...');
       req.body.recipients = JSON.parse(req.body.recipients);
+      console.log('📧 Parsed recipients:', JSON.stringify(req.body.recipients, null, 2));
     }
     
     const {
@@ -29,10 +32,10 @@ exports.createNotification = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !description || !deadline) {
+    if (!title || !description) {
       return res.status(400).json({
         success: false,
-        message: 'Title, description, and deadline are required fields'
+        message: 'Title and description are required fields'
       });
     }
 
@@ -57,27 +60,33 @@ exports.createNotification = async (req, res) => {
       createdByModel: req.user.role === 'admin' ? 'Admin' : 'Faculty'
     };
 
-    // Add attachment if file was uploaded
+    // Upload attachment to Supabase Storage if a file was provided
     if (req.file) {
-      console.log('File uploaded:', {
-        filename: req.file.originalname,
-        path: req.file.path,
-        mimetype: req.file.mimetype,
-        size: req.file.size
-      });
-      
+      const uploaded = await storageService.uploadMulterFile(
+        req.file,
+        storageService.FOLDERS.NOTIFICATION
+      );
+      console.log('File uploaded to Supabase Storage:', uploaded.publicUrl);
+
       notificationData.attachment = {
         filename: req.file.originalname,
-        path: req.file.path,
+        path: uploaded.publicUrl,
         mimetype: req.file.mimetype,
         size: req.file.size
       };
     }
 
-    // Create notification
-    const notification = new Notification(notificationData);
+    // Determine the creator model based on role
+    if (req.user.role === 'admin') {
+      notificationData.createdByModel = 'Admin';
+    } else if (req.user.role === 'faculty') {
+      notificationData.createdByModel = 'Faculty';
+    } else if (req.user.role === 'hod') {
+      notificationData.createdByModel = 'HOD';
+    }
 
-    await notification.save();
+    // Create notification
+    const notification = await prisma.notification.create({ data: notificationData });
 
     // Send emails based on recipient filters
     try {
@@ -110,89 +119,86 @@ exports.createNotification = async (req, res) => {
   }
 };
 
+// Helper: does a notification's recipients JSON target this user?
+function matchesRecipient(recipients, role, user) {
+  if (!recipients) return false;
+
+  if (role === 'student') {
+    const r = recipients.students;
+    if (!r) return false;
+    return !!r.all
+      || (Array.isArray(r.courses) && r.courses.includes(user.course))
+      || (Array.isArray(r.branches) && r.branches.includes(user.branch))
+      || (Array.isArray(r.passoutYears) && r.passoutYears.includes(user.passoutYear));
+  }
+  if (role === 'faculty') {
+    const r = recipients.faculty;
+    if (!r) return false;
+    return !!r.all
+      || (Array.isArray(r.courses) && r.courses.includes(user.course))
+      || (Array.isArray(r.departments) && r.departments.includes(user.department));
+  }
+  if (role === 'admin') {
+    const r = recipients.admins;
+    if (!r) return false;
+    return !!r.all
+      || (Array.isArray(r.names) && r.names.includes(user.name));
+  }
+  if (role === 'hod') {
+    const r = recipients.hods;
+    if (!r) return false;
+    return !!r.all
+      || (Array.isArray(r.courses) && r.courses.includes(user.course))
+      || (Array.isArray(r.departments) && r.departments.includes(user.department));
+  }
+  return false;
+}
+
+// Fetch non-expired notifications targeting the given user (recipients is JSON,
+// so we filter the targeting in JS while keeping DB filtering for expiry/order).
+async function getNotificationsForUser(role, id) {
+  let user = null;
+  if (role === 'student') user = await prisma.student.findUnique({ where: { id } });
+  else if (role === 'faculty') user = await prisma.faculty.findUnique({ where: { id } });
+  else if (role === 'admin') user = await prisma.admin.findUnique({ where: { id } });
+  else if (role === 'hod') user = await prisma.hOD.findUnique({ where: { id } });
+
+  if (!user) return { user: null, notifications: [] };
+
+  const candidates = await prisma.notification.findMany({
+    where: { expired: false },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const notifications = candidates.filter(n => matchesRecipient(n.recipients, role, user));
+  return { user, notifications };
+}
+
 // Get all notifications for a user
 exports.getUserNotifications = async (req, res) => {
   try {
     const { role, id } = req.user;
-    let notifications = [];
-    
-    if (role === 'student') {
-      const student = await Student.findById(id);
-      if (!student) {
-        return res.status(404).json({
-          success: false,
-          message: 'Student not found'
-        });
-      }
-      
-      // Find notifications for this student based on filters (excluding expired ones)
-      notifications = await Notification.find({
-        $and: [
-          {
-            $or: [
-              { 'recipients.students.all': true },
-              { 'recipients.students.courses': student.course },
-              { 'recipients.students.branches': student.branch },
-              { 'recipients.students.passoutYears': student.passoutYear }
-            ]
-          },
-          { $or: [{ expired: false }, { expired: { $exists: false } }] }
-        ]
-      }).sort({ createdAt: -1 });
-    } 
-    else if (role === 'faculty') {
-      const faculty = await Faculty.findById(id);
-      if (!faculty) {
-        return res.status(404).json({
-          success: false,
-          message: 'Faculty not found'
-        });
-      }
-      
-      // Find notifications for this faculty based on filters (excluding expired ones)
-      notifications = await Notification.find({
-        $and: [
-          {
-            $or: [
-              { 'recipients.faculty.all': true },
-              { 'recipients.faculty.specializations': faculty.specialization }
-            ]
-          },
-          { $or: [{ expired: false }, { expired: { $exists: false } }] }
-        ]
-      }).sort({ createdAt: -1 });
-    }
-    else if (role === 'admin') {
-      const admin = await Admin.findById(id);
-      if (!admin) {
-        return res.status(404).json({
-          success: false,
-          message: 'Admin not found'
-        });
-      }
-      
-      // Find notifications for this admin based on filters (excluding expired ones)
-      notifications = await Notification.find({
-        $and: [
-          {
-            $or: [
-              { 'recipients.admins.all': true },
-              { 'recipients.admins.names': admin.name }
-            ]
-          },
-          { $or: [{ expired: false }, { expired: { $exists: false } }] }
-        ]
-      }).sort({ createdAt: -1 });
+
+    const { user, notifications } = await getNotificationsForUser(role, id);
+
+    if (!user) {
+      const label = role.charAt(0).toUpperCase() + role.slice(1);
+      return res.status(404).json({
+        success: false,
+        message: `${label} not found`
+      });
     }
 
     // Mark which notifications have been read by this user
+    const userModel = role.charAt(0).toUpperCase() + role.slice(1);
     const processedNotifications = notifications.map(notification => {
-      const readStatus = notification.isRead.find(
-        item => item.user.toString() === id && item.userModel === role.charAt(0).toUpperCase() + role.slice(1)
+      const isRead = Array.isArray(notification.isRead) ? notification.isRead : [];
+      const readStatus = isRead.find(
+        item => String(item.user) === String(id) && item.userModel === userModel
       );
-      
+
       return {
-        ...notification._doc,
+        ...notification,
         isReadByUser: !!readStatus,
         readAt: readStatus ? readStatus.readAt : null
       };
@@ -219,28 +225,37 @@ exports.markNotificationAsRead = async (req, res) => {
     const { notificationId } = req.params;
     const { role, id } = req.user;
     
-    const notification = await Notification.findById(notificationId);
-    
+    const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
+
     if (!notification) {
       return res.status(404).json({
         success: false,
         message: 'Notification not found'
       });
     }
-    
+
+    const userModel = role.charAt(0).toUpperCase() + role.slice(1);
+    const isRead = Array.isArray(notification.isRead) ? notification.isRead : [];
+
     // Check if already marked as read
-    const alreadyRead = notification.isRead.some(
-      item => item.user.toString() === id && item.userModel === role.charAt(0).toUpperCase() + role.slice(1)
+    const alreadyRead = isRead.some(
+      item => String(item.user) === String(id) && item.userModel === userModel
     );
-    
+
     if (!alreadyRead) {
-      notification.isRead.push({
-        user: id,
-        userModel: role.charAt(0).toUpperCase() + role.slice(1),
-        readAt: new Date()
+      const newIsRead = [
+        ...isRead,
+        {
+          user: id,
+          userModel,
+          readAt: new Date()
+        }
+      ];
+
+      await prisma.notification.update({
+        where: { id: notificationId },
+        data: { isRead: newIsRead }
       });
-      
-      await notification.save();
     }
     
     res.status(200).json({
@@ -261,80 +276,25 @@ exports.markNotificationAsRead = async (req, res) => {
 exports.getUnreadCount = async (req, res) => {
   try {
     const { role, id } = req.user;
-    let notifications = [];
-    
-    if (role === 'student') {
-      const student = await Student.findById(id);
-      if (!student) {
-        return res.status(404).json({
-          success: false,
-          message: 'Student not found'
-        });
-      }
-      
-      notifications = await Notification.find({
-        $and: [
-          {
-            $or: [
-              { 'recipients.students.all': true },
-              { 'recipients.students.courses': student.course },
-              { 'recipients.students.branches': student.branch },
-              { 'recipients.students.passoutYears': student.passoutYear }
-            ]
-          },
-          { $or: [{ expired: false }, { expired: { $exists: false } }] }
-        ]
-      });
-    } 
-    else if (role === 'faculty') {
-      const faculty = await Faculty.findById(id);
-      if (!faculty) {
-        return res.status(404).json({
-          success: false,
-          message: 'Faculty not found'
-        });
-      }
-      
-      notifications = await Notification.find({
-        $and: [
-          {
-            $or: [
-              { 'recipients.faculty.all': true },
-              { 'recipients.faculty.specializations': faculty.specialization }
-            ]
-          },
-          { $or: [{ expired: false }, { expired: { $exists: false } }] }
-        ]
-      });
-    }
-    else if (role === 'admin') {
-      const admin = await Admin.findById(id);
-      if (!admin) {
-        return res.status(404).json({
-          success: false,
-          message: 'Admin not found'
-        });
-      }
-      
-      notifications = await Notification.find({
-        $and: [
-          {
-            $or: [
-              { 'recipients.admins.all': true },
-              { 'recipients.admins.names': admin.name }
-            ]
-          },
-          { $or: [{ expired: false }, { expired: { $exists: false } }] }
-        ]
+
+    const { user, notifications } = await getNotificationsForUser(role, id);
+
+    if (!user) {
+      const label = role.charAt(0).toUpperCase() + role.slice(1);
+      return res.status(404).json({
+        success: false,
+        message: `${label} not found`
       });
     }
 
     // Count unread notifications
-    const unreadCount = notifications.filter(notification => 
-      !notification.isRead.some(
-        item => item.user.toString() === id && item.userModel === role.charAt(0).toUpperCase() + role.slice(1)
-      )
-    ).length;
+    const userModel = role.charAt(0).toUpperCase() + role.slice(1);
+    const unreadCount = notifications.filter(notification => {
+      const isRead = Array.isArray(notification.isRead) ? notification.isRead : [];
+      return !isRead.some(
+        item => String(item.user) === String(id) && item.userModel === userModel
+      );
+    }).length;
 
     res.status(200).json({
       success: true,
@@ -350,80 +310,340 @@ exports.getUnreadCount = async (req, res) => {
   }
 };
 
+// Get notification history (for admins and HODs to see sent notifications)
+exports.getNotificationHistory = async (req, res) => {
+  try {
+    const { role, id } = req.user;
+    const { search, type, dateFrom, dateTo, page = 1, limit = 20 } = req.query;
+
+    // Only allow admins and HODs to view notification history
+    if (role !== 'admin' && role !== 'hod') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only admins and HODs can view notification history.'
+      });
+    }
+
+    // Build query
+    const query = {};
+
+    // Filter by creator for HODs (they can only see their own notifications)
+    if (role === 'hod') {
+      query.createdBy = id;
+      query.createdByModel = 'HOD';
+    }
+
+    // Search by title or description
+    if (search) {
+      query.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    // Filter by type
+    if (type && type !== 'all') {
+      query.type = type;
+    }
+
+    // Filter by date range
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        query.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        query.createdAt.lte = new Date(dateTo);
+      }
+    }
+
+    // Get total count for pagination
+    const total = await prisma.notification.count({ where: query });
+
+    // Get notifications with pagination
+    const notifications = await prisma.notification.findMany({
+      where: query,
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit, 10),
+      skip: (parseInt(page, 10) - 1) * parseInt(limit, 10)
+    });
+
+    // Manually resolve the polymorphic createdBy reference (name/email)
+    const creatorIds = [...new Set(notifications.map(n => n.createdBy).filter(Boolean))];
+    if (creatorIds.length > 0) {
+      const [admins, faculties, hods] = await Promise.all([
+        prisma.admin.findMany({ where: { id: { in: creatorIds } }, select: { id: true, name: true, email: true } }),
+        prisma.faculty.findMany({ where: { id: { in: creatorIds } }, select: { id: true, name: true, email: true } }),
+        prisma.hOD.findMany({ where: { id: { in: creatorIds } }, select: { id: true, name: true, email: true } })
+      ]);
+      const creatorMap = new Map();
+      [...admins, ...faculties, ...hods].forEach(c => creatorMap.set(c.id, c));
+      notifications.forEach(n => {
+        if (n.createdBy && creatorMap.has(n.createdBy)) {
+          n.createdBy = creatorMap.get(n.createdBy);
+        }
+      });
+    }
+
+    // Calculate recipient counts for each notification
+    const notificationsWithCounts = await Promise.all(
+      notifications.map(async (notification) => {
+        let recipientCount = 0;
+        const recipients = notification.recipients;
+
+        // Count students
+        if (recipients.students && recipients.students.all) {
+          recipientCount += await prisma.student.count();
+        } else if (recipients.students) {
+          const filters = [];
+
+          if (recipients.students.courses && recipients.students.courses.length > 0) {
+            filters.push({ course: { in: recipients.students.courses } });
+          }
+          if (recipients.students.branches && recipients.students.branches.length > 0) {
+            filters.push({ branch: { in: recipients.students.branches } });
+          }
+          if (recipients.students.passoutYears && recipients.students.passoutYears.length > 0) {
+            filters.push({ passoutYear: { in: recipients.students.passoutYears } });
+          }
+
+          if (filters.length > 0) {
+            recipientCount += await prisma.student.count({ where: { AND: filters } });
+          }
+        }
+
+        // Count faculty
+        if (recipients.faculty && recipients.faculty.all) {
+          recipientCount += await prisma.faculty.count();
+        } else if (recipients.faculty) {
+          const filters = [];
+
+          if (recipients.faculty.courses && recipients.faculty.courses.length > 0) {
+            filters.push({ course: { in: recipients.faculty.courses } });
+          }
+          if (recipients.faculty.departments && recipients.faculty.departments.length > 0) {
+            filters.push({ department: { in: recipients.faculty.departments } });
+          }
+
+          if (filters.length > 0) {
+            recipientCount += await prisma.faculty.count({ where: { AND: filters } });
+          }
+        }
+
+        // Count admins
+        if (recipients.admins && recipients.admins.all) {
+          recipientCount += await prisma.admin.count();
+        } else if (recipients.admins && recipients.admins.names && recipients.admins.names.length > 0) {
+          recipientCount += await prisma.admin.count({ where: { name: { in: recipients.admins.names } } });
+        }
+
+        // Count HODs
+        if (recipients.hods && recipients.hods.all) {
+          recipientCount += await prisma.hOD.count();
+        } else if (recipients.hods) {
+          const filters = [];
+
+          if (recipients.hods.courses && recipients.hods.courses.length > 0) {
+            filters.push({ course: { in: recipients.hods.courses } });
+          }
+          if (recipients.hods.departments && recipients.hods.departments.length > 0) {
+            filters.push({ department: { in: recipients.hods.departments } });
+          }
+
+          if (filters.length > 0) {
+            recipientCount += await prisma.hOD.count({ where: { AND: filters } });
+          }
+        }
+
+        // Count direct emails
+        if (recipients.emails && recipients.emails.length > 0) {
+          recipientCount += recipients.emails.length;
+        }
+
+        return {
+          ...notification,
+          recipientCount,
+          readCount: Array.isArray(notification.isRead) ? notification.isRead.length : 0
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: notificationsWithCounts,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit),
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching notification history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notification history',
+      error: error.message
+    });
+  }
+};
+
 // Helper function to send notification emails
 async function sendNotificationEmails(notification) {
   try {
     const recipients = notification.recipients;
     let emailList = [];
-    
-    // Get student emails
-    if (recipients.students) {
+
+    console.log('📧 Starting email collection for notification:', notification.title);
+    console.log('Recipients object:', JSON.stringify(recipients, null, 2));
+
+    // Get student emails - only if actually selected
+    if (recipients.students && (recipients.students.all ||
+        (recipients.students.courses && recipients.students.courses.length > 0) ||
+        (recipients.students.branches && recipients.students.branches.length > 0) ||
+        (recipients.students.passoutYears && recipients.students.passoutYears.length > 0))) {
+      console.log('👨‍🎓 Processing student recipients...');
       let studentQuery = {};
-      
+
       if (!recipients.students.all) {
         const filters = [];
-        
+
         if (recipients.students.courses && recipients.students.courses.length > 0) {
-          filters.push({ course: { $in: recipients.students.courses } });
+          filters.push({ course: { in: recipients.students.courses } });
+          console.log('   - Courses filter:', recipients.students.courses);
         }
-        
+
         if (recipients.students.branches && recipients.students.branches.length > 0) {
-          filters.push({ branch: { $in: recipients.students.branches } });
+          filters.push({ branch: { in: recipients.students.branches } });
+          console.log('   - Branches filter:', recipients.students.branches);
         }
-        
+
         if (recipients.students.passoutYears && recipients.students.passoutYears.length > 0) {
-          filters.push({ passoutYear: { $in: recipients.students.passoutYears } });
+          filters.push({ passoutYear: { in: recipients.students.passoutYears } });
+          console.log('   - Passout years filter:', recipients.students.passoutYears);
         }
-        
+
         if (filters.length > 0) {
-          studentQuery = { $and: filters };
+          studentQuery = { AND: filters };
+        } else {
+          console.log('   ⚠️ Student filters exist but are empty - skipping students');
         }
+      } else {
+        console.log('   - Fetching ALL students');
       }
-      
-      const students = await Student.find(studentQuery).select('email');
-      emailList = [...emailList, ...students.map(s => s.email)];
+
+      if (recipients.students.all || Object.keys(studentQuery).length > 0) {
+        const students = await prisma.student.findMany({ where: studentQuery, select: { email: true } });
+        console.log(`   ✅ Found ${students.length} students`);
+        emailList = [...emailList, ...students.map(s => s.email)];
+      }
+    } else if (recipients.students) {
+      console.log('   ⚠️ Students recipient object exists but nothing selected - skipping');
     }
     
     // Get faculty emails
     if (recipients.faculty) {
+      console.log('👨‍🏫 Processing faculty recipients...');
       if (recipients.faculty.all) {
-        const faculty = await Faculty.find().select('email');
+        console.log('   - Fetching ALL faculty');
+        const faculty = await prisma.faculty.findMany({ select: { email: true } });
+        console.log(`   ✅ Found ${faculty.length} faculty members`);
         emailList = [...emailList, ...faculty.map(f => f.email)];
       } else {
-        let facultyQuery = {};
         const filters = [];
-        
-        if (recipients.faculty.specializations && recipients.faculty.specializations.length > 0) {
-          filters.push({ specialization: { $in: recipients.faculty.specializations } });
+
+        if (recipients.faculty.courses && recipients.faculty.courses.length > 0) {
+          filters.push({ course: { in: recipients.faculty.courses } });
+          console.log('   - Courses filter:', recipients.faculty.courses);
         }
-        
+
+        if (recipients.faculty.departments && recipients.faculty.departments.length > 0) {
+          filters.push({ department: { in: recipients.faculty.departments } });
+          console.log('   - Departments filter:', recipients.faculty.departments);
+        }
+
         if (filters.length > 0) {
-          facultyQuery = { $or: filters };
-          const faculty = await Faculty.find(facultyQuery).select('email');
+          const faculty = await prisma.faculty.findMany({ where: { AND: filters }, select: { email: true } });
+          console.log(`   ✅ Found ${faculty.length} faculty members`);
           emailList = [...emailList, ...faculty.map(f => f.email)];
+        } else {
+          console.log('   ⚠️ No filters specified for faculty');
         }
       }
     }
     
     // Get admin emails
     if (recipients.admins) {
+      console.log('👨‍💼 Processing admin recipients...');
       if (recipients.admins.all) {
-        const admins = await Admin.find().select('email');
+        console.log('   - Fetching ALL admins');
+        const admins = await prisma.admin.findMany({ select: { email: true } });
+        console.log(`   ✅ Found ${admins.length} admins`);
         emailList = [...emailList, ...admins.map(a => a.email)];
       } else if (recipients.admins.names && recipients.admins.names.length > 0) {
-        const admins = await Admin.find({ name: { $in: recipients.admins.names } }).select('email');
+        console.log('   - Names filter:', recipients.admins.names);
+        const admins = await prisma.admin.findMany({ where: { name: { in: recipients.admins.names } }, select: { email: true } });
+        console.log(`   ✅ Found ${admins.length} admins`);
         emailList = [...emailList, ...admins.map(a => a.email)];
+      } else {
+        console.log('   ⚠️ No filters specified for admins');
       }
     }
-    
-    // Remove duplicates
-    emailList = [...new Set(emailList)];
-    
+
+    // Get HOD emails
+    if (recipients.hods) {
+      console.log('👨‍💼 Processing HOD recipients...');
+      if (recipients.hods.all) {
+        console.log('   - Fetching ALL HODs');
+        const hods = await prisma.hOD.findMany({ select: { email: true } });
+        console.log(`   ✅ Found ${hods.length} HODs`);
+        emailList = [...emailList, ...hods.map(h => h.email)];
+      } else {
+        const filters = [];
+
+        if (recipients.hods.courses && recipients.hods.courses.length > 0) {
+          filters.push({ course: { in: recipients.hods.courses } });
+          console.log('   - Courses filter:', recipients.hods.courses);
+        }
+
+        if (recipients.hods.departments && recipients.hods.departments.length > 0) {
+          filters.push({ department: { in: recipients.hods.departments } });
+          console.log('   - Departments filter:', recipients.hods.departments);
+        }
+
+        if (filters.length > 0) {
+          const hods = await prisma.hOD.findMany({ where: { AND: filters }, select: { email: true } });
+          console.log(`   ✅ Found ${hods.length} HODs`);
+          emailList = [...emailList, ...hods.map(h => h.email)];
+        } else {
+          console.log('   ⚠️ No filters specified for HODs');
+        }
+      }
+    }
+
+    // Add direct email addresses
+    if (recipients.emails && Array.isArray(recipients.emails) && recipients.emails.length > 0) {
+      console.log('📧 Processing direct email addresses...');
+      console.log('   - Direct emails:', recipients.emails);
+      emailList = [...emailList, ...recipients.emails];
+      console.log(`   ✅ Added ${recipients.emails.length} direct emails`);
+    }
+
+    // Remove duplicates and filter out invalid emails
+    emailList = [...new Set(emailList)].filter(email => email && email.includes('@'));
+
+    console.log('✅ Final email list:', emailList);
+    console.log(`📊 Total unique emails collected: ${emailList.length}`);
+
     // Send emails
     if (emailList.length > 0) {
+      console.log('📤 Sending emails to recipients...');
       await sendBatchEmails(emailList, notification);
+      console.log('✅ Emails sent successfully!');
+    } else {
+      console.log('⚠️ No emails to send - email list is empty!');
     }
-    
+
     return emailList.length;
   } catch (error) {
     console.error('Error sending notification emails:', error);
@@ -482,10 +702,20 @@ function createEmailContent(notification) {
     deadlineTime = deadline.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   }
   
-  // Get sender type (Admin or Faculty)
+  // Get sender type (Admin, Faculty, or HOD)
   const senderType = notification.createdByModel || 'Admin';
-  const senderColor = senderType === 'Admin' ? '#1a73e8' : '#0f9d58'; // Blue for Admin, Green for Faculty
-  const senderLabel = senderType === 'Admin' ? 'TPO' : 'Faculty';
+  let senderColor, senderLabel;
+
+  if (senderType === 'Admin') {
+    senderColor = '#1a73e8'; // Blue for Admin
+    senderLabel = 'TPO';
+  } else if (senderType === 'HOD') {
+    senderColor = '#f57c00'; // Orange for HOD
+    senderLabel = 'HOD';
+  } else {
+    senderColor = '#0f9d58'; // Green for Faculty
+    senderLabel = 'Faculty';
+  }
   
   const deadlineText = notification.deadline 
     ? `<tr>

@@ -5,14 +5,17 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import PortalLayout from '@/components/app/PortalLayout';
+import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Users, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import { resolveFileUrl } from '../lib/api';
 import './Dashboard.css';
 
 const FacultyList = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -98,18 +101,13 @@ const FacultyList = () => {
 
   const handleAddFaculty = () => navigate('/faculty/add-faculty');
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
-  
-
   const filteredFaculties = facultyData.filter((faculty) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       faculty.name.toLowerCase().includes(searchLower) ||
       faculty.email.toLowerCase().includes(searchLower) ||
-      (faculty.specialization && faculty.specialization.toLowerCase().includes(searchLower))
+      (faculty.course && faculty.course.toLowerCase().includes(searchLower)) ||
+      (faculty.department && faculty.department.toLowerCase().includes(searchLower))
     );
   });
 
@@ -145,102 +143,100 @@ const FacultyList = () => {
   }
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="main">
-        <Header user={profileData || user} handleLogout={handleLogout} navigate={navigate} />
-
-        <div className="content-container px-3 py-4 w-full mx-auto max-w-full">
-          <div className="bg-white rounded-xl shadow-sm px-4 py-4 w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-              <h1 className="text-xl font-semibold text-gray-800">Faculty Management</h1>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+    <PortalLayout role="admin" title="Faculty" user={profileData || user}>
+          <PageHeader
+            title="Faculty Management"
+            subtitle="Manage all faculty members in the portal"
+            icon={Users}
+            actions={
+              <>
                 <form className="w-full sm:w-64">
-                  <input
+                  <Input
                     {...registerSearch('search')}
                     type="text"
                     placeholder="Search faculty..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </form>
-                <button
-                  onClick={handleAddFaculty}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm md:text-base whitespace-nowrap"
-                >
-                  ➕ Add Faculty
-                </button>
-              </div>
-            </div>
-
+                <Button onClick={handleAddFaculty} className="whitespace-nowrap">
+                  <UserPlus /> Add Faculty
+                </Button>
+              </>
+            }
+          />
+          <GlassPanel className="p-0 sm:p-0">
             <div className="w-full overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Avatar</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Name</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Email</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Specialization</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700">Actions</th>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2.5 font-semibold">Avatar</th>
+                    <th className="px-3 py-2.5 font-semibold">Name</th>
+                    <th className="px-3 py-2.5 font-semibold">Email</th>
+                    <th className="px-3 py-2.5 font-semibold">Phone</th>
+                    <th className="px-3 py-2.5 font-semibold">Course</th>
+                    <th className="px-3 py-2.5 font-semibold">Department</th>
+                    <th className="px-3 py-2.5 font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {filteredFaculties.length > 0 ? (
                     filteredFaculties.map((faculty) => (
-                      <tr key={faculty._id} className="hover:bg-gray-50">
+                      <tr key={faculty._id} className="border-b border-border/60 hover:bg-accent/40 transition-colors">
                         <td className="px-3 py-3">
                           {faculty.avatar ? (
                             <img
-                              src={`http://localhost:3001${faculty.avatar}`}
+                              src={resolveFileUrl(faculty.avatar)}
                               alt={faculty.name}
-                              className="w-10 h-10 rounded-full object-cover border"
+                              className="w-10 h-10 rounded-full object-cover border border-border"
                             />
                           ) : (
-                            <div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded-full text-xs text-gray-600">
+                            <div className="w-10 h-10 flex items-center justify-center bg-muted rounded-full text-xs text-muted-foreground">
                               N/A
                             </div>
                           )}
                         </td>
-                        <td className="px-3 py-3 text-gray-900">{faculty.name}</td>
-                        <td className="px-3 py-3 text-gray-600">{faculty.email}</td>
-                        <td className="px-3 py-3 text-gray-600">
-                          {faculty.specialization || '-'}
-                        </td>
-                        <td className="px-3 py-3 text-gray-600">
+                        <td className="px-3 py-3 font-medium text-foreground">{faculty.name}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{faculty.email}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{faculty.phone || '-'}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{faculty.course || '-'}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{faculty.department || '-'}</td>
+                        <td className="px-3 py-3 text-muted-foreground">
                           <div className="flex flex-wrap gap-2">
-                            <button
+                            <Button
                               onClick={() => navigate(`/admin/edit-faculty/${faculty._id}`)}
-                              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                              variant="outline"
+                              size="sm"
                               disabled={isDeleting}
                             >
-                              ✏️ Edit
-                            </button>
-                            <button
+                              <Pencil /> Edit
+                            </Button>
+                            <Button
                               onClick={() => handleDeleteFaculty(faculty._id)}
-                              className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                              variant="destructive"
+                              size="sm"
                               disabled={isDeleting}
                             >
-                              {isDeleting ? '⏳ Deleting...' : '🗑️ Remove'}
-                            </button>
+                              <Trash2 /> {isDeleting ? 'Deleting...' : 'Remove'}
+                            </Button>
                           </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="px-3 py-3 text-center text-gray-500">
-                        {searchTerm ? 'No matching faculty found' : 'No faculty members found'}
+                      <td colSpan="7" className="px-3 py-8">
+                        <EmptyState
+                          icon={Users}
+                          title={searchTerm ? 'No matching faculty found' : 'No faculty members found'}
+                          description={searchTerm ? 'Try a different search term.' : 'Add your first faculty member to get started.'}
+                        />
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
-
-        <Footer />
-      </div>
-    </div>
+          </GlassPanel>
+    </PortalLayout>
   );
 };
 

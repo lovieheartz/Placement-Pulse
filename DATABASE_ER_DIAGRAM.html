@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Management System - Database ER Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            font-style: italic;
+        }
+
+        .info-section {
+            padding: 30px 40px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-card p {
+            color: #495057;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .legend-section {
+            padding: 30px 40px;
+            background: white;
+        }
+
+        .legend-section h2 {
+            color: #2d3748;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #28a745;
+        }
+
+        .legend-item h4 {
+            color: #2d3748;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .legend-item ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .legend-item li {
+            color: #495057;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .legend-item li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .diagram-section {
+            padding: 40px;
+            background: white;
+            overflow-x: auto;
+        }
+
+        .diagram-section h2 {
+            color: #2d3748;
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .diagram-container {
+            background: #fafafa;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            min-height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #mermaid-diagram {
+            width: 100%;
+            min-height: 600px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .footer p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .info-grid, .legend-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .diagram-section {
+                padding: 20px;
+            }
+
+            .btn {
+                display: block;
+                margin: 10px auto;
+            }
+        }
+
+        /* Mermaid diagram styling */
+        .mermaid {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .controls, .btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 Placement Management System</h1>
+            <p>Complete Database Entity-Relationship Diagram</p>
+            <p class="subtitle">Netaji Subhash Engineering College (NSEC)</p>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <h2 style="color: #2d3748; font-size: 1.5rem; margin-bottom: 15px;">Database Overview</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>🗄️ Total Collections</h3>
+                    <p><strong>10 Collections</strong> - 4 User roles + 6 Application data collections</p>
+                </div>
+                <div class="info-card">
+                    <h3>👥 User Entities</h3>
+                    <p>Student, Faculty, HOD, Admin with role-based access control</p>
+                </div>
+                <div class="info-card">
+                    <h3>📝 Application Data</h3>
+                    <p>NOC, Notifications, Resume Analysis, Mock Interviews, Tests</p>
+                </div>
+                <div class="info-card">
+                    <h3>🔗 Relationships</h3>
+                    <p>One-to-Many and Many-to-Many relationships across entities</p>
+                </div>
+                <div class="info-card">
+                    <h3>💾 Database Type</h3>
+                    <p>MongoDB (NoSQL) with Mongoose ODM for schema validation</p>
+                </div>
+                <div class="info-card">
+                    <h3>🔒 Security</h3>
+                    <p>Bcrypt password hashing, JWT tokens, email verification</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend Section -->
+        <div class="legend-section">
+            <h2>📖 Entity Descriptions</h2>
+            <div class="legend-grid">
+                <div class="legend-item" style="border-left-color: #667eea;">
+                    <h4>🎓 STUDENT</h4>
+                    <ul>
+                        <li>Complete student profile with academic details</li>
+                        <li>Skills, certifications, projects, internships</li>
+                        <li>Resume management and verification status</li>
+                        <li>Social links (LinkedIn, GitHub, Portfolio)</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #764ba2;">
+                    <h4>👨‍🏫 FACULTY</h4>
+                    <ul>
+                        <li>Faculty member details and credentials</li>
+                        <li>Department and designation information</li>
+                        <li>Assigned courses and branches</li>
+                        <li>Notification sending permissions</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #f093fb;">
+                    <h4>👔 HOD (Head of Department)</h4>
+                    <ul>
+                        <li>Department head with extended privileges</li>
+                        <li>Department-wide student management</li>
+                        <li>Faculty creation and test management</li>
+                        <li>Department-level analytics access</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #f5576c;">
+                    <h4>⚙️ ADMIN</h4>
+                    <ul>
+                        <li>System-wide administrative access</li>
+                        <li>NOC processing and approval authority</li>
+                        <li>User management across all roles</li>
+                        <li>Special permissions and super admin role</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #4facfe;">
+                    <h4>📋 NOC (No Objection Certificate)</h4>
+                    <ul>
+                        <li>Student NOC applications with company details</li>
+                        <li>Offer letter upload and processing workflow</li>
+                        <li>Status tracking (Pending/Approved/Rejected)</li>
+                        <li>Admin remarks and processing history</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #43e97b;">
+                    <h4>🔔 NOTIFICATION</h4>
+                    <ul>
+                        <li>Multi-type notifications (Simple/Deadline/FormLink)</li>
+                        <li>Advanced targeting by role, course, branch, year</li>
+                        <li>Deadline management with automatic reminders</li>
+                        <li>Read receipts and engagement tracking</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #fa709a;">
+                    <h4>📄 RESUME_ANALYSIS</h4>
+                    <ul>
+                        <li>AI-powered resume analysis with ATS scoring</li>
+                        <li>Text extraction from PDF/DOCX formats</li>
+                        <li>Keyword matching and gap identification</li>
+                        <li>Categorized suggestions and optimization</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #fee140;">
+                    <h4>🎤 MOCK_INTERVIEW</h4>
+                    <ul>
+                        <li>Multi-modal interviews (Text/Voice/Professional)</li>
+                        <li>AI-generated personalized questions</li>
+                        <li>Question-wise feedback and scoring</li>
+                        <li>Performance analytics and improvement areas</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #30cfd0;">
+                    <h4>📝 APTITUDE_TEST</h4>
+                    <ul>
+                        <li>Test creation by HOD/Admin with questions</li>
+                        <li>Configurable duration, marks, difficulty</li>
+                        <li>Department and course-wise targeting</li>
+                        <li>Scheduled test windows with date ranges</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #a8edea;">
+                    <h4>✅ TEST_ATTEMPT</h4>
+                    <ul>
+                        <li>Student test attempts with answers</li>
+                        <li>Auto-evaluation with detailed scoring</li>
+                        <li>Time tracking and submission status</li>
+                        <li>Performance metrics and analytics</li>
+                    </ul>
+                </div>
+                <div class="legend-item" style="border-left-color: #fbc2eb;">
+                    <h4>👥 TEST_BATCH</h4>
+                    <ul>
+                        <li>Batch-wise test scheduling</li>
+                        <li>Department/course/branch grouping</li>
+                        <li>Batch statistics and pass/fail tracking</li>
+                        <li>Scheduled date management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagram Section -->
+        <div class="diagram-section">
+            <h2>🔍 Interactive ER Diagram</h2>
+            <div class="diagram-container">
+                <div id="mermaid-diagram" class="mermaid">
+erDiagram
+    %% Placement Management System - Complete Database ER Diagram
+
+    STUDENT {
+        ObjectId _id PK
+        String name
+        String email UK
+        String password
+        String phone
+        String rollNumber
+        String registrationNumber
+        String course
+        String branch
+        String semester
+        Number passoutYear
+        Number cgpa
+        String gender
+        Date dateOfBirth
+        String address
+        String profilePicture
+        String resumePath
+        Array skills
+        Array certifications
+        Array projects
+        Boolean isVerified
+        Boolean isBlocked
+        Date createdAt
+    }
+
+    FACULTY {
+        ObjectId _id PK
+        String name
+        String email UK
+        String password
+        String phone
+        String employeeId
+        String department
+        String designation
+        String profilePicture
+        Array assignedCourses
+        Array assignedBranches
+        Boolean isVerified
+        Boolean isActive
+        Date createdAt
+    }
+
+    HOD {
+        ObjectId _id PK
+        String name
+        String email UK
+        String password
+        String phone
+        String employeeId
+        String department UK
+        String designation
+        String profilePicture
+        Boolean isVerified
+        Boolean isActive
+        Date createdAt
+    }
+
+    ADMIN {
+        ObjectId _id PK
+        String name
+        String email UK
+        String password
+        String phone
+        String employeeId
+        String role
+        String profilePicture
+        Array permissions
+        Boolean isActive
+        Date createdAt
+    }
+
+    NOC {
+        ObjectId _id PK
+        ObjectId studentId FK
+        String studentName
+        String studentEmail
+        String companyName
+        String jobRole
+        String location
+        Number package
+        Date joiningDate
+        String offerLetterPath
+        String status
+        String adminRemarks
+        ObjectId processedBy FK
+        Date processedDate
+        Date createdAt
+    }
+
+    NOTIFICATION {
+        ObjectId _id PK
+        String title
+        String message
+        String notificationType
+        String priority
+        Object targetAudience
+        Array targetRoles
+        Array targetCourses
+        Date deadline
+        Boolean sendReminder
+        String attachmentPath
+        Boolean isExpired
+        ObjectId createdBy FK
+        String createdByRole
+        Array readBy
+        Date createdAt
+    }
+
+    RESUME_ANALYSIS {
+        ObjectId _id PK
+        ObjectId studentId FK
+        String studentName
+        String resumePath
+        String resumeFormat
+        String extractedText
+        String jobDescription
+        Object analysisResult
+        Number atsScore
+        Array missingKeywords
+        Array suggestions
+        String aiProvider
+        String aiModel
+        Date createdAt
+    }
+
+    MOCK_INTERVIEW {
+        ObjectId _id PK
+        ObjectId studentId FK
+        String studentName
+        String interviewType
+        String jobRole
+        String difficulty
+        Array questions
+        Array answers
+        Array feedback
+        Number overallScore
+        Array strengths
+        Array improvements
+        String status
+        Date completedAt
+        Date createdAt
+    }
+
+    APTITUDE_TEST {
+        ObjectId _id PK
+        String testName
+        String description
+        String testType
+        String difficulty
+        Number duration
+        Number totalMarks
+        Array questions
+        ObjectId createdBy FK
+        String department
+        Boolean isActive
+        Date startDate
+        Date endDate
+        Date createdAt
+    }
+
+    TEST_ATTEMPT {
+        ObjectId _id PK
+        ObjectId testId FK
+        ObjectId studentId FK
+        String studentName
+        Array answers
+        Number score
+        Number percentage
+        Number correctAnswers
+        String status
+        Date startTime
+        Date submitTime
+        Date createdAt
+    }
+
+    TEST_BATCH {
+        ObjectId _id PK
+        String batchName
+        ObjectId testId FK
+        Array studentIds
+        String department
+        ObjectId createdBy FK
+        Date scheduledDate
+        String status
+        Number totalStudents
+        Object statistics
+        Date createdAt
+    }
+
+    STUDENT ||--o{ NOC : "applies"
+    STUDENT ||--o{ RESUME_ANALYSIS : "submits"
+    STUDENT ||--o{ MOCK_INTERVIEW : "takes"
+    STUDENT ||--o{ TEST_ATTEMPT : "attempts"
+
+    ADMIN ||--o{ NOC : "processes"
+    ADMIN ||--o{ NOTIFICATION : "creates"
+    ADMIN ||--o{ APTITUDE_TEST : "manages"
+
+    FACULTY ||--o{ NOTIFICATION : "sends"
+
+    HOD ||--o{ NOTIFICATION : "sends"
+    HOD ||--o{ APTITUDE_TEST : "creates"
+    HOD ||--o{ TEST_BATCH : "schedules"
+
+    APTITUDE_TEST ||--o{ TEST_ATTEMPT : "has"
+    APTITUDE_TEST ||--o{ TEST_BATCH : "scheduled-in"
+
+    TEST_BATCH ||--o{ TEST_ATTEMPT : "contains"
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="window.print()">🖨️ Print Diagram</button>
+                <button class="btn" onclick="downloadDiagram()">💾 Download as PNG</button>
+                <button class="btn" onclick="zoomIn()">🔍 Zoom In</button>
+                <button class="btn" onclick="zoomOut()">🔍 Zoom Out</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Placement Management System Database Design</strong></p>
+            <p>Netaji Subhash Engineering College | MERN Stack Application</p>
+            <p>MongoDB 8.14.1 | Mongoose ODM | 10 Collections | Complete Schema</p>
+            <p style="margin-top: 10px; font-size: 0.85rem;">Generated: December 2025</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            er: {
+                fontSize: 14,
+                layoutDirection: 'TB',
+                minEntityWidth: 180,
+                minEntityHeight: 80,
+                entityPadding: 15,
+                stroke: '#667eea',
+                fill: '#f8f9fa',
+                useMaxWidth: true
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        // Zoom functionality
+        let currentZoom = 1;
+
+        function zoomIn() {
+            currentZoom += 0.1;
+            document.getElementById('mermaid-diagram').style.transform = `scale(${currentZoom})`;
+            document.getElementById('mermaid-diagram').style.transformOrigin = 'top center';
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.1;
+                document.getElementById('mermaid-diagram').style.transform = `scale(${currentZoom})`;
+                document.getElementById('mermaid-diagram').style.transformOrigin = 'top center';
+            }
+        }
+
+        // Download diagram as PNG
+        function downloadDiagram() {
+            alert('To download as PNG:\n\n1. Use browser print → Save as PDF\n2. Or use screenshot tools\n3. Or use online Mermaid to PNG converters\n\nMermaid code is also saved in DATABASE_ER_DIAGRAM.mmd file');
+        }
+
+        // Log info
+        console.log('%c📊 Placement Management System - ER Diagram', 'color: #667eea; font-size: 20px; font-weight: bold;');
+        console.log('%c10 Collections | 4 User Roles | 6 Application Entities', 'color: #764ba2; font-size: 14px;');
+        console.log('%cMongoDB + Mongoose ODM | MERN Stack', 'color: #28a745; font-size: 12px;');
+    </script>
+</body>
+</html>

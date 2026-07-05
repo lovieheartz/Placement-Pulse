@@ -14,9 +14,12 @@
     "@google/genai": "^1.29.1",
     "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^4.8.0",
+    "@prisma/client": "^6.19.3",
+    "@supabase/supabase-js": "^2.110.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.10.0",
@@ -29,5 +32,8 @@
     "pdf-parse": "^1.1.4",
     "pdfkit": "^0.17.2",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
   }
 }

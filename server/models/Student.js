@@ -70,6 +70,20 @@
       type: Boolean,
       default: false
     },
+    blockReason: {
+      type: String,
+      default: null
+    },
+    blockedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: 'blockedByModel',
+      default: null
+    },
+    blockedByModel: {
+      type: String,
+      enum: ['Admin', 'Faculty', 'HOD'],
+      default: null
+    },
     blockedAt: {
       type: Date,
       default: null

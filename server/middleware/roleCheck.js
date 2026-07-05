@@ -66,6 +66,25 @@ const facultyOnly = (req, res, next) => {
   next();
 };
 
+// Middleware to allow only HOD
+const hodOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+
+  if (req.user.role !== 'hod') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. HOD privileges required.'
+    });
+  }
+
+  next();
+};
+
 // Middleware to allow both admins and faculty
 const adminOrFaculty = (req, res, next) => {
   if (!req.user) {
@@ -85,9 +104,30 @@ const adminOrFaculty = (req, res, next) => {
   next();
 };
 
+// Middleware to allow admin, faculty, or HOD
+const adminOrFacultyOrHOD = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+
+  if (req.user.role !== 'admin' && req.user.role !== 'faculty' && req.user.role !== 'hod') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin, faculty, or HOD privileges required.'
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   studentOnly,
   adminOnly,
   facultyOnly,
-  adminOrFaculty
+  hodOnly,
+  adminOrFaculty,
+  adminOrFacultyOrHOD
 };

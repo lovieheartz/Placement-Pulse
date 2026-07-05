@@ -1,6 +1,5 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const bcrypt = require("bcryptjs");
@@ -19,11 +18,21 @@ console.log('Static file path configured:', path.join(__dirname, "uploads"));
 // ✅ Serve NOC uploads specifically
 app.use("/uploads/noc", express.static(path.join(__dirname, "uploads", "noc")));
 
-// === MONGODB CONNECTION ===
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+// ✅ Serve proctoring snapshots
+app.use("/uploads/proctoring", express.static(path.join(__dirname, "uploads", "proctoring")));
+
+// === DATABASE: Supabase Postgres via Prisma ===
+// (MongoDB/Mongoose fully removed — all data access goes through lib/prisma.js.)
+const prisma = require("./lib/prisma");
+prisma
+  .$connect()
+  .then(() => console.log("✅ Supabase Postgres (Prisma) connected"))
+  .catch((err) => console.error("❌ Postgres connection error:", err));
+
+// === SUPABASE STORAGE ===
+// Ensure the storage bucket exists on boot (files are stored in Supabase, not local disk).
+const { ensureBucket } = require("./services/storageService");
+ensureBucket();
 
 // === ROUTES ===
 app.use("/", require("./routes/authRoutes")); // Consider using "/auth" prefix
@@ -31,11 +40,15 @@ app.use("/student", require("./routes/studentRoutes"));
 app.use("/student-profile", require("./routes/studentProfileRoutes")); // Student profile routes
 app.use("/admin", require("./routes/adminRoutes"));
 app.use("/faculty", require("./routes/facultyRoutes")); // ✅ Ensures /faculty/:id will work
+app.use("/hod", require("./routes/hodRoutes")); // HOD routes
 app.use("/notifications", require("./routes/notificationRoutes")); // Notification routes
 app.use("/noc", require("./routes/nocRoutes")); // NOC routes
 app.use("/api/resume-analysis", require("./routes/resumeAnalysisRoutes")); // Resume analysis routes
 app.use("/api/mock-interview", require("./routes/mockInterviewRoutes")); // AI Mock Interview routes
 app.use("/api/interview", require("./routes/openaiInterviewRoutes").router); // OpenAI Realtime Interview routes
+app.use("/api/aptitude", require("./routes/aptitudeTestRoutes")); // Aptitude Test routes
+app.use("/api/attempts", require("./routes/testAttemptRoutes")); // Test Attempt routes
+app.use("/api/batches", require("./routes/testBatchRoutes")); // Test Batch routes
 
 // === HEALTH CHECK ===
 app.get("/", (req, res) => {

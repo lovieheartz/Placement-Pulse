@@ -4,20 +4,18 @@ const mammoth = require('mammoth');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
-const ResumeAnalysis = require('../models/ResumeAnalysis');
-const Student = require('../models/Student');
+const prisma = require('../lib/prisma');
 const aiService = require('../services/aiService');
+const storageService = require('../services/storageService');
 
 // Initialize Hugging Face client (fallback)
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 class ResumeAnalysisController {
   
-  // Extract text from uploaded resume file
-  static async extractTextFromFile(filePath, mimeType) {
+  // Extract text from an uploaded resume buffer (multer memoryStorage)
+  static async extractTextFromFile(fileBuffer, mimeType) {
     try {
-      const fileBuffer = fs.readFileSync(filePath);
-      
       if (mimeType === 'application/pdf') {
         const data = await pdfParse(fileBuffer);
         return data.text;
@@ -305,35 +303,34 @@ class ResumeAnalysisController {
     };
   }
 
-  // Generate PDF from optimized resume text
+  // Generate a PDF from the optimized resume text, upload it to Supabase Storage,
+  // and return its public URL.
   static async generateOptimizedResumePDF(optimizedText, originalFilename) {
     try {
-      const doc = new PDFDocument();
       const fileName = `optimized_${Date.now()}_${originalFilename.replace(/\.[^/.]+$/, '')}.pdf`;
-      const filePath = path.join(__dirname, '../uploads/optimized_resumes', fileName);
-      
-      // Ensure directory exists
-      const dir = path.dirname(filePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
 
-      // Create PDF
-      const stream = fs.createWriteStream(filePath);
-      doc.pipe(stream);
-      
-      // Add content
-      doc.fontSize(16).text('Optimized Resume', { align: 'center' });
-      doc.moveDown();
-      doc.fontSize(12).text(optimizedText, { align: 'left' });
-      
-      doc.end();
-      
-      return new Promise((resolve, reject) => {
-        stream.on('finish', () => resolve({ fileName, filePath }));
-        stream.on('error', reject);
+      // Render the PDF into an in-memory buffer (no disk writes)
+      const pdfBuffer = await new Promise((resolve, reject) => {
+        const doc = new PDFDocument();
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        doc.fontSize(16).text('Optimized Resume', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(optimizedText, { align: 'left' });
+        doc.end();
       });
-      
+
+      const { publicUrl } = await storageService.uploadBuffer(pdfBuffer, {
+        folder: storageService.FOLDERS.OPTIMIZED_RESUME,
+        originalName: fileName,
+        mimetype: 'application/pdf',
+        fieldName: 'optimized',
+      });
+
+      return { fileName, publicUrl };
     } catch (error) {
       console.error('Error generating PDF:', error);
       throw new Error('Failed to generate optimized resume PDF');
@@ -362,8 +359,7 @@ class ResumeAnalysisController {
       console.log('File details:', {
         originalname: req.file.originalname,
         mimetype: req.file.mimetype,
-        size: req.file.size,
-        path: req.file.path
+        size: req.file.size
       });
 
       const { jobDescription } = req.body;
@@ -381,7 +377,7 @@ class ResumeAnalysisController {
       const studentId = req.user.id;
       console.log('Looking for student with ID:', studentId);
       
-      const student = await Student.findById(studentId);
+      const student = await prisma.student.findUnique({ where: { id: studentId } });
       if (!student) {
         console.log('Error: Student not found');
         return res.status(404).json({
@@ -393,8 +389,8 @@ class ResumeAnalysisController {
       console.log('Student found:', student.name);
 
       console.log('Extracting text from file first...');
-      // Extract text from resume BEFORE creating the record
-      const extractedText = await ResumeAnalysisController.extractTextFromFile(req.file.path, req.file.mimetype);
+      // Extract text from the in-memory resume buffer BEFORE creating the record
+      const extractedText = await ResumeAnalysisController.extractTextFromFile(req.file.buffer, req.file.mimetype);
       console.log('Text extracted, length:', extractedText.length);
 
       if (!extractedText || extractedText.trim().length === 0) {
@@ -428,29 +424,35 @@ class ResumeAnalysisController {
 
       console.log('Transformed suggestions:', transformedSuggestions.length);
 
-      // Create analysis record with all required fields
-      analysisRecord = new ResumeAnalysis({
-        student: studentId,
-        resumeFile: {
-          filename: req.file.filename,
-          originalName: req.file.originalname,
-          filePath: req.file.path,
-          fileSize: req.file.size,
-          mimeType: req.file.mimetype
-        },
-        extractedText: extractedText,
-        jobDescription: jobDescription.trim(),
-        analysis: {
-          atsScore: aiAnalysis.ats_score || 0,
-          missingKeywords: aiAnalysis.missing_keywords || [],
-          suggestions: transformedSuggestions,
-          optimizedResume: aiAnalysis.optimized_resume || extractedText
-        },
-        status: 'completed',
-        processingTime: Date.now() - startTime
-      });
+      // Upload the original resume to Supabase Storage
+      const uploadedResume = await storageService.uploadMulterFile(
+        req.file,
+        storageService.FOLDERS.RESUME
+      );
 
-      await analysisRecord.save();
+      // Create analysis record with all required fields
+      analysisRecord = await prisma.resumeAnalysis.create({
+        data: {
+          student: studentId,
+          resumeFile: {
+            filename: uploadedResume.path.split('/').pop(),
+            originalName: req.file.originalname,
+            filePath: uploadedResume.publicUrl,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype
+          },
+          extractedText: extractedText,
+          jobDescription: jobDescription.trim(),
+          analysis: {
+            atsScore: aiAnalysis.ats_score || 0,
+            missingKeywords: aiAnalysis.missing_keywords || [],
+            suggestions: transformedSuggestions,
+            optimizedResume: aiAnalysis.optimized_resume || extractedText
+          },
+          status: 'completed',
+          processingTime: Date.now() - startTime
+        }
+      });
       console.log('Analysis record saved successfully');
 
       console.log('Generating optimized resume PDF...');
@@ -466,7 +468,7 @@ class ResumeAnalysisController {
         success: true,
         message: 'Resume analysis completed successfully',
         data: {
-          analysisId: analysisRecord._id,
+          analysisId: analysisRecord.id,
           atsScore: aiAnalysis.ats_score,
           score_breakdown: aiAnalysis.score_breakdown || {},
           detected_industry: aiAnalysis.detected_industry || 'general',
@@ -475,7 +477,7 @@ class ResumeAnalysisController {
           missingKeywords: aiAnalysis.missing_keywords || [], // Legacy support
           suggestions: aiAnalysis.suggestions || [],
           optimizedResume: aiAnalysis.optimized_resume,
-          optimizedPdfUrl: `/api/resume-analysis/download-optimized/${pdfResult.fileName}`,
+          optimizedPdfUrl: pdfResult.publicUrl,
           processingTime: analysisRecord.processingTime,
           analysis_metadata: aiAnalysis.analysis_metadata || {}
         }
@@ -486,10 +488,14 @@ class ResumeAnalysisController {
       
       // Update analysis record with error
       if (analysisRecord) {
-        analysisRecord.status = 'failed';
-        analysisRecord.errorMessage = error.message;
-        analysisRecord.processingTime = Date.now() - startTime;
-        await analysisRecord.save();
+        await prisma.resumeAnalysis.update({
+          where: { id: analysisRecord.id },
+          data: {
+            status: 'failed',
+            errorMessage: error.message,
+            processingTime: Date.now() - startTime
+          }
+        });
       }
 
       res.status(500).json({
@@ -506,17 +512,19 @@ class ResumeAnalysisController {
       const studentId = req.user.id;
       const { page = 1, limit = 10 } = req.query;
 
-      const analyses = await ResumeAnalysis.find({ student: studentId })
-        .sort({ createdAt: -1 })
-        .limit(limit * 1)
-        .skip((page - 1) * limit)
-        .select('-extractedText'); // Exclude large text field
+      const analyses = await prisma.resumeAnalysis.findMany({
+        where: { student: studentId },
+        orderBy: { createdAt: 'desc' },
+        take: parseInt(limit, 10),
+        skip: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        omit: { extractedText: true } // Exclude large text field
+      });
 
-      const total = await ResumeAnalysis.countDocuments({ student: studentId });
+      const total = await prisma.resumeAnalysis.count({ where: { student: studentId } });
 
       // Transform data to match frontend expectations
       const transformedAnalyses = analyses.map(analysis => ({
-        _id: analysis._id,
+        _id: analysis.id,
         atsScore: analysis.analysis?.atsScore || 0,
         score_breakdown: analysis.analysis?.scoreBreakdown || {},
         detected_industry: analysis.analysis?.detectedIndustry || 'general',
@@ -555,9 +563,11 @@ class ResumeAnalysisController {
       const { analysisId } = req.params;
       const studentId = req.user.id;
 
-      const analysis = await ResumeAnalysis.findOne({
-        _id: analysisId,
-        student: studentId
+      const analysis = await prisma.resumeAnalysis.findFirst({
+        where: {
+          id: analysisId,
+          student: studentId
+        }
       });
 
       if (!analysis) {
@@ -613,9 +623,11 @@ class ResumeAnalysisController {
       const { analysisId } = req.params;
       const studentId = req.user.id;
 
-      const analysis = await ResumeAnalysis.findOne({
-        _id: analysisId,
-        student: studentId
+      const analysis = await prisma.resumeAnalysis.findFirst({
+        where: {
+          id: analysisId,
+          student: studentId
+        }
       });
 
       if (!analysis) {
@@ -625,13 +637,13 @@ class ResumeAnalysisController {
         });
       }
 
-      // Delete associated files
-      if (analysis.resumeFile?.filePath && fs.existsSync(analysis.resumeFile.filePath)) {
-        fs.unlinkSync(analysis.resumeFile.filePath);
+      // Delete associated resume file from Supabase Storage
+      if (analysis.resumeFile?.filePath) {
+        await storageService.remove(analysis.resumeFile.filePath);
       }
 
       // Delete the analysis record
-      await ResumeAnalysis.deleteOne({ _id: analysisId });
+      await prisma.resumeAnalysis.delete({ where: { id: analysisId } });
 
       res.status(200).json({
         success: true,

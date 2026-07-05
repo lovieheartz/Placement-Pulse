@@ -1,25 +1,33 @@
 import React, { useContext, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import StudentSidebar from '../components/StudentSidebar';
-import StudentHeader from '../components/StudentHeader';
-import StudentFooter from '../components/StudentFooter';
+import axios from 'axios';
+import PortalLayout from '@/components/app/PortalLayout';
+import { PageHeader } from '@/components/ui/surface';
+import { FileSearch } from 'lucide-react';
 import ResumeAnalyzer from '../components/ResumeAnalyzer';
 import ResumeAnalysisHistory from '../components/ResumeAnalysisHistory';
 import './Dashboard.css';
 
 const ResumeAnalyzerPage = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('analyzer');
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
+  const token = sessionStorage.getItem('authToken');
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
+  // Fetch profile with avatar
+  const { data: profileData } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: async () => {
+      const res = await axios.get('http://localhost:3001/student/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data;
+    },
+    enabled: !!token,
+  });
 
   if (!user) {
     navigate('/login');
@@ -27,27 +35,22 @@ const ResumeAnalyzerPage = () => {
   }
 
   return (
-    <div className="dashboard">
-      <StudentSidebar />
-
-      <div className="main">
-        <StudentHeader
-          user={user}
-          toggleDropdown={toggleDropdown}
-          isDropdownOpen={isDropdownOpen}
-          handleLogout={handleLogout}
-          navigate={navigate}
+    <PortalLayout role="student" title="AI Resume Analyzer" user={profileData}>
+        <PageHeader
+          title="AI Resume Analyzer"
+          subtitle="Analyze your resume and review past reports"
+          icon={FileSearch}
         />
 
-        {/* Tab Navigation - Directly under header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <nav className="flex gap-4 md:gap-8 px-6 md:px-8">
+        {/* Tab Navigation */}
+        <div className="border-b border-border">
+          <nav className="flex gap-4 md:gap-8">
             <button
               onClick={() => setActiveTab('analyzer')}
               className={`relative py-4 px-2 font-semibold text-base transition-all duration-200 ${
                 activeTab === 'analyzer'
-                  ? 'text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Resume Analyzer
@@ -59,8 +62,8 @@ const ResumeAnalyzerPage = () => {
               onClick={() => setActiveTab('history')}
               className={`relative py-4 px-2 font-semibold text-base transition-all duration-200 ${
                 activeTab === 'history'
-                  ? 'text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Analysis History
@@ -72,13 +75,10 @@ const ResumeAnalyzerPage = () => {
         </div>
 
         {/* Content */}
-        <div className="px-6 md:px-8 py-6 md:py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="py-6 md:py-8">
           {activeTab === 'analyzer' ? <ResumeAnalyzer /> : <ResumeAnalysisHistory />}
         </div>
-
-        <StudentFooter />
-      </div>
-    </div>
+    </PortalLayout>
   );
 };
 
