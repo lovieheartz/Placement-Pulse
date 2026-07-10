@@ -22,6 +22,8 @@ const FOLDERS = {
   NOTIFICATION: "notifications",
   PROCTORING: "proctoring",
   TEST_PDF: "test_pdfs",
+  ASSIGNMENT: "assignments",
+  SUBMISSION: "submissions",
 };
 
 /**

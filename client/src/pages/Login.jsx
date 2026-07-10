@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { apiUrl } from '../lib/api';
 import { BRAND } from '../constants/brand';
+import { BrandGlyph } from '../components/ui/BrandMark';
 import GlassBackground from '../components/ui/GlassBackground';
 import { ArrowUpRight, ArrowRight } from '../components/ui/icons';
 
@@ -92,9 +93,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-md">
         {/* Brand */}
         <Link to="/" className="flex items-center justify-center gap-3 mb-7">
-          <span className="liquid-glass flex h-12 w-12 items-center justify-center rounded-full">
-            <span className="font-heading italic text-2xl text-white">{BRAND.monogram}</span>
-          </span>
+          <BrandGlyph size={40} />
           <span className="flex flex-col items-start leading-none">
             <span className="font-heading italic text-xl text-white">{BRAND.name}</span>
             <span className="text-[10px] uppercase tracking-[0.18em] text-white/55 mt-0.5">{BRAND.org}</span>

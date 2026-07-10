@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
+import { API_BASE } from '../config/api';
 
 const CreateAdmin = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "", phone: "" });
@@ -10,7 +11,7 @@ const CreateAdmin = () => {
   // ✅ Mutation to create first admin
   const { mutate, isPending } = useMutation({
     mutationFn: async (newAdmin) => {
-      const res = await axios.post("http://localhost:3001/admin/create-first-admin", newAdmin);
+      const res = await axios.post(`${API_BASE}/admin/create-first-admin`, newAdmin);
       return res.data;
     },
     onSuccess: () => {

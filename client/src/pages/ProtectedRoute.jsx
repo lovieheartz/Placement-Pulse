@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -13,7 +14,7 @@ const ProtectedRoute = ({ children }) => {
   const authToken = sessionStorage.getItem("authToken");
 
   useEffect(() => {
-    axios.get("http://localhost:3001/admin/exists")
+    axios.get(`${API_BASE}/admin/exists`)
       .then((res) => {
         setAdminExists(res.data.exists);
         setLoading(false);

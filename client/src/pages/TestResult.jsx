@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiCheckCircle, FiXCircle, FiClock, FiAward, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';
+import { API_BASE } from '../config/api';
 
 const TestResult = () => {
   const { testId } = useParams();
@@ -19,7 +20,7 @@ const TestResult = () => {
       console.log('Fetching result for testId:', testId);
 
       const response = await axios.get(
-        `http://localhost:3001/api/attempts/${testId}/my-result`,
+        `${API_BASE}/api/attempts/${testId}/my-result`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

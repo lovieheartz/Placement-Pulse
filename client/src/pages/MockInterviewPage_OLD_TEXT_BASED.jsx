@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { FiVideo, FiPlay, FiSend, FiClock, FiTarget, FiTrendingUp, FiCheckCircle, FiAlertCircle, FiTrash2, FiEye, FiCamera, FiMic, FiVideoOff } from 'react-icons/fi';
 import StudentSidebar from '../components/StudentSidebar';
+import { API_BASE } from '../config/api';
 
 const MockInterviewPage = () => {
   const [currentView, setCurrentView] = useState('setup'); // 'setup', 'interview', 'results', 'history'
@@ -93,7 +94,7 @@ const MockInterviewPage = () => {
   const fetchHistory = async () => {
     try {
       const token = sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:3001/api/mock-interview/history', {
+      const response = await axios.get(`${API_BASE}/api/mock-interview/history`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setHistory(response.data.data || []);
@@ -120,7 +121,7 @@ const MockInterviewPage = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        'http://localhost:3001/api/mock-interview/start',
+        `${API_BASE}/api/mock-interview/start`,
         {
           ...interviewConfig,
           experienceLevel: 'fresher' // All students are freshers
@@ -157,7 +158,7 @@ const MockInterviewPage = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:3001/api/mock-interview/${currentInterview}/submit`,
+        `${API_BASE}/api/mock-interview/${currentInterview}/submit`,
         { answer: currentAnswer },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -191,7 +192,7 @@ const MockInterviewPage = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.get(
-        `http://localhost:3001/api/mock-interview/${interviewId}/results`,
+        `${API_BASE}/api/mock-interview/${interviewId}/results`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       setSelectedHistoryItem(response.data.data);
@@ -209,7 +210,7 @@ const MockInterviewPage = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       await axios.delete(
-        `http://localhost:3001/api/mock-interview/${interviewId}`,
+        `${API_BASE}/api/mock-interview/${interviewId}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       fetchHistory();

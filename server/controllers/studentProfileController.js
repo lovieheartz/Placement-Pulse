@@ -20,6 +20,10 @@ function calculateCompletion(profile) {
   return Math.round((filledFields / fields.length) * 100);
 }
 
+// Exported so other controllers (e.g. academic result import) can keep the
+// completion percentage in sync after writing profile data.
+exports.calculateCompletion = calculateCompletion;
+
 // Get student profile
 exports.getStudentProfile = async (req, res) => {
   try {

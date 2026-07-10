@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import PortalLayout from '@/components/app/PortalLayout';
 import { PageHeader } from '@/components/ui/surface';
-import { FileSearch } from 'lucide-react';
+import { FileSearch, History } from 'lucide-react';
 import ResumeAnalyzer from '../components/ResumeAnalyzer';
 import ResumeAnalysisHistory from '../components/ResumeAnalysisHistory';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const ResumeAnalyzerPage = () => {
@@ -21,7 +22,7 @@ const ResumeAnalyzerPage = () => {
   const { data: profileData } = useQuery({
     queryKey: ['studentProfile'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/student/profile', {
+      const res = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -42,36 +43,25 @@ const ResumeAnalyzerPage = () => {
           icon={FileSearch}
         />
 
-        {/* Tab Navigation */}
-        <div className="border-b border-border">
-          <nav className="flex gap-4 md:gap-8">
+        {/* Segmented tab control */}
+        <div className="inline-flex w-full max-w-md items-center gap-1 rounded-2xl border border-border/70 bg-muted/50 p-1.5 shadow-sm backdrop-blur-sm sm:w-auto">
+          {[
+            { id: 'analyzer', label: 'Resume Analyzer', Icon: FileSearch },
+            { id: 'history', label: 'Analysis History', Icon: History },
+          ].map(({ id, label, Icon }) => (
             <button
-              onClick={() => setActiveTab('analyzer')}
-              className={`relative py-4 px-2 font-semibold text-base transition-all duration-200 ${
-                activeTab === 'analyzer'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`relative flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 sm:flex-none ${
+                activeTab === id
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                  : 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
               }`}
             >
-              Resume Analyzer
-              {activeTab === 'analyzer' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600"></div>
-              )}
+              <Icon className="size-4 shrink-0" />
+              {label}
             </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`relative py-4 px-2 font-semibold text-base transition-all duration-200 ${
-                activeTab === 'history'
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Analysis History
-              {activeTab === 'history' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600"></div>
-              )}
-            </button>
-          </nav>
+          ))}
         </div>
 
         {/* Content */}

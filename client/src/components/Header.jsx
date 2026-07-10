@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FiBell, FiChevronDown } from 'react-icons/fi';
 import API_CONFIG from '../config/api';
+import { API_BASE } from '../config/api';
 
 const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }) => {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -112,7 +113,7 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
   const profilePictureUrl = rawProfilePicture
     ? rawProfilePicture.startsWith('http')
       ? rawProfilePicture
-      : `http://localhost:3001${rawProfilePicture}`
+      : `${API_BASE}${rawProfilePicture}`
     : null;
 
   // Debug logging

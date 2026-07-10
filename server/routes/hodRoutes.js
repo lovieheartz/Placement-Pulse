@@ -49,5 +49,6 @@ router.get("/students", authenticateToken, hodOnly, hodController.getAllStudents
 router.put("/students/:id/block", authenticateToken, hodOnly, hodController.blockStudent);
 router.put("/students/:id/unblock", authenticateToken, hodOnly, hodController.unblockStudent);
 router.get("/students/blocked", authenticateToken, hodOnly, hodController.getBlockedStudents);
+router.get("/students/:id/profile", authenticateToken, hodOnly, hodController.getStudentProfileById);
 
 module.exports = router;

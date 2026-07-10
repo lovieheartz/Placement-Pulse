@@ -9,6 +9,7 @@ import { GlassPanel, PageHeader } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 
 const ApplyNOC = () => {
   const { user } = useContext(AuthContext);
@@ -23,7 +24,7 @@ const ApplyNOC = () => {
   const { data: profileData } = useQuery({
     queryKey: ['studentProfile'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/student/profile', {
+      const res = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -69,7 +70,7 @@ const ApplyNOC = () => {
         data.append('attachment', selectedFile);
       }
 
-      const { data: response } = await axios.post('http://localhost:3001/noc/submit', data, {
+      const { data: response } = await axios.post(`${API_BASE}/noc/submit`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

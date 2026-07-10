@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { API_BASE } from '../config/api';
 import 'react-toastify/dist/ReactToastify.css';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../context/AuthContext';
@@ -31,7 +32,7 @@ const FacultyList = () => {
   } = useQuery({
     queryKey: ['faculties'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/faculty/all-faculties');
+      const { data } = await axios.get(`${API_BASE}/faculty/all-faculties`);
       if (!data.data || !Array.isArray(data.data)) {
         throw new Error('Invalid data format received from server');
       }
@@ -50,7 +51,7 @@ const FacultyList = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -60,7 +61,7 @@ const FacultyList = () => {
 
   const { mutate: deleteFacultyMutation, isPending: isDeleting } = useMutation({
     mutationFn: async (facultyId) => {
-      const { data } = await axios.delete(`http://localhost:3001/faculty/delete/${facultyId}`);
+      const { data } = await axios.delete(`${API_BASE}/faculty/delete/${facultyId}`);
       return data.deletedId;
     },
     onMutate: async (facultyId) => {

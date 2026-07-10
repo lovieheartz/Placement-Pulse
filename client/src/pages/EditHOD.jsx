@@ -11,6 +11,7 @@ import { UserCog } from 'lucide-react';
 import axios from 'axios';
 import { courseOptions, courseToDepartments } from '../constants/departments';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const EditHOD = () => {
@@ -36,7 +37,7 @@ const EditHOD = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -47,7 +48,7 @@ const EditHOD = () => {
   const { data: hodData, isLoading } = useQuery({
     queryKey: ['hod', id],
     queryFn: async () => {
-      const { data } = await axios.get(`http://localhost:3001/admin/hod/${id}`, {
+      const { data } = await axios.get(`${API_BASE}/admin/hod/${id}`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -85,7 +86,7 @@ const EditHOD = () => {
     mutationFn: async (formData) => {
       const token = sessionStorage.getItem('authToken');
       const { data } = await axios.put(
-        `http://localhost:3001/admin/hod/${id}`,
+        `${API_BASE}/admin/hod/${id}`,
         formData,
         {
           headers: {

@@ -19,6 +19,7 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from "./pages/Profile"; 
 import EditFaculty from './pages/EditFaculty';
 import StudentList from './pages/StudentList';
+import StudentDetail from './pages/StudentDetail';
 import BlockedStudents from './pages/BlockedStudents';
 import AdminList from './pages/AdminList';
 import AddAdmin from './pages/AddAdmin';
@@ -29,6 +30,11 @@ import TrackNOC from './pages/TrackNOC';
 import ManageNOC from './pages/ManageNOC';
 import StudentProfileDashboard from './pages/StudentProfile/StudentProfileDashboard';
 import StudentProfileEdit from './pages/StudentProfile/StudentProfileEdit';
+import AcademicRecords from './pages/StudentProfile/AcademicRecords';
+import StudentAssignments from './pages/StudentAssignments';
+import StudentGrades from './pages/StudentGrades';
+import FacultyAssignments from './pages/FacultyAssignments';
+import AssignmentSubmissions from './pages/AssignmentSubmissions';
 import ResumeAnalyzerPage from './pages/ResumeAnalyzerPage';
 import RealtimeInterviewPage from './pages/RealtimeInterviewPage';
 import InterviewHistoryPage from './pages/InterviewHistoryPage';
@@ -99,6 +105,9 @@ function App() {
         <Route path='/student/dashboard' element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
         <Route path='/faculty-dashboard' element={<ProtectedRoute><FacultyDashboard /></ProtectedRoute>} />
         <Route path='/faculty/students' element={<ProtectedRoute><FacultyStudentList /></ProtectedRoute>} />
+        <Route path='/faculty/students/:studentId' element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
+        <Route path='/faculty/assignments' element={<ProtectedRoute><FacultyAssignments /></ProtectedRoute>} />
+        <Route path='/faculty/assignments/:id' element={<ProtectedRoute><AssignmentSubmissions /></ProtectedRoute>} />
         <Route path='/faculty/profile' element={<ProtectedRoute><FacultyProfile /></ProtectedRoute>} />
         <Route path='/admin/faculty' element={<ProtectedRoute><FacultyList /></ProtectedRoute>} />
         <Route path='/admin/add-faculty' element={<ProtectedRoute><AddFaculty /></ProtectedRoute>} />
@@ -106,6 +115,7 @@ function App() {
         <Route path="/admin/edit-faculty/:id" element={<ProtectedRoute><EditFaculty /></ProtectedRoute>} />
         <Route path='/admin/students' element={<ProtectedRoute><StudentList /></ProtectedRoute>} />
         <Route path='/admin/students/blocked' element={<ProtectedRoute><BlockedStudents /></ProtectedRoute>} />
+        <Route path='/admin/students/:studentId' element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
         <Route path='/admin/admins' element={<ProtectedRoute><AdminList /></ProtectedRoute>} />
         <Route path='/admin/add-admin' element={<ProtectedRoute><AddAdmin /></ProtectedRoute>} />
         <Route path='/admin/send-notification' element={<ProtectedRoute><SendNotification /></ProtectedRoute>} />
@@ -117,6 +127,9 @@ function App() {
         <Route path='/admin/manage-noc' element={<ProtectedRoute><ManageNOC /></ProtectedRoute>} />
         <Route path='/student/profile' element={<ProtectedRoute><StudentProfileDashboard /></ProtectedRoute>} />
         <Route path='/student/profile/edit' element={<ProtectedRoute><StudentProfileEdit /></ProtectedRoute>} />
+        <Route path='/student/academic-records' element={<ProtectedRoute><AcademicRecords /></ProtectedRoute>} />
+        <Route path='/student/assignments' element={<ProtectedRoute><StudentAssignments /></ProtectedRoute>} />
+        <Route path='/student/grades' element={<ProtectedRoute><StudentGrades /></ProtectedRoute>} />
         <Route path='/student/resume-analyzer' element={<ProtectedRoute><ResumeAnalyzerPage /></ProtectedRoute>} />
         <Route path='/student/mock-interview' element={<ProtectedRoute><RealtimeInterviewPage /></ProtectedRoute>} />
         {/* HOD Routes */}
@@ -128,7 +141,10 @@ function App() {
         <Route path='/hod/add-faculty' element={<ProtectedRoute><AddFacultyByHOD /></ProtectedRoute>} />
         <Route path='/hod/profile' element={<ProtectedRoute><HODProfile /></ProtectedRoute>} />
         <Route path='/hod/students' element={<ProtectedRoute><HODStudents /></ProtectedRoute>} />
+        <Route path='/hod/students/:studentId' element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
         <Route path='/hod/blocked-students' element={<ProtectedRoute><HODBlockedStudents /></ProtectedRoute>} />
+        <Route path='/hod/assignments' element={<ProtectedRoute><FacultyAssignments /></ProtectedRoute>} />
+        <Route path='/hod/assignments/:id' element={<ProtectedRoute><AssignmentSubmissions /></ProtectedRoute>} />
         <Route path='/hod/send-notification' element={<ProtectedRoute><HODSendNotification /></ProtectedRoute>} />
         <Route path='/hod/notification-history' element={<ProtectedRoute><HODNotificationHistory /></ProtectedRoute>} />
         <Route path='/student/interview-history' element={<ProtectedRoute><InterviewHistoryPage /></ProtectedRoute>} />

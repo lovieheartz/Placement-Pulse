@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiClock, FiCamera, FiAlertTriangle } from 'react-icons/fi';
+import { API_BASE } from '../config/api';
 
 const TakeTest = () => {
   const { testId } = useParams();
@@ -39,7 +40,7 @@ const TakeTest = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:3001/api/attempts/start/${testId}`,
+        `${API_BASE}/api/attempts/start/${testId}`,
         {
           browserInfo: {
             userAgent: navigator.userAgent,
@@ -129,7 +130,7 @@ const TakeTest = () => {
       try {
         const token = sessionStorage.getItem('authToken');
         await axios.post(
-          `http://localhost:3001/api/attempts/${attemptId}/monitor/snapshot`,
+          `${API_BASE}/api/attempts/${attemptId}/monitor/snapshot`,
           formData,
           {
             headers: {
@@ -153,7 +154,7 @@ const TakeTest = () => {
       try {
         const token = sessionStorage.getItem('authToken');
         await axios.post(
-          `http://localhost:3001/api/attempts/${attemptId}/monitor/tab-switch`,
+          `${API_BASE}/api/attempts/${attemptId}/monitor/tab-switch`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -227,7 +228,7 @@ const TakeTest = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       await axios.post(
-        `http://localhost:3001/api/attempts/${attemptId}/answer`,
+        `${API_BASE}/api/attempts/${attemptId}/answer`,
         {
           questionId: question._id,
           questionNumber: question.questionNumber,
@@ -275,7 +276,7 @@ const TakeTest = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       await axios.post(
-        `http://localhost:3001/api/attempts/${attemptId}/submit`,
+        `${API_BASE}/api/attempts/${attemptId}/submit`,
         { submissionType },
         { headers: { Authorization: `Bearer ${token}` } }
       );

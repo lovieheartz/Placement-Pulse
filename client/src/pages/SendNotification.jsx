@@ -9,6 +9,7 @@ import { GlassPanel, PageHeader } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
 import API_CONFIG from '../config/api';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const SendNotification = () => {
@@ -78,7 +79,7 @@ const SendNotification = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -147,7 +148,7 @@ const SendNotification = () => {
 
       // Fetch students
       try {
-        const studentsResponse = await axios.get('http://localhost:3001/admin/all-students', {
+        const studentsResponse = await axios.get(`${API_BASE}/admin/all-students`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -166,7 +167,7 @@ const SendNotification = () => {
 
       // Fetch HODs
       try {
-        const hodsResponse = await axios.get('http://localhost:3001/admin/all-hods', {
+        const hodsResponse = await axios.get(`${API_BASE}/admin/all-hods`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -194,7 +195,7 @@ const SendNotification = () => {
     queryKey: ['allHODs'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/admin/all-hods', {
+      const { data } = await axios.get(`${API_BASE}/admin/all-hods`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data.data || [];

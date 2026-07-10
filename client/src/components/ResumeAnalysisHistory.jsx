@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { API_BASE } from '../config/api';
 import {
   FiClock,
   FiFileText,
@@ -53,13 +54,21 @@ const ResumeAnalysisHistory = () => {
     fetchAnalysisHistory();
   }, []);
 
+  // Lock body scroll while the detail modal is open
+  useEffect(() => {
+    document.body.style.overflow = selectedAnalysis ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedAnalysis]);
+
   const fetchAnalysisHistory = async () => {
     try {
       setLoading(true);
       const token = sessionStorage.getItem('authToken');
 
       const response = await axios.get(
-        'http://localhost:3001/api/resume-analysis/history',
+        `${API_BASE}/api/resume-analysis/history`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -87,7 +96,7 @@ const ResumeAnalysisHistory = () => {
       const token = sessionStorage.getItem('authToken');
 
       await axios.delete(
-        `http://localhost:3001/api/resume-analysis/${analysisId}`,
+        `${API_BASE}/api/resume-analysis/${analysisId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -281,40 +290,47 @@ const ResumeAnalysisHistory = () => {
             {/* Close Button */}
             <button
               onClick={() => setSelectedAnalysis(null)}
-              className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full border border-border bg-card text-lg font-bold text-muted-foreground shadow-sm transition-all hover:bg-destructive hover:text-destructive-foreground"
+              className="absolute right-4 top-4 z-20 flex size-9 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-sm backdrop-blur transition-colors hover:bg-white dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+              aria-label="Close"
             >×</button>
 
-            {/* Modal Header */}
-            <div className="border-b border-border px-6 py-6 sm:px-8">
-              <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <FiFileText className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Resume Analysis Report</h2>
-                  <p className="truncate text-sm text-muted-foreground">{selectedAnalysis.resumeFileName}</p>
+            {/* Gradient hero header */}
+            <div
+              className="relative overflow-hidden px-6 pb-8 pt-7 text-white sm:px-8"
+              style={{
+                background: `linear-gradient(135deg, ${getScoreColor(
+                  selectedAnalysis.atsScore
+                )} 0%, #4338ca 130%)`,
+              }}
+            >
+              <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/15 blur-3xl" />
+              <div className="relative flex flex-col items-center gap-5 sm:flex-row">
+                <div className="flex size-24 shrink-0 flex-col items-center justify-center rounded-full bg-white shadow-lg sm:size-28">
+                  <div
+                    className="text-4xl font-black leading-none"
+                    style={{ color: getScoreColor(selectedAnalysis.atsScore) }}
+                  >
+                    {selectedAnalysis.atsScore}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-400">/ 100</span>
+                </div>
+                <div className="min-w-0 text-center sm:text-left">
+                  <div className="flex items-center justify-center gap-2 text-2xl font-extrabold sm:justify-start">
+                    <FiAward className="h-6 w-6 shrink-0" />
+                    ATS Compatibility Score
+                  </div>
+                  <p className="mt-1 truncate text-sm text-white/85">
+                    {selectedAnalysis.resumeFileName}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Modal Body */}
             <div className="space-y-6 p-6 sm:p-8">
-              {/* Score Summary */}
-              <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-border bg-card/60 p-6 text-center sm:flex-row sm:gap-12 sm:text-left">
-                <div className="flex size-28 flex-col items-center justify-center rounded-full border-4 border-border bg-card">
-                  <div className="text-4xl font-extrabold" style={{ color: getScoreColor(selectedAnalysis.atsScore) }}>
-                    {selectedAnalysis.atsScore}
-                  </div>
-                  <span className="text-xs text-muted-foreground">/ 100</span>
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-foreground">ATS Compatibility Score</div>
-                  <div className="text-sm text-muted-foreground">Resume Analysis Results</div>
-                </div>
-              </div>
-
               {/* Score Breakdown */}
-              {selectedAnalysis.score_breakdown && (
+              {selectedAnalysis.score_breakdown &&
+                Object.keys(selectedAnalysis.score_breakdown).length > 0 && (
                 <div className="rounded-2xl border border-border bg-muted/40 p-5 sm:p-6">
                   <h3 className="mb-4 flex items-center text-lg font-bold text-foreground">
                     <FiAward className="mr-2 h-5 w-5 text-primary" />

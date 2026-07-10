@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import {
   FaUser,
@@ -10,9 +11,15 @@ import {
   FaLock,
   FaEye,
   FaEyeSlash,
+  FaGraduationCap,
+  FaCodeBranch,
+  FaCalendarAlt,
+  FaChevronDown,
+  FaCheck,
 } from 'react-icons/fa';
 import { apiUrl } from '../lib/api';
 import { BRAND } from '../constants/brand';
+import { BrandGlyph } from '../components/ui/BrandMark';
 import GlassBackground from '../components/ui/GlassBackground';
 import { ArrowRight } from '../components/ui/icons';
 
@@ -33,10 +40,134 @@ const inputWrap =
   'ds-field liquid-glass flex items-center gap-3 rounded-2xl px-4';
 const inputField =
   'w-full bg-transparent py-3.5 text-sm text-white placeholder-white/40 outline-none';
-const selectWrap = 'ds-field liquid-glass rounded-2xl relative';
-const selectField =
-  'w-full appearance-none bg-transparent py-3.5 pl-4 pr-9 text-sm text-white outline-none [&>option]:bg-[#0b0d14] [&>option]:text-white';
+// Selects share the exact same wrapper as inputs so heights + left icons align.
+const selectWrap =
+  'ds-field liquid-glass flex items-center gap-3 rounded-2xl px-4 py-3.5';
+const labelText = 'block text-xs font-medium text-white/60 mb-1.5 pl-1';
 const errText = 'mt-1.5 text-xs text-rose-300/90 pl-1';
+
+/**
+ * Fully custom dark dropdown (replaces the un-themeable native <select>).
+ * The trigger matches the glass input fields; the menu is rendered in a portal
+ * on document.body with fixed positioning, so it is never clipped by the auth
+ * panel's `overflow:hidden` and always floats above everything. Keyboard-
+ * accessible (Enter/Space/Arrows/Esc) and closes on outside click / scroll.
+ * `options` is an array of { value, label }.
+ */
+const GlassSelect = ({ value, onChange, options, placeholder, icon: Icon, disabled = false }) => {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const [rect, setRect] = useState(null);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+  const selected = options.find((o) => o.value === value);
+
+  const openMenu = () => {
+    if (disabled) return;
+    setRect(btnRef.current?.getBoundingClientRect());
+    setActive(options.findIndex((o) => o.value === value));
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const update = () => setRect(btnRef.current?.getBoundingClientRect());
+    const onScroll = () => setOpen(false);
+    const onDoc = (e) => {
+      if (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', onScroll, true);
+    document.addEventListener('mousedown', onDoc);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', onScroll, true);
+      document.removeEventListener('mousedown', onDoc);
+    };
+  }, [open]);
+
+  const choose = (v) => { onChange(v); setOpen(false); btnRef.current?.focus(); };
+
+  const onKeyDown = (e) => {
+    if (disabled) return;
+    if (e.key === 'Escape' || e.key === 'Tab') { setOpen(false); return; }
+    if (!open) {
+      if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); openMenu(); }
+      return;
+    }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(options.length - 1, a + 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (active >= 0) choose(options[active].value); }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        ref={btnRef}
+        type="button"
+        disabled={disabled}
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        onKeyDown={onKeyDown}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`${selectWrap} w-full text-left ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+      >
+        {Icon && <Icon className="shrink-0 text-white/50" />}
+        <span className={`flex-1 truncate ${selected ? 'text-white' : 'text-white/40'}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <FaChevronDown
+          className={`shrink-0 text-[11px] text-white/50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && rect &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            role="listbox"
+            style={{
+              position: 'fixed',
+              top: rect.bottom + 6,
+              left: rect.left,
+              width: rect.width,
+              maxHeight: Math.min(300, window.innerHeight - rect.bottom - 16),
+            }}
+            className="z-[999] overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#0b0f1c]/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/25"
+          >
+            {options.length === 0 && (
+              <li className="px-3 py-2 text-sm text-white/40">No options</li>
+            )}
+            {options.map((o, i) => {
+              const isSel = o.value === value;
+              const isActive = i === active;
+              return (
+                <li
+                  key={o.value}
+                  role="option"
+                  aria-selected={isSel}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => choose(o.value)}
+                  className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors ${
+                    isSel
+                      ? 'bg-sky-500/25 text-white'
+                      : isActive
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/75'
+                  }`}
+                >
+                  <span className="truncate">{o.label}</span>
+                  {isSel && <FaCheck className="ml-2 shrink-0 text-[11px] text-sky-300" />}
+                </li>
+              );
+            })}
+          </ul>,
+          document.body
+        )}
+    </div>
+  );
+};
 
 const STRENGTH = [
   { label: 'Too weak', color: '#fb7185', width: '20%' },
@@ -79,11 +210,15 @@ const Signup = () => {
     register,
     handleSubmit,
     watch,
+    setValue,
+    control,
     formState: { errors },
   } = useForm({ defaultValues: { email: prefillEmail } });
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1999 + 10 }, (_, i) => 2020 + i);
+  const yearOpts = years.map((y) => ({ value: String(y), label: String(y) }));
+  const courseOpts = Object.keys(courseOptions).map((c) => ({ value: c, label: c }));
 
   const passwordValue = watch('password') || '';
   const strengthIdx = scorePassword(passwordValue);
@@ -263,9 +398,7 @@ const Signup = () => {
 
       <div className="relative z-10 w-full max-w-xl">
         <Link to="/" className="flex items-center justify-center gap-3 mb-6">
-          <span className="liquid-glass flex h-12 w-12 items-center justify-center rounded-full">
-            <span className="font-heading italic text-2xl text-white">{BRAND.monogram}</span>
-          </span>
+          <BrandGlyph size={40} />
           <span className="flex flex-col items-start leading-none">
             <span className="font-heading italic text-xl text-white">{BRAND.name}</span>
             <span className="text-[10px] uppercase tracking-[0.18em] text-white/55 mt-0.5">{BRAND.org}</span>
@@ -334,75 +467,86 @@ const Signup = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-white/60 mb-1.5 pl-1">Course</label>
-                <div className={selectWrap}>
-                  <select
-                    className={selectField}
-                    {...register('course', { required: 'Course is required' })}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                  >
-                    <option value="">Select course</option>
-                    {Object.keys(courseOptions).map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
-                </div>
+                <label className={labelText}>Course</label>
+                <Controller
+                  name="course"
+                  control={control}
+                  rules={{ required: 'Course is required' }}
+                  render={({ field }) => (
+                    <GlassSelect
+                      icon={FaGraduationCap}
+                      placeholder="Select course"
+                      value={field.value || ''}
+                      options={courseOpts}
+                      onChange={(v) => {
+                        field.onChange(v);
+                        setSelectedCourse(v);
+                        // Reset branch so a stale value from a previous course can't be submitted.
+                        setValue('branch', '', { shouldValidate: false });
+                      }}
+                    />
+                  )}
+                />
                 {errors.course && <p className={errText}>{errors.course.message}</p>}
               </div>
 
               <div>
-                <label className="block text-xs text-white/60 mb-1.5 pl-1">Branch</label>
-                <div className={selectWrap}>
-                  <select
-                    className={selectField}
-                    disabled={!selectedCourse}
-                    {...register('branch', { required: 'Branch is required' })}
-                  >
-                    <option value="">Select branch</option>
-                    {selectedCourse &&
-                      courseOptions[selectedCourse]?.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
-                </div>
+                <label className={labelText}>Branch</label>
+                <Controller
+                  name="branch"
+                  control={control}
+                  rules={{ required: 'Branch is required' }}
+                  render={({ field }) => (
+                    <GlassSelect
+                      icon={FaCodeBranch}
+                      disabled={!selectedCourse}
+                      placeholder={selectedCourse ? 'Select branch' : 'Select course first'}
+                      value={field.value || ''}
+                      options={(selectedCourse ? courseOptions[selectedCourse] : []).map((b) => ({ value: b, label: b }))}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
                 {errors.branch && <p className={errText}>{errors.branch.message}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-white/60 mb-1.5 pl-1">Admission year</label>
-                <div className={selectWrap}>
-                  <select
-                    className={selectField}
-                    {...register('admissionYear', { required: 'Required' })}
-                  >
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
-                </div>
+                <label className={labelText}>Admission year</label>
+                <Controller
+                  name="admissionYear"
+                  control={control}
+                  rules={{ required: 'Required' }}
+                  render={({ field }) => (
+                    <GlassSelect
+                      icon={FaCalendarAlt}
+                      placeholder="Select year"
+                      value={field.value || ''}
+                      options={yearOpts}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
                 {errors.admissionYear && <p className={errText}>{errors.admissionYear.message}</p>}
               </div>
 
               <div>
-                <label className="block text-xs text-white/60 mb-1.5 pl-1">Passout year</label>
-                <div className={selectWrap}>
-                  <select
-                    className={selectField}
-                    {...register('passoutYear', { required: 'Required' })}
-                  >
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50">▾</span>
-                </div>
+                <label className={labelText}>Passout year</label>
+                <Controller
+                  name="passoutYear"
+                  control={control}
+                  rules={{ required: 'Required' }}
+                  render={({ field }) => (
+                    <GlassSelect
+                      icon={FaCalendarAlt}
+                      placeholder="Select year"
+                      value={field.value || ''}
+                      options={yearOpts}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
                 {errors.passoutYear && <p className={errText}>{errors.passoutYear.message}</p>}
               </div>
             </div>

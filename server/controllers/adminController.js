@@ -252,6 +252,31 @@ exports.getAllStudents = async (req, res) => {
   }
 };
 
+// Get a single student's full profile (incl. semesterMarks / CGPA) for admin view.
+exports.getStudentProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const student = await prisma.student.findUnique({
+      where: { id },
+      omit: { password: true },
+    });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    const profile = await prisma.studentProfile.findUnique({ where: { studentId: id } });
+
+    res.status(200).json({
+      success: true,
+      data: { student, profile: profile || null },
+    });
+  } catch (err) {
+    console.error("Get student profile by id error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 // Get blocked students
 exports.getBlockedStudents = async (req, res) => {
   try {

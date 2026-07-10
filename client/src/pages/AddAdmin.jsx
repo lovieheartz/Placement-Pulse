@@ -11,6 +11,7 @@ import { GlassPanel, PageHeader } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { ShieldPlus } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const AddAdmin = () => {
@@ -29,7 +30,7 @@ const AddAdmin = () => {
     mutationFn: async (adminData) => {
       const token = sessionStorage.getItem('authToken');
       const { data } = await axios.post(
-        'http://localhost:3001/admin/create-admin-by-admin',
+        `${API_BASE}/admin/create-admin-by-admin`,
         adminData,
         {
           headers: { 

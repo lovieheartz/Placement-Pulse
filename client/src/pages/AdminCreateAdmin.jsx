@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm } from "react-hook-form";
+import { API_BASE } from '../config/api';
 
 
 const AdminCreateAdmin = () => {
@@ -31,7 +32,7 @@ const AdminCreateAdmin = () => {
   const { mutate: createAdmin, isPending: isCreating } = useMutation({
     mutationFn: async (data) => {
       const res = await axios.post(
-        "http://localhost:3001/admin/create-admin",
+        `${API_BASE}/admin/create-admin`,
         data,
         {
           headers: { "Content-Type": "application/json" },

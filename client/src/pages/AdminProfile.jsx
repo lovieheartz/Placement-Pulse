@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_BASE } from '../config/api';
 import "react-toastify/dist/ReactToastify.css";
 import {
   Camera,
@@ -27,8 +28,8 @@ const AdminProfile = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const profileEndpoint = `http://localhost:3001/admin/profile`;
-  const avatarEndpoint = `http://localhost:3001/admin/upload-avatar`;
+  const profileEndpoint = `${API_BASE}/admin/profile`;
+  const avatarEndpoint = `${API_BASE}/admin/upload-avatar`;
 
   const {
     data: profileData,

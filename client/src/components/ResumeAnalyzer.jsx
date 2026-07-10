@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import { API_BASE } from '../config/api';
 import 'react-circular-progressbar/dist/styles.css';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -159,7 +160,7 @@ const ResumeAnalyzer = () => {
       const token = sessionStorage.getItem('authToken');
 
       const response = await axios.post(
-        'http://localhost:3001/api/resume-analysis/upload',
+        `${API_BASE}/api/resume-analysis/upload`,
         formData,
         {
           headers: {
@@ -296,140 +297,136 @@ const ResumeAnalyzer = () => {
   return (
     <div className="w-full space-y-6 md:space-y-8">
 
-      {/* Top Section - Upload & Job Description - Full Width */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
+      {/* Top Section - Upload & Job Description */}
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2 md:gap-6">
 
           {/* Upload Resume Card */}
-          <div className="space-y-0">
-
-            {/* File Upload Card */}
-            <GlassPanel className="overflow-hidden p-0">
-              <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
-              <div className="p-5 sm:p-6">
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <FiUpload className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Upload Resume</h3>
-                    <p className="text-xs text-muted-foreground">PDF or DOCX, up to 10MB</p>
-                  </div>
-                </div>
-
-                <div
-                  className={`rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300 ${
-                    dragActive
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary hover:bg-primary/5'
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  {file ? (
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-                        <FiCheckCircle className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="break-all px-2 text-xs font-medium text-foreground sm:text-sm md:text-base">{file.name}</p>
-                        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                      <Button variant="destructive" size="sm" onClick={removeFile}>
-                        Remove File
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                        <FiFileText className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground sm:text-base md:text-lg">
-                          Drop your resume here
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">PDF or DOCX format (Max 10MB)</p>
-                      </div>
-                      <label className="inline-block cursor-pointer">
-                        <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
-                          Choose File
-                        </span>
-                        <input
-                          type="file"
-                          accept=".pdf,.docx"
-                          onChange={handleFileInput}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  )}
+          <GlassPanel className="group relative flex flex-col overflow-hidden p-0">
+            <span className="pointer-events-none block h-1.5 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+            <div className="pointer-events-none absolute -right-12 -top-8 size-40 rounded-full bg-blue-500/[0.07] blur-3xl" />
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/15 dark:text-blue-400">
+                  <FiUpload className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Upload Resume</h3>
+                  <p className="text-xs text-muted-foreground">PDF or DOCX, up to 10MB</p>
                 </div>
               </div>
-            </GlassPanel>
 
-          </div>
-
-          {/* Job Description Card (Right Column) */}
-          <div className="space-y-5 md:space-y-6">
-            {/* Job Description Card */}
-            <GlassPanel className="overflow-hidden p-0">
-              <span className="pointer-events-none block h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600" />
-              <div className="p-5 sm:p-6">
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <FiTarget className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Job Description</h3>
-                    <p className="text-xs text-muted-foreground">Paste the role you're targeting</p>
+              <div
+                className={`flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-300 ${
+                  dragActive
+                    ? 'scale-[1.01] border-primary bg-primary/5'
+                    : file
+                    ? 'border-emerald-500/40 bg-emerald-500/[0.04]'
+                    : 'border-border hover:border-primary/60 hover:bg-primary/[0.03]'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                {file ? (
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
+                      <FiCheckCircle className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="break-all px-2 text-sm font-semibold text-foreground md:text-base">{file.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB · Ready to analyze
+                      </p>
+                    </div>
+                    <Button variant="destructive" size="sm" onClick={removeFile}>
+                      Remove File
+                    </Button>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15 transition-transform duration-300 group-hover:scale-105">
+                      <FiFileText className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-foreground md:text-lg">
+                        Drop your resume here
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">or browse — PDF / DOCX, max 10MB</p>
+                    </div>
+                    <label className="inline-block cursor-pointer">
+                      <span className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-110">
+                        <FiUpload className="h-4 w-4" /> Choose File
+                      </span>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx"
+                        onChange={handleFileInput}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+          </GlassPanel>
 
-                <textarea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Paste the complete job description here for accurate ATS analysis..."
-                  className="h-48 w-full resize-none rounded-xl border border-input bg-card p-4 text-sm leading-relaxed text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground sm:text-sm">
-                    {jobDescription.length} characters
-                  </span>
-                  {jobDescription.length > 0 && (
-                    <span className="text-xs font-medium text-primary sm:text-sm">
-                      {jobDescription.split(/\s+/).length} words
-                    </span>
-                  )}
+          {/* Job Description Card */}
+          <GlassPanel className="relative flex flex-col overflow-hidden p-0">
+            <span className="pointer-events-none block h-1.5 w-full bg-gradient-to-r from-indigo-600 to-violet-600" />
+            <div className="pointer-events-none absolute -right-12 -top-8 size-40 rounded-full bg-violet-500/[0.07] blur-3xl" />
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/15 dark:text-violet-400">
+                  <FiTarget className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Job Description</h3>
+                  <p className="text-xs text-muted-foreground">Paste the role you're targeting</p>
                 </div>
               </div>
-            </GlassPanel>
 
-            {/* Analyze Button */}
-            <Button
-              variant="gradient"
-              size="xl"
-              onClick={analyzeResume}
-              disabled={!file || !jobDescription.trim() || isAnalyzing}
-              className="w-full"
-            >
-              {isAnalyzing ? (
-                <>
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  <span>Analyzing Resume...</span>
-                  <FiZap className="h-5 w-5 animate-pulse" />
-                </>
-              ) : (
-                <>
-                  <FiCpu className="h-5 w-5" />
-                  <span>Analyze with AI</span>
-                </>
-              )}
-            </Button>
-          </div>
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the complete job description here for accurate ATS analysis…"
+                className="min-h-[168px] w-full flex-1 resize-none rounded-2xl border border-input bg-background/60 p-4 text-sm leading-relaxed text-foreground shadow-inner transition-colors placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              />
+              <div className="mt-3 flex items-center justify-between text-xs sm:text-sm">
+                <span className="rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+                  {jobDescription.length} characters
+                </span>
+                {jobDescription.trim().length > 0 && (
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                    {jobDescription.trim().split(/\s+/).length} words
+                  </span>
+                )}
+              </div>
+            </div>
+          </GlassPanel>
       </div>
+
+      {/* Analyze Button — full width, prominent */}
+      <Button
+        variant="gradient"
+        size="xl"
+        onClick={analyzeResume}
+        disabled={!file || !jobDescription.trim() || isAnalyzing}
+        className="w-full shadow-lg shadow-indigo-500/20"
+      >
+        {isAnalyzing ? (
+          <>
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            <span>Analyzing Resume…</span>
+            <FiZap className="h-5 w-5 animate-pulse" />
+          </>
+        ) : (
+          <>
+            <FiCpu className="h-5 w-5" />
+            <span>Analyze with AI</span>
+          </>
+        )}
+      </Button>
 
       {/* Analysis Progress & Results Section - Full Width */}
       <div className="w-full">

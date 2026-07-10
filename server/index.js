@@ -49,6 +49,7 @@ app.use("/api/interview", require("./routes/openaiInterviewRoutes").router); // 
 app.use("/api/aptitude", require("./routes/aptitudeTestRoutes")); // Aptitude Test routes
 app.use("/api/attempts", require("./routes/testAttemptRoutes")); // Test Attempt routes
 app.use("/api/batches", require("./routes/testBatchRoutes")); // Test Batch routes
+app.use("/api/assignments", require("./routes/assignmentRoutes")); // Assignments (AI-evaluated) routes
 
 // === HEALTH CHECK ===
 app.get("/", (req, res) => {

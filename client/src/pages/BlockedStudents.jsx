@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ShieldBan, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 // Using Tailwind instead of React Bootstrap
 import './Dashboard.css';
 
@@ -27,7 +28,7 @@ const BlockedStudents = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -44,7 +45,7 @@ const BlockedStudents = () => {
     queryKey: ['blockedStudents'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/admin/students/blocked', {
+      const { data } = await axios.get(`${API_BASE}/admin/students/blocked`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -60,7 +61,7 @@ const BlockedStudents = () => {
   const { mutate: unblockStudentMutation, isPending: isUnblocking } = useMutation({
     mutationFn: async (studentId) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/admin/students/${studentId}/unblock`, {}, {
+      const { data } = await axios.put(`${API_BASE}/admin/students/${studentId}/unblock`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;

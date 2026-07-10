@@ -348,3 +348,19 @@ config/local.json
 test_*.js
 test_*.html
 *_test.js
+
+##############################
+# Source overrides (this is a JS project, not Python)
+##############################
+
+# The generic Python "lib/" rule above wrongly ignores real JS source dirs.
+# These MUST be tracked or the frontend build and backend startup break on a
+# fresh clone (Vercel/Render build from a fresh checkout).
+!client/src/lib/
+!client/src/lib/**
+!server/lib/
+!server/lib/**
+
+# Public assets referenced by index.html that the image rules would drop.
+!client/public/favicon.svg
+!client/public/brand-icon.svg

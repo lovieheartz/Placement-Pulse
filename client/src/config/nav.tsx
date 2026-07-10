@@ -21,6 +21,8 @@ import {
   UserCheck,
   Lock,
   Send,
+  GraduationCap,
+  Award,
 } from "lucide-react";
 
 export type Role = "student" | "faculty" | "hod" | "admin";
@@ -101,6 +103,9 @@ export const NAV: Record<Role, NavGroup[]> = {
     {
       heading: "Academics",
       items: [
+        { id: "academic-records", title: "Academic Records", icon: GraduationCap, to: "/student/academic-records", isNew: true },
+        { id: "assignments", title: "Assignments", icon: ClipboardList, to: "/student/assignments", isNew: true },
+        { id: "grades", title: "My Grades", icon: Award, to: "/student/grades" },
         {
           id: "tests",
           title: "Tests",
@@ -164,6 +169,7 @@ export const NAV: Record<Role, NavGroup[]> = {
       heading: "Assessments",
       items: [
         { id: "tests", title: "Aptitude Tests", icon: ClipboardList, to: "/faculty/aptitude-tests" },
+        { id: "assignments", title: "Assignments", icon: GraduationCap, to: "/faculty/assignments", isNew: true },
       ],
     },
     {
@@ -208,7 +214,10 @@ export const NAV: Record<Role, NavGroup[]> = {
     },
     {
       heading: "Assessments",
-      items: [{ id: "tests", title: "Aptitude Tests", icon: ClipboardList, to: "/hod/aptitude-tests" }],
+      items: [
+        { id: "tests", title: "Aptitude Tests", icon: ClipboardList, to: "/hod/aptitude-tests" },
+        { id: "assignments", title: "Assignments", icon: GraduationCap, to: "/hod/assignments", isNew: true },
+      ],
     },
     {
       heading: "Account",

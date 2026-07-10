@@ -218,12 +218,12 @@ export function AppSidebar({
       <button
         onClick={() => go(meta.home)}
         className={cn(
-          "flex items-center gap-3 px-4 py-4 transition-colors hover:bg-white/5",
+          "flex items-center gap-2.5 px-3.5 py-4 transition-colors hover:bg-white/5",
           collapsed && "justify-center px-2"
         )}
       >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/95 text-blue-700 shadow-md">
-          <BrandIcon className="size-5" strokeWidth={2.2} />
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/95 text-blue-700 shadow-md">
+          <BrandIcon className="size-[18px]" strokeWidth={2.2} />
         </span>
         {!collapsed && (
           <span className="flex flex-col text-left leading-tight">
@@ -238,7 +238,7 @@ export function AppSidebar({
       </button>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {NAV[role].map((group, gi) => (
           <div key={gi} className="flex flex-col gap-1">
             {group.heading && !collapsed && (

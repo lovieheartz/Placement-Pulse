@@ -8,6 +8,7 @@ import { Bell } from 'lucide-react';
 import PortalLayout from '@/components/app/PortalLayout';
 import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
 import { Badge } from '@/components/ui/badge';
+import { API_BASE } from '../config/api';
 
 const StudentNotifications = () => {
   const { source } = useParams(); // 'tpo' or 'faculty' or undefined for all
@@ -21,7 +22,7 @@ const StudentNotifications = () => {
   const { data: user } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/student/profile', {
+      const res = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -39,7 +40,7 @@ const StudentNotifications = () => {
         throw new Error('No auth token');
       }
       
-      const { data } = await axios.get('http://localhost:3001/notifications/user', {
+      const { data } = await axios.get(`${API_BASE}/notifications/user`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -81,7 +82,7 @@ const StudentNotifications = () => {
     mutationFn: async (notificationId) => {
       try {
         const response = await axios.put(
-          `http://localhost:3001/notifications/${notificationId}/read`, 
+          `${API_BASE}/notifications/${notificationId}/read`, 
           {}, 
           { headers: { Authorization: `Bearer ${token}` }}
         );

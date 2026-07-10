@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { FiPlus, FiEdit2, FiTrash2, FiBarChart2, FiDownload, FiEye, FiUsers, FiUserPlus, FiX, FiCheck } from 'react-icons/fi';
+import {
+  FiPlus, FiEdit2, FiTrash2, FiBarChart2, FiDownload, FiEye, FiUsers,
+  FiUserPlus, FiX, FiCheck, FiArrowLeft, FiSearch, FiClock, FiHelpCircle,
+  FiCalendar, FiSend, FiInbox, FiFileText,
+} from 'react-icons/fi';
+import { API_BASE } from '../lib/api';
+import LiquidGlass from '../components/ui/LiquidGlass';
 
 const AptitudeTestList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [busyId, setBusyId] = useState(null);
 
   // Batch management modal
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -17,20 +25,27 @@ const AptitudeTestList = () => {
   const [testBatches, setTestBatches] = useState([]);
   const [loadingBatches, setLoadingBatches] = useState(false);
 
+  // Role-aware base path so Create/Edit/Analytics/Dashboard work for
+  // admin, hod and faculty (they all share this page).
+  const basePath = useMemo(() => {
+    if (location.pathname.startsWith('/hod')) return '/hod';
+    if (location.pathname.startsWith('/faculty')) return '/faculty';
+    return '/admin';
+  }, [location.pathname]);
+
+  const authHeaders = () => ({
+    headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
+  });
+
   useEffect(() => {
     fetchTests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTests = async () => {
     try {
-      const token = sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:3001/api/aptitude/tests', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setTests(response.data.data);
-      }
+      const response = await axios.get(`${API_BASE}/api/aptitude/tests`, authHeaders());
+      if (response.data.success) setTests(response.data.data);
     } catch (error) {
       console.error('Error fetching tests:', error);
       alert('Failed to fetch tests');
@@ -40,57 +55,39 @@ const AptitudeTestList = () => {
   };
 
   const handlePublishTest = async (testId) => {
-    if (!window.confirm('Are you sure you want to publish this test? Students will be able to see it.')) {
-      return;
-    }
-
+    if (!window.confirm('Publish this test? Students will be able to see it.')) return;
     try {
-      const token = sessionStorage.getItem('authToken');
-      await axios.post(
-        `http://localhost:3001/api/aptitude/tests/${testId}/publish`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert('Test published successfully!');
-      fetchTests();
+      setBusyId(testId);
+      await axios.post(`${API_BASE}/api/aptitude/tests/${testId}/publish`, {}, authHeaders());
+      await fetchTests();
     } catch (error) {
       console.error('Error publishing test:', error);
       alert(error.response?.data?.message || 'Failed to publish test');
+    } finally {
+      setBusyId(null);
     }
   };
 
   const handleDeleteTest = async (testId) => {
-    if (!window.confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
-      return;
-    }
-
+    if (!window.confirm('Delete this test? This action cannot be undone.')) return;
     try {
-      const token = sessionStorage.getItem('authToken');
-      await axios.delete(
-        `http://localhost:3001/api/aptitude/tests/${testId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert('Test deleted successfully!');
-      fetchTests();
+      setBusyId(testId);
+      await axios.delete(`${API_BASE}/api/aptitude/tests/${testId}`, authHeaders());
+      await fetchTests();
     } catch (error) {
       console.error('Error deleting test:', error);
       alert(error.response?.data?.message || 'Failed to delete test');
+    } finally {
+      setBusyId(null);
     }
   };
 
   const handleExportResults = async (testId) => {
     try {
-      const token = sessionStorage.getItem('authToken');
-      const response = await axios.get(
-        `http://localhost:3001/api/aptitude/tests/${testId}/export`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob'
-        }
-      );
-
+      const response = await axios.get(`${API_BASE}/api/aptitude/tests/${testId}/export`, {
+        ...authHeaders(),
+        responseType: 'blob',
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -98,6 +95,7 @@ const AptitudeTestList = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting results:', error);
       alert('Failed to export results');
@@ -109,16 +107,11 @@ const AptitudeTestList = () => {
     setSelectedTest(test);
     setShowBatchModal(true);
     setLoadingBatches(true);
-
     try {
-      const token = sessionStorage.getItem('authToken');
-
-      // Fetch all available batches
       const batchResponse = await axios.get(
-        'http://localhost:3001/api/batches?status=active&limit=100',
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE}/api/batches?status=active&limit=100`,
+        authHeaders()
       );
-
       setAvailableBatches(batchResponse.data.data || []);
       setTestBatches(test.assignedBatches || []);
     } catch (error) {
@@ -131,16 +124,13 @@ const AptitudeTestList = () => {
 
   const handleAssignBatch = async (batchId) => {
     try {
-      const token = sessionStorage.getItem('authToken');
       await axios.post(
-        `http://localhost:3001/api/aptitude/tests/${selectedTest._id}/assign-batch`,
+        `${API_BASE}/api/aptitude/tests/${selectedTest._id}/assign-batch`,
         { batchId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        authHeaders()
       );
-
       setTestBatches([...testBatches, batchId]);
-      alert('Batch assigned successfully!');
-      fetchTests(); // Refresh test list
+      fetchTests();
     } catch (error) {
       console.error('Error assigning batch:', error);
       alert(error.response?.data?.message || 'Failed to assign batch');
@@ -149,15 +139,12 @@ const AptitudeTestList = () => {
 
   const handleRemoveBatch = async (batchId) => {
     try {
-      const token = sessionStorage.getItem('authToken');
       await axios.delete(
-        `http://localhost:3001/api/aptitude/tests/${selectedTest._id}/remove-batch/${batchId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE}/api/aptitude/tests/${selectedTest._id}/remove-batch/${batchId}`,
+        authHeaders()
       );
-
-      setTestBatches(testBatches.filter(id => id !== batchId));
-      alert('Batch removed successfully!');
-      fetchTests(); // Refresh test list
+      setTestBatches(testBatches.filter((id) => id !== batchId));
+      fetchTests();
     } catch (error) {
       console.error('Error removing batch:', error);
       alert(error.response?.data?.message || 'Failed to remove batch');
@@ -165,21 +152,14 @@ const AptitudeTestList = () => {
   };
 
   const handlePopulateStudents = async (batchId) => {
-    if (!window.confirm('This will add ALL students matching this batch\'s criteria (course, department, passout year). Continue?')) {
-      return;
-    }
-
+    if (!window.confirm("This will add ALL students matching this batch's criteria (course, department, passout year). Continue?")) return;
     try {
-      const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:3001/api/batches/${batchId}/add-all-students`,
+        `${API_BASE}/api/batches/${batchId}/add-all-students`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        authHeaders()
       );
-
       alert(response.data.message || 'Students added successfully!');
-
-      // Refresh batches
       handleManageBatches(selectedTest);
     } catch (error) {
       console.error('Error populating students:', error);
@@ -187,349 +167,284 @@ const AptitudeTestList = () => {
     }
   };
 
-  const getStatusBadge = (test) => {
+  const getStatusMeta = (test) => {
     const now = new Date();
-    const startDate = new Date(test.schedule.startDate);
-    const endDate = new Date(test.schedule.endDate);
+    const startDate = test.schedule?.startDate ? new Date(test.schedule.startDate) : null;
+    const endDate = test.schedule?.endDate ? new Date(test.schedule.endDate) : null;
 
-    if (test.status === 'draft') {
-      return <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-semibold">Draft</span>;
-    }
-
-    if (test.status === 'archived') {
-      return <span className="px-3 py-1 bg-purple-200 text-purple-700 rounded-full text-xs font-semibold">Archived</span>;
-    }
-
-    if (endDate < now) {
-      return <span className="px-3 py-1 bg-red-200 text-red-700 rounded-full text-xs font-semibold">Completed</span>;
-    }
-
-    if (startDate > now) {
-      return <span className="px-3 py-1 bg-blue-200 text-blue-700 rounded-full text-xs font-semibold">Upcoming</span>;
-    }
-
-    return <span className="px-3 py-1 bg-green-200 text-green-700 rounded-full text-xs font-semibold">Ongoing</span>;
+    if (test.status === 'draft') return { label: 'Draft', cls: 'bg-slate-400/15 text-slate-200 ring-white/15' };
+    if (test.status === 'archived') return { label: 'Archived', cls: 'bg-purple-500/15 text-purple-200 ring-purple-300/25' };
+    if (endDate && endDate < now) return { label: 'Completed', cls: 'bg-rose-500/15 text-rose-200 ring-rose-300/25' };
+    if (startDate && startDate > now) return { label: 'Upcoming', cls: 'bg-sky-500/15 text-sky-200 ring-sky-300/25' };
+    return { label: 'Ongoing', cls: 'bg-emerald-500/15 text-emerald-200 ring-emerald-300/25' };
   };
 
-  const filteredTests = tests.filter(test => {
+  const filteredTests = tests.filter((test) => {
     const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase());
-
     if (filter === 'all') return matchesSearch;
     if (filter === 'draft') return matchesSearch && test.status === 'draft';
     if (filter === 'published') return matchesSearch && test.status === 'published';
     if (filter === 'completed') {
-      const endDate = new Date(test.schedule.endDate);
-      return matchesSearch && endDate < new Date();
+      const endDate = test.schedule?.endDate ? new Date(test.schedule.endDate) : null;
+      return matchesSearch && endDate && endDate < new Date();
     }
-
     return matchesSearch;
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading tests...</p>
-        </div>
-      </div>
-    );
-  }
+  const stats = [
+    { label: 'Total Tests', value: tests.length, icon: FiBarChart2, tint: 'from-sky-400/30 to-blue-500/10', ring: 'ring-sky-300/30', ic: 'text-sky-200' },
+    { label: 'Published', value: tests.filter((t) => t.status === 'published').length, icon: FiEye, tint: 'from-emerald-400/30 to-teal-500/10', ring: 'ring-emerald-300/30', ic: 'text-emerald-200' },
+    { label: 'Draft', value: tests.filter((t) => t.status === 'draft').length, icon: FiEdit2, tint: 'from-slate-300/25 to-slate-500/10', ring: 'ring-white/20', ic: 'text-slate-100' },
+    { label: 'Total Attempts', value: tests.reduce((s, t) => s + (t.stats?.totalAttempts || 0), 0), icon: FiUsers, tint: 'from-fuchsia-400/30 to-purple-500/10', ring: 'ring-fuchsia-300/30', ic: 'text-fuchsia-200' },
+  ];
+
+  const filters = [
+    { key: 'all', label: 'All Tests' },
+    { key: 'published', label: 'Published' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'completed', label: 'Completed' },
+  ];
+
+  const goDashboard = () => navigate(basePath === '/hod' ? '/hod/dashboard' : basePath === '/faculty' ? '/faculty/dashboard' : '/home');
+
+  const IconBtn = ({ onClick, title, className, children, disabled }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 backdrop-blur-md transition-all hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
+    >
+      {children}
+    </button>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="relative min-h-screen text-white">
+      {/* Animated liquid aurora background */}
+      <div className="pointer-events-none fixed inset-0 -z-10 ds-aurora" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(120%_120%_at_50%_-10%,transparent,rgba(5,6,10,0.55))]" />
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between">
+        <LiquidGlass strong className="rounded-3xl p-6 sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Aptitude Tests</h1>
-              <p className="text-gray-600 mt-1">Manage and monitor all aptitude tests</p>
+              <h1 className="bg-gradient-to-r from-white via-white to-sky-200 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
+                Aptitude Tests
+              </h1>
+              <p className="mt-1.5 text-sm text-white/60">Manage and monitor all aptitude tests</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={() => {
-                  // Determine if user is admin or HOD based on current path
-                  const path = window.location.pathname;
-                  if (path.includes('/hod/')) {
-                    navigate('/hod/dashboard');
-                  } else {
-                    navigate('/home'); // Admin dashboard
-                  }
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-all duration-200"
+                onClick={goDashboard}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/90 ring-1 ring-white/15 backdrop-blur-md transition-all hover:bg-white/10"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
+                <FiArrowLeft size={18} />
                 Back to Dashboard
               </button>
               <button
-                onClick={() => navigate('/admin/aptitude-tests/create')}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200"
+                onClick={() => navigate(`${basePath}/aptitude-tests/create`)}
+                className="ds-shimmer inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_30px_-8px_rgba(59,99,255,0.6)] ring-1 ring-white/20 transition-all hover:brightness-110 active:scale-[0.98]"
               >
-                <FiPlus size={20} />
+                <FiPlus size={18} />
                 Create New Test
               </button>
             </div>
           </div>
-        </div>
+        </LiquidGlass>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Tests</p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">{tests.length}</p>
+        {/* Stats Cards — small glass boxes */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => (
+            <LiquidGlass key={s.label} hover tilt className="rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white/55">{s.label}</p>
+                  <p className="mt-1 text-4xl font-bold tracking-tight text-white">{s.value}</p>
+                </div>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${s.tint} ring-1 ${s.ring} backdrop-blur-md`}>
+                  <s.icon size={22} className={s.ic} />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <FiBarChart2 size={24} className="text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Published</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">
-                  {tests.filter(t => t.status === 'published').length}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <FiEye size={24} className="text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Draft</p>
-                <p className="text-3xl font-bold text-gray-600 mt-1">
-                  {tests.filter(t => t.status === 'draft').length}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <FiEdit2 size={24} className="text-gray-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Attempts</p>
-                <p className="text-3xl font-bold text-purple-600 mt-1">
-                  {tests.reduce((sum, t) => sum + (t.stats?.totalAttempts || 0), 0)}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <FiUsers size={24} className="text-purple-600" />
-              </div>
-            </div>
-          </div>
+            </LiquidGlass>
+          ))}
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                All Tests
-              </button>
-              <button
-                onClick={() => setFilter('published')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === 'published'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Published
-              </button>
-              <button
-                onClick={() => setFilter('draft')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === 'draft'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Draft
-              </button>
-              <button
-                onClick={() => setFilter('completed')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === 'completed'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Completed
-              </button>
+        <LiquidGlass className="mt-6 rounded-2xl p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {filters.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                    filter === f.key
+                      ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-[0_8px_24px_-10px_rgba(59,99,255,0.7)] ring-1 ring-white/20'
+                      : 'bg-white/5 text-white/70 ring-1 ring-white/10 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
-
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tests..."
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <div className="relative md:w-72">
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/45" size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tests..."
+                className="w-full rounded-xl bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder-white/40 ring-1 ring-white/15 outline-none backdrop-blur-md transition-shadow focus:ring-2 focus:ring-sky-400/60"
+              />
+            </div>
           </div>
-        </div>
+        </LiquidGlass>
 
         {/* Tests Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <LiquidGlass className="mt-6 overflow-hidden rounded-2xl">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Test Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Questions
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Schedule
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Attempts
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+            <table className="w-full min-w-[860px]">
+              <thead>
+                <tr className="border-b border-white/10">
+                  {['Test Name', 'Duration', 'Questions', 'Schedule', 'Status', 'Attempts', 'Actions'].map((h) => (
+                    <th key={h} className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wider text-white/45">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTests.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                      No tests found. Create your first test to get started!
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTests.map((test) => (
-                    <tr key={test._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{test.title}</p>
-                          {test.description && (
-                            <p className="text-sm text-gray-500 mt-1">{test.description.substring(0, 60)}...</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{test.duration} mins</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{test.totalQuestions}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm">
-                          <p className="text-gray-900">
-                            {new Date(test.schedule.startDate).toLocaleDateString()}
-                          </p>
-                          <p className="text-gray-500">
-                            to {new Date(test.schedule.endDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(test)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {test.stats?.totalAttempts || 0}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {test.status === 'draft' && (
-                            <button
-                              onClick={() => handlePublishTest(test._id)}
-                              className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
-                              title="Publish Test"
-                            >
-                              <FiEye size={18} />
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => navigate(`/admin/aptitude-tests/${test._id}/analytics`)}
-                            className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
-                            title="View Analytics"
-                          >
-                            <FiBarChart2 size={18} />
-                          </button>
-
-                          {(test.stats?.totalAttempts || 0) > 0 && (
-                            <button
-                              onClick={() => handleExportResults(test._id)}
-                              className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
-                              title="Export Results"
-                            >
-                              <FiDownload size={18} />
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => navigate(`/admin/aptitude-tests/${test._id}/edit`)}
-                            className="p-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition-colors"
-                            title="Edit Test"
-                          >
-                            <FiEdit2 size={18} />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteTest(test._id)}
-                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                            title="Delete Test"
-                          >
-                            <FiTrash2 size={18} />
-                          </button>
-                        </div>
+              <tbody className="divide-y divide-white/[0.06]">
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i}>
+                      <td colSpan={7} className="px-6 py-4">
+                        <div className="h-6 w-full animate-pulse rounded bg-white/10" />
                       </td>
                     </tr>
                   ))
+                ) : filteredTests.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-16">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+                          <FiInbox size={28} className="text-white/50" />
+                        </div>
+                        <p className="font-semibold text-white">No tests found</p>
+                        <p className="mt-1 text-sm text-white/55">
+                          {searchQuery || filter !== 'all' ? 'Try adjusting your filters or search.' : 'Create your first test to get started!'}
+                        </p>
+                        {!searchQuery && filter === 'all' && (
+                          <button
+                            onClick={() => navigate(`${basePath}/aptitude-tests/create`)}
+                            className="ds-shimmer mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20 hover:brightness-110"
+                          >
+                            <FiPlus size={16} /> Create New Test
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTests.map((test) => {
+                    const status = getStatusMeta(test);
+                    const attempts = test.stats?.totalAttempts || 0;
+                    return (
+                      <tr key={test._id} className="group transition-colors hover:bg-white/[0.04]">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400/25 to-indigo-500/10 ring-1 ring-white/10">
+                              <FiFileText size={16} className="text-sky-200" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-white">{test.title}</p>
+                              {test.description && (
+                                <p className="mt-0.5 max-w-xs truncate text-sm text-white/50">{test.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 text-sm text-white/80">
+                            <FiClock size={14} className="text-white/45" />
+                            {test.duration} mins
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 text-sm text-white/80">
+                            <FiHelpCircle size={14} className="text-white/45" />
+                            {test.totalQuestions}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-start gap-1.5 text-sm">
+                            <FiCalendar size={14} className="mt-0.5 text-white/45" />
+                            <div>
+                              <p className="text-white/80">{test.schedule?.startDate ? new Date(test.schedule.startDate).toLocaleDateString() : '—'}</p>
+                              <p className="text-white/45">to {test.schedule?.endDate ? new Date(test.schedule.endDate).toLocaleDateString() : '—'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 backdrop-blur-md ${status.cls}`}>{status.label}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="text-sm font-bold text-white">{attempts}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center gap-1.5">
+                            {test.status === 'draft' && (
+                              <IconBtn onClick={() => handlePublishTest(test._id)} disabled={busyId === test._id} title="Publish Test"
+                                className="bg-emerald-500/15 text-emerald-200 ring-emerald-300/25 hover:bg-emerald-500/25">
+                                <FiSend size={16} />
+                              </IconBtn>
+                            )}
+                            <IconBtn onClick={() => handleManageBatches(test)} title="Manage Batches & Students"
+                              className="bg-indigo-500/15 text-indigo-200 ring-indigo-300/25 hover:bg-indigo-500/25">
+                              <FiUsers size={16} />
+                            </IconBtn>
+                            <IconBtn onClick={() => navigate(`${basePath}/aptitude-tests/${test._id}/analytics`)} title="View Analytics"
+                              className="bg-sky-500/15 text-sky-200 ring-sky-300/25 hover:bg-sky-500/25">
+                              <FiBarChart2 size={16} />
+                            </IconBtn>
+                            {attempts > 0 && (
+                              <IconBtn onClick={() => handleExportResults(test._id)} title="Export Results"
+                                className="bg-fuchsia-500/15 text-fuchsia-200 ring-fuchsia-300/25 hover:bg-fuchsia-500/25">
+                                <FiDownload size={16} />
+                              </IconBtn>
+                            )}
+                            <IconBtn onClick={() => navigate(`${basePath}/aptitude-tests/${test._id}/edit`)} title="Edit Test"
+                              className="bg-amber-500/15 text-amber-200 ring-amber-300/25 hover:bg-amber-500/25">
+                              <FiEdit2 size={16} />
+                            </IconBtn>
+                            <IconBtn onClick={() => handleDeleteTest(test._id)} disabled={busyId === test._id} title="Delete Test"
+                              className="bg-rose-500/15 text-rose-200 ring-rose-300/25 hover:bg-rose-500/25">
+                              <FiTrash2 size={16} />
+                            </IconBtn>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </LiquidGlass>
 
         {/* Batch Management Modal */}
         {showBatchModal && selectedTest && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setShowBatchModal(false)}>
+            <LiquidGlass strong className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl" onClick={(e) => e.stopPropagation()}>
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6">
+              <div className="bg-gradient-to-r from-indigo-600/80 to-sky-600/70 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold">Manage Batches & Students</h2>
-                    <p className="text-indigo-100 mt-1">{selectedTest.title}</p>
+                    <h2 className="text-xl font-bold text-white sm:text-2xl">Manage Batches &amp; Students</h2>
+                    <p className="mt-1 text-indigo-100/90">{selectedTest.title}</p>
                   </div>
-                  <button
-                    onClick={() => setShowBatchModal(false)}
-                    className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
-                  >
-                    <FiX size={24} />
+                  <button onClick={() => setShowBatchModal(false)} className="rounded-xl p-2 text-white transition-colors hover:bg-white/20">
+                    <FiX size={22} />
                   </button>
                 </div>
               </div>
@@ -537,120 +452,81 @@ const AptitudeTestList = () => {
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-6">
                 {loadingBatches ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading batches...</p>
+                  <div className="py-12 text-center">
+                    <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-white/20 border-b-sky-300" />
+                    <p className="mt-4 text-white/60">Loading batches...</p>
+                  </div>
+                ) : availableBatches.length === 0 ? (
+                  <div className="rounded-2xl bg-white/5 py-12 text-center ring-1 ring-white/10">
+                    <FiUsers size={44} className="mx-auto mb-4 text-white/50" />
+                    <p className="font-medium text-white">No batches available</p>
+                    <p className="mt-1 text-sm text-white/55">Create batches first to assign them to tests</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {availableBatches.length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <FiUsers size={48} className="mx-auto text-gray-400 mb-4" />
-                        <p className="text-gray-600 font-medium">No batches available</p>
-                        <p className="text-sm text-gray-500 mt-2">Create batches first to assign them to tests</p>
-                      </div>
-                    ) : (
-                      availableBatches.map((batch) => {
-                        const isAssigned = testBatches.some(id => id === batch._id || id._id === batch._id);
-                        const batchIdStr = batch._id.toString();
-
-                        return (
-                          <div
-                            key={batch._id}
-                            className={`border-2 rounded-lg p-4 transition-all ${
-                              isAssigned
-                                ? 'border-green-500 bg-green-50'
-                                : 'border-gray-200 bg-white hover:border-indigo-300'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h3 className="text-lg font-semibold text-gray-800">{batch.batchName}</h3>
-                                  {batch.batchCode && (
-                                    <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded">
-                                      {batch.batchCode}
-                                    </span>
-                                  )}
-                                  {isAssigned && (
-                                    <span className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded">
-                                      <FiCheck size={14} />
-                                      Assigned
-                                    </span>
-                                  )}
+                    {availableBatches.map((batch) => {
+                      const isAssigned = testBatches.some((id) => id === batch._id || id?._id === batch._id);
+                      const batchIdStr = batch._id.toString();
+                      return (
+                        <div key={batch._id} className={`rounded-2xl p-4 ring-1 backdrop-blur-md transition-all ${isAssigned ? 'bg-emerald-500/10 ring-emerald-400/40' : 'bg-white/5 ring-white/10 hover:ring-indigo-300/40'}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <h3 className="text-lg font-semibold text-white">{batch.batchName}</h3>
+                                {batch.batchCode && <span className="rounded bg-white/10 px-2 py-1 text-xs font-medium text-white/70">{batch.batchCode}</span>}
+                                {isAssigned && (
+                                  <span className="inline-flex items-center gap-1 rounded bg-emerald-500 px-2 py-1 text-xs font-semibold text-white">
+                                    <FiCheck size={13} /> Assigned
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-white/65">
+                                <div><span className="font-medium text-white/90">Course:</span> {batch.course}</div>
+                                {batch.department && <div><span className="font-medium text-white/90">Department:</span> {batch.department}</div>}
+                                <div><span className="font-medium text-white/90">Academic Year:</span> {batch.academicYear}</div>
+                                <div><span className="font-medium text-white/90">Passout Year:</span> {batch.passoutYear}</div>
+                                <div className="col-span-2">
+                                  <span className="font-medium text-white/90">Students:</span>{' '}
+                                  <span className={`font-bold ${batch.studentCount === 0 ? 'text-rose-300' : 'text-emerald-300'}`}>{batch.studentCount || 0}</span>
+                                  {batch.studentCount === 0 && <span className="ml-2 text-xs text-rose-300">⚠️ No students in this batch</span>}
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 mb-3">
-                                  <div><span className="font-medium">Course:</span> {batch.course}</div>
-                                  {batch.department && <div><span className="font-medium">Department:</span> {batch.department}</div>}
-                                  <div><span className="font-medium">Academic Year:</span> {batch.academicYear}</div>
-                                  <div><span className="font-medium">Passout Year:</span> {batch.passoutYear}</div>
-                                  <div className="col-span-2">
-                                    <span className="font-medium">Students:</span>{' '}
-                                    <span className={`font-bold ${batch.studentCount === 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                      {batch.studentCount || 0}
-                                    </span>
-                                    {batch.studentCount === 0 && (
-                                      <span className="ml-2 text-red-600 text-xs">⚠️ No students in this batch</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  {!isAssigned ? (
-                                    <button
-                                      onClick={() => handleAssignBatch(batchIdStr)}
-                                      className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-                                    >
-                                      Assign to Test
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => handleRemoveBatch(batchIdStr)}
-                                      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                                    >
-                                      Remove from Test
-                                    </button>
-                                  )}
-
-                                  {batch.studentCount === 0 && (
-                                    <button
-                                      onClick={() => handlePopulateStudents(batch._id)}
-                                      className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                                    >
-                                      <FiUserPlus size={16} />
-                                      Auto-Add Students
-                                    </button>
-                                  )}
-                                </div>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {!isAssigned ? (
+                                  <button onClick={() => handleAssignBatch(batchIdStr)} className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-indigo-600">Assign to Test</button>
+                                ) : (
+                                  <button onClick={() => handleRemoveBatch(batchIdStr)} className="rounded-xl bg-rose-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-rose-600">Remove from Test</button>
+                                )}
+                                {batch.studentCount === 0 && (
+                                  <button onClick={() => handlePopulateStudents(batch._id)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-emerald-600">
+                                    <FiUserPlus size={15} /> Auto-Add Students
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
-                        );
-                      })
-                    )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-gray-200 p-4 bg-gray-50">
+              <div className="border-t border-white/10 bg-white/5 p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    <strong>{testBatches.length}</strong> batch(es) assigned to this test
+                  <div className="text-sm text-white/60">
+                    <strong className="text-white">{testBatches.length}</strong> batch(es) assigned to this test
                   </div>
                   <button
-                    onClick={() => {
-                      setShowBatchModal(false);
-                      fetchTests(); // Refresh to show updated batch counts
-                    }}
-                    className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                    onClick={() => { setShowBatchModal(false); fetchTests(); }}
+                    className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:brightness-110"
                   >
                     Done
                   </button>
                 </div>
               </div>
-            </div>
+            </LiquidGlass>
           </div>
         )}
       </div>

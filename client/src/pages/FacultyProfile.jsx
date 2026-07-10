@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_BASE } from '../config/api';
 import "react-toastify/dist/ReactToastify.css";
 import PortalLayout from "@/components/app/PortalLayout";
 import { GlassPanel } from "@/components/ui/surface";
@@ -15,8 +16,8 @@ const FacultyProfile = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const profileEndpoint = `http://localhost:3001/faculty/profile`;
-  const avatarEndpoint = `http://localhost:3001/faculty/upload-avatar`;
+  const profileEndpoint = `${API_BASE}/faculty/profile`;
+  const avatarEndpoint = `${API_BASE}/faculty/upload-avatar`;
 
   const {
     data: profileData,

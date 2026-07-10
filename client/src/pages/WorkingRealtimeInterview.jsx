@@ -8,6 +8,7 @@ import StudentHeader from '../components/StudentHeader';
 import StudentFooter from '../components/StudentFooter';
 import useVoiceRecognition from '../hooks/useVoiceRecognition';
 import useTextToSpeech from '../hooks/useTextToSpeech';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 /**
@@ -84,7 +85,7 @@ const WorkingRealtimeInterview = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:3001/api/mock-interview/${interviewId}/submit`,
+        `${API_BASE}/api/mock-interview/${interviewId}/submit`,
         { answer },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -208,7 +209,7 @@ const WorkingRealtimeInterview = () => {
 
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        'http://localhost:3001/api/mock-interview/start',
+        `${API_BASE}/api/mock-interview/start`,
         { ...interviewConfig, experienceLevel: interviewConfig.experienceLevel || 'intermediate' },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );

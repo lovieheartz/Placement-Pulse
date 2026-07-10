@@ -8,14 +8,17 @@ import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { GraduationCap, Ban, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, Ban, CheckCircle2, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 // Using Tailwind instead of React Bootstrap
 import './Dashboard.css';
 
 const StudentList = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showUnblockModal, setShowUnblockModal] = useState(false);
@@ -34,7 +37,7 @@ const StudentList = () => {
     queryKey: ['students'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/admin/students', {
+      const { data } = await axios.get(`${API_BASE}/admin/students`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -50,7 +53,7 @@ const StudentList = () => {
   const { mutate: blockStudentMutation, isPending: isBlocking } = useMutation({
     mutationFn: async ({ studentId, reason }) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/admin/students/${studentId}/block`, { reason }, {
+      const { data } = await axios.put(`${API_BASE}/admin/students/${studentId}/block`, { reason }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;
@@ -88,7 +91,7 @@ const StudentList = () => {
   const { mutate: unblockStudentMutation, isPending: isUnblocking } = useMutation({
     mutationFn: async (studentId) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/admin/students/${studentId}/unblock`, {}, {
+      const { data } = await axios.put(`${API_BASE}/admin/students/${studentId}/unblock`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;
@@ -120,7 +123,7 @@ const StudentList = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -394,6 +397,13 @@ const StudentList = () => {
                         </td>
                         <td className="px-3 py-3 text-muted-foreground">
                           <div className="flex flex-wrap gap-2">
+                            <Button
+                              onClick={() => navigate(`/admin/students/${student.id || student._id}`)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Eye /> View
+                            </Button>
                             {student.isBlocked ? (
                               <Button
                                 onClick={() => handleUnblockStudent(student)}

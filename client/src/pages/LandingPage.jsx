@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GlassBackground from "../components/ui/GlassBackground";
 import FadingVideo from "../components/ui/FadingVideo";
@@ -9,6 +9,7 @@ import ParallaxOrbs from "../components/ui/ParallaxOrbs";
 import ScrollProgress from "../components/ui/ScrollProgress";
 import CountUp from "../components/ui/CountUp";
 import { BRAND } from "../constants/brand";
+import { BrandGlyph } from "../components/ui/BrandMark";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -36,10 +37,10 @@ const NAV_LINKS = [
 const RECRUITERS = ["Google", "Microsoft", "Amazon", "TCS", "Deloitte", "Infosys", "Accenture", "Wipro"];
 
 const SOCIALS = [
-  { Icon: Instagram, label: "Instagram", href: "https://instagram.com" },
-  { Icon: Twitter, label: "Twitter / X", href: "https://twitter.com" },
-  { Icon: LinkedIn, label: "LinkedIn", href: "https://linkedin.com" },
-  { Icon: GlobeIcon, label: "Website", href: "https://nsec.ac.in" },
+  { Icon: Instagram, label: "Instagram", handle: "@nsecplacements", href: "https://instagram.com/nsecplacements" },
+  { Icon: Twitter, label: "X (Twitter)", handle: "@nsecplacements", href: "https://x.com/nsecplacements" },
+  { Icon: LinkedIn, label: "LinkedIn", handle: "NSEC Placement Cell", href: "https://www.linkedin.com/school/netaji-subhash-engineering-college/" },
+  { Icon: GlobeIcon, label: "College Website", handle: "nsec.ac.in", href: "https://nsec.ac.in" },
 ];
 
 const AUDIENCES = [
@@ -139,11 +140,7 @@ const Navbar = ({ navigate }) => {
     >
       <nav className="mx-auto max-w-7xl flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3" aria-label={`${BRAND.name} home`}>
-          <span className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full">
-            <span className="font-heading italic text-2xl leading-none text-white">
-              {BRAND.monogram}
-            </span>
-          </span>
+          <BrandGlyph size={36} />
           <span className="flex flex-col leading-none">
             <span className="font-heading italic text-xl text-white">{BRAND.name}</span>
             <span className="hidden sm:block text-[10px] uppercase tracking-[0.18em] text-white/55 font-body mt-0.5">
@@ -212,20 +209,39 @@ const Navbar = ({ navigate }) => {
 
 /* ------------------------------- Hero ------------------------------- */
 const Hero = ({ navigate }) => {
-  const [email, setEmail] = useState("");
+  // Scroll parallax: background drifts slower than the page, foreground
+  // content rises and gently fades as you scroll past the fold.
+  const bgRef = useRef(null);
+  const fgRef = useRef(null);
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    const q = email.trim() ? `?email=${encodeURIComponent(email.trim())}` : "";
-    navigate(`/signup${q}`);
-  };
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const y = Math.max(0, window.scrollY);
+      if (bgRef.current) bgRef.current.style.transform = `translate3d(0, ${y * 0.32}px, 0)`;
+      if (fgRef.current) {
+        fgRef.current.style.transform = `translate3d(0, ${y * 0.14}px, 0)`;
+        fgRef.current.style.opacity = String(Math.max(0, 1 - y / 620));
+      }
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
     <section id="home" className="relative min-h-screen overflow-hidden bg-black">
       {/* Full-screen video biased to its lower content, with a cinematic
-          slow zoom. Uses object-position (not translate) so there is no
-          empty gap at the top behind the nav. */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+          slow zoom + scroll parallax on the wrapper. */}
+      <div ref={bgRef} className="absolute inset-[-12%_0_-12%_0] z-0 overflow-hidden will-change-transform">
         <div className="absolute inset-0 ds-aurora" />
         <FadingVideo
           src={HERO_VIDEO}
@@ -236,7 +252,7 @@ const Hero = ({ navigate }) => {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(5,6,10,0.82) 0%, rgba(5,6,10,0.28) 30%, rgba(5,6,10,0.3) 58%, rgba(5,6,10,0.82) 100%)",
+              "linear-gradient(180deg, rgba(5,6,10,0.82) 0%, rgba(5,6,10,0.28) 30%, rgba(5,6,10,0.3) 58%, rgba(5,6,10,0.88) 100%)",
           }}
         />
       </div>
@@ -245,7 +261,7 @@ const Hero = ({ navigate }) => {
         <Navbar navigate={navigate} />
 
         {/* Top-aligned so nothing is clipped by the fixed nav */}
-        <div className="flex-1 flex flex-col items-center px-6 text-center pt-28 md:pt-32">
+        <div ref={fgRef} className="flex-1 flex flex-col items-center px-6 text-center pt-32 md:pt-36 will-change-transform">
           <Reveal immediate delay={0.1}>
             <div className="liquid-glass inline-flex items-center gap-2 rounded-full pr-3 mb-8">
               <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-black">New</span>
@@ -260,73 +276,51 @@ const Hero = ({ navigate }) => {
             className="text-5xl md:text-6xl lg:text-7xl font-heading italic text-white tracking-[-2px] leading-[0.95]"
           />
 
-          <div className="mt-9 w-full max-w-xl">
-            <Reveal immediate delay={0.3}>
-              <form
-                onSubmit={onSubmit}
-                className="liquid-glass rounded-full pl-6 pr-2 py-2 flex items-center gap-3"
+          <Reveal immediate delay={0.35}>
+            <p className="mt-6 max-w-xl text-white/85 text-base md:text-lg leading-relaxed font-light">
+              NSEC's all-in-one placement platform — AI resume reviews, realtime
+              mock interviews and aptitude tests. Everything you need to go from
+              student to hired.
+            </p>
+          </Reveal>
+
+          {/* Primary CTAs */}
+          <Reveal immediate delay={0.5}>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                to="/signup"
+                className="ds-cta-dark group inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
               >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your college email"
-                  aria-label="College email"
-                  className="flex-1 bg-transparent text-white placeholder:text-white/40 text-base outline-none"
-                />
-                <button
-                  type="submit"
-                  aria-label="Get started"
-                  className="bg-white rounded-full p-3 text-black transition-transform hover:scale-105 shrink-0"
-                >
-                  <ArrowRight className="h-5 w-5" strokeWidth={2.2} />
-                </button>
-              </form>
-            </Reveal>
+                Create free account
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.2} />
+              </Link>
+              <a
+                href="#platform"
+                className="ds-shimmer liquid-glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+              >
+                Explore the platform
+              </a>
+            </div>
+          </Reveal>
 
-            <Reveal immediate delay={0.45}>
-              <p className="mt-4 text-white/85 text-sm leading-relaxed px-4">
-                Join NSEC's all-in-one placement platform — AI resume reviews,
-                realtime mock interviews and aptitude tests. Everything you need
-                to go from student to hired.
-              </p>
-            </Reveal>
-          </div>
-
-          <Reveal immediate delay={0.6} className="mt-7">
-            <a
-              href="#platform"
-              className="ds-shimmer liquid-glass inline-block rounded-full px-8 py-3 text-white text-sm font-medium hover:bg-white/10 transition-colors"
-            >
-              Explore the platform
-            </a>
+          {/* Trust chips */}
+          <Reveal immediate delay={0.65}>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/65">
+              {["Free for NSEC students", "2-minute setup", "Official placement cell portal"].map((t) => (
+                <span key={t} className="inline-flex items-center gap-1.5">
+                  <span className="text-emerald-300/90">✓</span> {t}
+                </span>
+              ))}
+            </div>
           </Reveal>
         </div>
 
         {/* Scroll cue */}
-        <Reveal immediate delay={0.85} className="flex justify-center pb-3">
+        <Reveal immediate delay={0.85} className="flex justify-center pb-10">
           <a href="#platform" aria-label="Scroll down" className="ds-scrollcue flex flex-col items-center gap-1 text-white/60 hover:text-white">
             <span className="text-[10px] uppercase tracking-[0.24em]">Scroll</span>
             <span className="text-lg leading-none">↓</span>
           </a>
-        </Reveal>
-
-        {/* Social icons */}
-        <Reveal immediate delay={0.95}>
-          <div className="flex justify-center gap-4 pb-12">
-            {SOCIALS.map(({ Icon, label, href }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={label}
-                className="liquid-glass rounded-full p-4 text-white/80 hover:text-white hover:bg-white/10 transition-all"
-              >
-                <Icon className="h-5 w-5" />
-              </a>
-            ))}
-          </div>
         </Reveal>
       </div>
     </section>
@@ -336,7 +330,8 @@ const Hero = ({ navigate }) => {
 /* -------------------------- Recruiters strip ------------------------ */
 const RecruitersStrip = () => (
   <section className="relative bg-[#05060a] overflow-hidden border-y border-white/10 py-10">
-    <div className="flex flex-col items-center gap-5 px-4">
+    <div className="ds-seam-glow" aria-hidden />
+    <div className="relative flex flex-col items-center gap-5 px-4">
       <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
         Trusted by recruiters hiring from our campus
       </span>
@@ -354,6 +349,26 @@ const RecruitersStrip = () => (
       </div>
     </div>
   </section>
+);
+
+/* ----------------------- Section background aura --------------------- */
+/**
+ * Layered premium backdrop for the dark sections: a colored gradient mesh,
+ * a masked engineering grid (or dots) for texture, and a light seam at the
+ * top edge so sections flow into each other instead of hard-cutting to black.
+ * `variant` (1–3) staggers the light sources so neighbours differ.
+ */
+const SectionAura = ({ variant = 1, texture = "grid", seam = true }) => (
+  <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className={`ds-mesh ds-mesh-${variant}`} />
+    <div className={texture === "dots" ? "ds-dots" : "ds-grid"} />
+    {seam && (
+      <>
+        <span className="ds-seam" />
+        <span className="ds-seam-glow" />
+      </>
+    )}
+  </div>
 );
 
 /* --------------------------- Section header -------------------------- */
@@ -424,6 +439,7 @@ const Capabilities = () => (
 /* ----------------------------- Audiences --------------------------- */
 const Audiences = () => (
   <section id="audiences" className="relative bg-[#05060a] overflow-hidden">
+    <SectionAura variant={1} />
     <ParallaxOrbs variant={3} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="max-w-2xl">
@@ -461,7 +477,7 @@ const Audiences = () => (
 /* ---------------------------- Feature grid ------------------------- */
 const Features = () => (
   <section className="relative bg-[#05060a] overflow-hidden">
-    <div className="absolute inset-0 ds-aurora opacity-40" />
+    <SectionAura variant={2} texture="dots" />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="text-center max-w-2xl mx-auto">
         <Kicker>Everything in one portal</Kicker>
@@ -495,6 +511,7 @@ const Features = () => (
 const Outcomes = () => (
   <section id="outcomes" className="relative bg-[#05060a] overflow-hidden">
     <div className="absolute inset-0 ds-aurora opacity-60" />
+    <SectionAura variant={3} seam={false} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="text-center">
         <Kicker>Outcomes</Kicker>
@@ -525,6 +542,7 @@ const Outcomes = () => (
 /* ------------------------------ Journey ---------------------------- */
 const Journey = () => (
   <section id="journey" className="relative bg-[#05060a] overflow-hidden">
+    <SectionAura variant={2} />
     <ParallaxOrbs variant={2} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="max-w-2xl">
@@ -553,6 +571,7 @@ const Journey = () => (
 /* ---------------------------- Testimonials ------------------------- */
 const Testimonials = () => (
   <section className="relative bg-[#05060a] overflow-hidden">
+    <SectionAura variant={1} texture="dots" />
     <ParallaxOrbs variant={3} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="max-w-2xl">
@@ -566,12 +585,24 @@ const Testimonials = () => (
       <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
         {TESTIMONIALS.map((t, i) => (
           <Reveal key={t.name} delay={0.12 * i}>
-            <LiquidGlass className="rounded-[1.25rem] p-7 h-full flex flex-col">
-              <div className="font-heading italic text-5xl text-white/30 leading-none">“</div>
+            <LiquidGlass hover className="rounded-[1.25rem] p-7 h-full flex flex-col">
+              <div className="flex items-center justify-between">
+                <div className="font-heading italic text-5xl text-white/30 leading-none">“</div>
+                <div className="flex gap-0.5 text-sm text-amber-300/90" aria-label="5 star rating">
+                  {"★★★★★".split("").map((s, si) => (
+                    <span key={si}>{s}</span>
+                  ))}
+                </div>
+              </div>
               <p className="mt-2 text-base text-white/90 font-body font-light leading-relaxed flex-1">{t.quote}</p>
-              <div className="mt-6">
-                <div className="font-heading italic text-xl text-white">{t.name}</div>
-                <div className="text-xs text-white/60 font-body mt-0.5">{t.role}</div>
+              <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-600 font-body text-base font-semibold text-white ring-1 ring-white/25">
+                  {t.name.charAt(0)}
+                </span>
+                <div>
+                  <div className="font-heading italic text-xl text-white leading-tight">{t.name}</div>
+                  <div className="text-xs text-white/60 font-body mt-0.5">{t.role}</div>
+                </div>
               </div>
             </LiquidGlass>
           </Reveal>
@@ -618,6 +649,7 @@ const FAQ = () => {
   const [openIdx, setOpenIdx] = useState(0);
   return (
     <section id="faq" className="relative bg-[#05060a] overflow-hidden">
+      <SectionAura variant={3} />
       <ParallaxOrbs variant={2} />
       <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
         <div className="text-center max-w-2xl mx-auto">
@@ -643,8 +675,9 @@ const FAQ = () => {
 
 /* ----------------------------- Final CTA --------------------------- */
 const FinalCTA = ({ navigate }) => (
-  <section className="relative bg-[#05060a] overflow-hidden px-6 md:px-12 lg:px-20 pb-10">
-    <Reveal className="mx-auto max-w-6xl">
+  <section className="relative bg-[#05060a] overflow-hidden px-6 md:px-12 lg:px-20 pt-24 pb-10">
+    <SectionAura variant={2} />
+    <Reveal className="relative mx-auto max-w-6xl">
       <LiquidGlass strong className="relative overflow-hidden rounded-[2rem] px-8 md:px-16 py-20 text-center">
         <div className="absolute inset-0 ds-aurora opacity-70" />
         <div className="relative z-10 flex flex-col items-center">
@@ -678,19 +711,40 @@ const FinalCTA = ({ navigate }) => (
 
 /* ------------------------------ Footer ----------------------------- */
 const Footer = () => (
-  <footer className="relative bg-[#05060a] px-6 md:px-12 lg:px-20 pt-16 pb-10 border-t border-white/10">
-    <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-10">
+  <footer className="relative bg-[#05060a] px-6 md:px-12 lg:px-20 pt-16 pb-10 border-t border-white/10 overflow-hidden">
+    <SectionAura variant={3} seam={false} />
+    <div className="relative mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-10">
       <div className="col-span-2 md:col-span-1">
         <div className="flex items-center gap-3">
-          <span className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full">
-            <span className="font-heading italic text-xl text-white">{BRAND.monogram}</span>
-          </span>
+          <BrandGlyph size={36} />
           <span className="font-heading italic text-xl text-white">{BRAND.name}</span>
         </div>
         <p className="mt-4 text-sm text-white/60 font-body font-light max-w-xs">
           {BRAND.tagline} The official placement platform of Netaji Subhash
           Engineering College.
         </p>
+
+        {/* Socials — with proper names */}
+        <div className="mt-6 flex flex-col gap-2.5">
+          {SOCIALS.map(({ Icon, label, handle, href }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={label}
+              className="group inline-flex items-center gap-3 text-sm font-body text-white/60 transition-colors hover:text-white"
+            >
+              <span className="liquid-glass flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 transition-colors group-hover:bg-white/10 group-hover:text-white">
+                <Icon className="h-4 w-4" />
+              </span>
+              <span>
+                {label}
+                <span className="text-white/35 transition-colors group-hover:text-white/60"> · {handle}</span>
+              </span>
+            </a>
+          ))}
+        </div>
       </div>
 
       <div>
@@ -721,7 +775,7 @@ const Footer = () => (
       </div>
     </div>
 
-    <div className="mx-auto max-w-7xl mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+    <div className="relative mx-auto max-w-7xl mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p className="text-xs text-white/40 font-body">
         © {new Date().getFullYear()} {BRAND.org}. All rights reserved.
       </p>

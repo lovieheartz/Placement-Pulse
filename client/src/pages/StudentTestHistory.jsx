@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import {
   CheckCircle,
   XCircle,
@@ -40,7 +41,7 @@ const StudentTestHistory = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.get(
-        'http://localhost:3001/api/attempts/my-history',
+        `${API_BASE}/api/attempts/my-history`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

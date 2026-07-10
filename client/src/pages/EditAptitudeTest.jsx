@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE } from '../lib/api';
+import LiquidGlass from '../components/ui/LiquidGlass';
 
 const EditAptitudeTest = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+  const basePath = useMemo(() => {
+    if (location.pathname.startsWith('/hod')) return '/hod';
+    if (location.pathname.startsWith('/faculty')) return '/faculty';
+    return '/admin';
+  }, [location.pathname]);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,7 +100,7 @@ const EditAptitudeTest = () => {
 
       // Fetch test details
       const testResponse = await axios.get(
-        `http://localhost:3001/api/aptitude/tests/${id}`,
+        `${API_BASE}/api/aptitude/tests/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -139,7 +147,7 @@ const EditAptitudeTest = () => {
 
       // Fetch questions
       const questionsResponse = await axios.get(
-        `http://localhost:3001/api/aptitude/tests/${id}/questions`,
+        `${API_BASE}/api/aptitude/tests/${id}/questions`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -152,7 +160,7 @@ const EditAptitudeTest = () => {
     } catch (error) {
       console.error('Error fetching test data:', error);
       alert('Failed to load test: ' + (error.response?.data?.message || error.message));
-      navigate('/admin/aptitude-tests');
+      navigate(`${basePath}/aptitude-tests`);
     } finally {
       setIsLoading(false);
     }
@@ -248,7 +256,7 @@ const EditAptitudeTest = () => {
 
       // Update test
       await axios.put(
-        `http://localhost:3001/api/aptitude/tests/${id}`,
+        `${API_BASE}/api/aptitude/tests/${id}`,
         {
           ...testData,
           totalQuestions: questions.length,
@@ -263,7 +271,7 @@ const EditAptitudeTest = () => {
       );
 
       alert('Test updated successfully!');
-      navigate('/admin/aptitude-tests');
+      navigate(`${basePath}/aptitude-tests`);
     } catch (error) {
       console.error('Error updating test:', error);
       alert(error.response?.data?.message || 'Failed to update test');
@@ -307,26 +315,32 @@ const EditAptitudeTest = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="relative min-h-screen text-white flex items-center justify-center">
+        <div className="pointer-events-none fixed inset-0 -z-10 ds-aurora" />
+        <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(120%_120%_at_50%_-10%,transparent,rgba(5,6,10,0.55))]" />
         <div className="text-center">
-          <div className="inline-block w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading test data...</p>
+          <div className="inline-block w-16 h-16 rounded-full border-2 border-white/20 border-b-sky-300 animate-spin"></div>
+          <p className="mt-4 text-white/70 font-medium">Loading test data...</p>
         </div>
       </div>
     );
   }
 
+  const inputClass = "w-full rounded-xl bg-white/5 px-3 py-2.5 text-white placeholder-white/40 ring-1 ring-white/15 outline-none backdrop-blur-md focus:ring-2 focus:ring-sky-400/60";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="relative min-h-screen text-white">
+      <div className="pointer-events-none fixed inset-0 -z-10 ds-aurora" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(120%_120%_at_50%_-10%,transparent,rgba(5,6,10,0.55))]" />
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Edit Aptitude Test</h1>
-          <p className="text-gray-600">Update test details and configuration</p>
-        </div>
+        <LiquidGlass strong className="rounded-3xl p-6 sm:p-8 mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">Edit Aptitude Test</h1>
+          <p className="text-white/70">Update test details and configuration</p>
+        </LiquidGlass>
 
         {/* Progress Steps */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <LiquidGlass className="rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between">
             {[
               { num: 1, title: 'Basic Info' },
@@ -338,61 +352,61 @@ const EditAptitudeTest = () => {
                 <div className="flex flex-col items-center">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
                     currentStep >= step.num
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                      ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white'
+                      : 'bg-white/5 text-white/60 ring-1 ring-white/10'
                   }`}>
                     {step.num}
                   </div>
                   <span className={`mt-2 text-sm font-medium ${
-                    currentStep >= step.num ? 'text-blue-600' : 'text-gray-500'
+                    currentStep >= step.num ? 'text-sky-300' : 'text-white/55'
                   }`}>
                     {step.title}
                   </span>
                 </div>
                 {index < 3 && (
-                  <div className={`flex-1 h-1 mx-2 ${
-                    currentStep > step.num ? 'bg-blue-600' : 'bg-gray-200'
+                  <div className={`flex-1 h-1 mx-2 rounded-full ${
+                    currentStep > step.num ? 'bg-gradient-to-r from-sky-500 to-indigo-500' : 'bg-white/10'
                   }`} />
                 )}
               </React.Fragment>
             ))}
           </div>
-        </div>
+        </LiquidGlass>
 
         {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <LiquidGlass className="rounded-2xl p-6 sm:p-8">
           {/* Step 1: Basic Info */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Basic Information</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Basic Information</h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Test Title *</label>
+                <label className="block text-sm font-medium text-white/70 mb-2">Test Title *</label>
                 <input
                   type="text"
                   name="title"
                   value={testData.title}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={inputClass}
                   placeholder="e.g., TCS NQT Mock Test 2024"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-white/70 mb-2">Description</label>
                 <textarea
                   name="description"
                   value={testData.description}
                   onChange={handleInputChange}
                   rows="3"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={inputClass}
                   placeholder="Brief description of the test"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-white/70 mb-2">
                     Total Test Duration (minutes) *
                   </label>
                   <input
@@ -401,13 +415,13 @@ const EditAptitudeTest = () => {
                     value={testData.duration}
                     onChange={handleInputChange}
                     min="1"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                     placeholder="60"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Pass Percentage</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">Pass Percentage</label>
                   <input
                     type="number"
                     name="passPercentage"
@@ -415,7 +429,7 @@ const EditAptitudeTest = () => {
                     onChange={handleInputChange}
                     min="0"
                     max="100"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                     placeholder="40"
                   />
                 </div>
@@ -423,34 +437,34 @@ const EditAptitudeTest = () => {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">Start Date & Time *</label>
                   <input
                     type="datetime-local"
                     value={testData.schedule.startDate}
                     onChange={(e) => handleNestedChange('schedule', 'startDate', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
+                  <label className="block text-sm font-medium text-white/70 mb-2">End Date & Time *</label>
                   <input
                     type="datetime-local"
                     value={testData.schedule.endDate}
                     onChange={(e) => handleNestedChange('schedule', 'endDate', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Test Instructions</label>
+                <label className="block text-sm font-medium text-white/70 mb-2">Test Instructions</label>
                 <textarea
                   name="instructions"
                   value={testData.instructions}
                   onChange={handleInputChange}
                   rows="4"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={inputClass}
                   placeholder="Instructions for students..."
                 />
               </div>
@@ -460,31 +474,31 @@ const EditAptitudeTest = () => {
           {/* Step 2: Settings */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Test Settings</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Test Settings</h2>
 
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Marking Scheme</h3>
+              <div className="border-b border-white/10 pb-4">
+                <h3 className="text-lg font-semibold text-white/70 mb-3">Marking Scheme</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Marks per Question</label>
+                    <label className="block text-sm font-medium text-white/70 mb-2">Marks per Question</label>
                     <input
                       type="number"
                       value={testData.markingScheme.positiveMarks}
                       onChange={(e) => handleNestedChange('markingScheme', 'positiveMarks', parseFloat(e.target.value))}
                       step="0.1"
                       min="0"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Negative Marks</label>
+                    <label className="block text-sm font-medium text-white/70 mb-2">Negative Marks</label>
                     <input
                       type="number"
                       value={testData.markingScheme.negativeMarks}
                       onChange={(e) => handleNestedChange('markingScheme', 'negativeMarks', parseFloat(e.target.value))}
                       step="0.1"
                       min="0"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className={inputClass}
                     />
                   </div>
                   <div className="flex items-center">
@@ -492,66 +506,66 @@ const EditAptitudeTest = () => {
                       type="checkbox"
                       checked={testData.markingScheme.partialMarking}
                       onChange={() => handleCheckboxChange('markingScheme', 'partialMarking')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Partial Marking</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Partial Marking</label>
                   </div>
                 </div>
               </div>
 
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Proctoring Settings</h3>
+              <div className="border-b border-white/10 pb-4">
+                <h3 className="text-lg font-semibold text-white/70 mb-3">Proctoring Settings</h3>
                 <div className="space-y-3">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.requireFullscreen}
                       onChange={() => handleCheckboxChange('settings', 'requireFullscreen')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Require Fullscreen Mode</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Require Fullscreen Mode</label>
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.requireCamera}
                       onChange={() => handleCheckboxChange('settings', 'requireCamera')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Require Camera Access</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Require Camera Access</label>
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.detectTabSwitch}
                       onChange={() => handleCheckboxChange('settings', 'detectTabSwitch')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Detect Tab Switching</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Detect Tab Switching</label>
                   </div>
 
                   {testData.settings.detectTabSwitch && (
                     <div className="ml-7">
-                      <label className="block text-sm text-gray-600 mb-1">Max Tab Switches (Auto-submit)</label>
+                      <label className="block text-sm text-white/55 mb-1">Max Tab Switches (Auto-submit)</label>
                       <input
                         type="number"
                         value={testData.settings.maxTabSwitches}
                         onChange={(e) => handleNestedChange('settings', 'maxTabSwitches', parseInt(e.target.value))}
                         min="1"
-                        className="w-32 px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-32 rounded-xl bg-white/5 px-3 py-2 text-white placeholder-white/40 ring-1 ring-white/15 outline-none backdrop-blur-md focus:ring-2 focus:ring-sky-400/60"
                       />
                     </div>
                   )}
 
                   {testData.settings.requireCamera && (
                     <div className="ml-7">
-                      <label className="block text-sm text-gray-600 mb-1">Snapshot Interval (seconds)</label>
+                      <label className="block text-sm text-white/55 mb-1">Snapshot Interval (seconds)</label>
                       <input
                         type="number"
                         value={testData.settings.snapshotInterval}
                         onChange={(e) => handleNestedChange('settings', 'snapshotInterval', parseInt(e.target.value))}
                         min="10"
-                        className="w-32 px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-32 rounded-xl bg-white/5 px-3 py-2 text-white placeholder-white/40 ring-1 ring-white/15 outline-none backdrop-blur-md focus:ring-2 focus:ring-sky-400/60"
                       />
                     </div>
                   )}
@@ -559,52 +573,52 @@ const EditAptitudeTest = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Display Settings</h3>
+                <h3 className="text-lg font-semibold text-white/70 mb-3">Display Settings</h3>
                 <div className="space-y-3">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.shuffleQuestions}
                       onChange={() => handleCheckboxChange('settings', 'shuffleQuestions')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Shuffle Questions</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Shuffle Questions</label>
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.shuffleOptions}
                       onChange={() => handleCheckboxChange('settings', 'shuffleOptions')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Shuffle Options</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Shuffle Options</label>
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.showQuestionPalette}
                       onChange={() => handleCheckboxChange('settings', 'showQuestionPalette')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Show Question Palette</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Show Question Palette</label>
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.showResultsImmediately}
                       onChange={() => handleCheckboxChange('settings', 'showResultsImmediately')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Show Results Immediately After Test</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Show Results Immediately After Test</label>
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={testData.settings.allowReview}
                       onChange={() => handleCheckboxChange('settings', 'allowReview')}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-sky-500 rounded focus:ring-sky-400"
                     />
-                    <label className="ml-2 text-sm font-medium text-gray-700">Allow Answer Review After Submission</label>
+                    <label className="ml-2 text-sm font-medium text-white/70">Allow Answer Review After Submission</label>
                   </div>
                 </div>
               </div>
@@ -615,13 +629,13 @@ const EditAptitudeTest = () => {
           {currentStep === 3 && (
             <div className="space-y-6">
               <div className="mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Select Recipients</h2>
-                <p className="text-gray-600 mt-1">Choose who can take this test</p>
+                <h2 className="text-2xl font-bold text-white">Select Recipients</h2>
+                <p className="text-white/70 mt-1">Choose who can take this test</p>
               </div>
 
               {/* Students Section */}
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm">
-                <h5 className="font-medium mb-3 text-blue-800 flex items-center gap-3">
+              <div className="bg-sky-500/15 rounded-lg p-4 ring-1 ring-sky-300/25">
+                <h5 className="font-medium mb-3 text-sky-200 flex items-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
@@ -629,31 +643,31 @@ const EditAptitudeTest = () => {
                 </h5>
 
                 <div className="mb-3">
-                  <label className="inline-flex items-center p-2 rounded-md hover:bg-blue-100">
+                  <label className="inline-flex items-center p-2 rounded-md hover:bg-white/5">
                     <input
                       type="checkbox"
                       checked={recipients.students.all}
                       onChange={(e) => handleRecipientChange('students', 'all', e.target.checked)}
-                      className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                      className="form-checkbox h-5 w-5 text-sky-500 rounded"
                     />
-                    <span className="ml-2 font-medium">All Students</span>
+                    <span className="ml-2 font-medium text-white/90">All Students</span>
                   </label>
                 </div>
 
                 {!recipients.students.all && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-blue-800 mb-1">Courses</label>
+                      <label className="block text-sm font-medium text-sky-200 mb-1">Courses</label>
                       <div className="flex flex-wrap gap-1">
                         {courses.map(course => (
-                          <label key={course} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-blue-200 hover:bg-blue-50">
+                          <label key={course} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                             <input
                               type="checkbox"
                               checked={recipients.students.courses.includes(course)}
                               onChange={() => handleMultiSelectChange('students', 'courses', course)}
-                              className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                              className="form-checkbox h-4 w-4 text-sky-500 rounded"
                             />
-                            <span className="ml-1 text-sm">{course}</span>
+                            <span className="ml-1 text-sm text-white/90">{course}</span>
                           </label>
                         ))}
                       </div>
@@ -661,17 +675,17 @@ const EditAptitudeTest = () => {
 
                     {recipients.students.courses.length > 0 && branches.length > 0 && (
                       <div>
-                        <label className="block text-sm font-medium text-blue-800 mb-1">Branches</label>
+                        <label className="block text-sm font-medium text-sky-200 mb-1">Branches</label>
                         <div className="flex flex-wrap gap-1">
                           {branches.map(branch => (
-                            <label key={branch} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-blue-200 hover:bg-blue-50">
+                            <label key={branch} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                               <input
                                 type="checkbox"
                                 checked={recipients.students.branches.includes(branch)}
                                 onChange={() => handleMultiSelectChange('students', 'branches', branch)}
-                                className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                                className="form-checkbox h-4 w-4 text-sky-500 rounded"
                               />
-                              <span className="ml-1 text-sm">{branch}</span>
+                              <span className="ml-1 text-sm text-white/90">{branch}</span>
                             </label>
                           ))}
                         </div>
@@ -679,17 +693,17 @@ const EditAptitudeTest = () => {
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-blue-800 mb-1">Passout Years</label>
+                      <label className="block text-sm font-medium text-sky-200 mb-1">Passout Years</label>
                       <div className="flex flex-wrap gap-1">
                         {passoutYears.map(year => (
-                          <label key={year} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-blue-200 hover:bg-blue-50">
+                          <label key={year} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                             <input
                               type="checkbox"
                               checked={recipients.students.passoutYears.includes(year)}
                               onChange={() => handleMultiSelectChange('students', 'passoutYears', year)}
-                              className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                              className="form-checkbox h-4 w-4 text-sky-500 rounded"
                             />
-                            <span className="ml-1 text-sm">{year}</span>
+                            <span className="ml-1 text-sm text-white/90">{year}</span>
                           </label>
                         ))}
                       </div>
@@ -699,8 +713,8 @@ const EditAptitudeTest = () => {
               </div>
 
               {/* Faculty Section */}
-              <div className="bg-green-50 rounded-lg p-4 border border-green-100 shadow-sm">
-                <h5 className="font-medium mb-3 text-green-800 flex items-center gap-3">
+              <div className="bg-emerald-500/15 rounded-lg p-4 ring-1 ring-emerald-300/25">
+                <h5 className="font-medium mb-3 text-emerald-200 flex items-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
@@ -708,48 +722,48 @@ const EditAptitudeTest = () => {
                 </h5>
 
                 <div className="mb-3">
-                  <label className="inline-flex items-center p-2 rounded-md hover:bg-green-100">
+                  <label className="inline-flex items-center p-2 rounded-md hover:bg-white/5">
                     <input
                       type="checkbox"
                       checked={recipients.faculty.all}
                       onChange={(e) => handleRecipientChange('faculty', 'all', e.target.checked)}
-                      className="form-checkbox h-5 w-5 text-green-600 rounded"
+                      className="form-checkbox h-5 w-5 text-emerald-500 rounded"
                     />
-                    <span className="ml-2 font-medium">All Faculty</span>
+                    <span className="ml-2 font-medium text-white/90">All Faculty</span>
                   </label>
                 </div>
 
                 {!recipients.faculty.all && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-green-800 mb-1">Courses</label>
+                      <label className="block text-sm font-medium text-emerald-200 mb-1">Courses</label>
                       <div className="flex flex-wrap gap-1">
                         {courses.map(course => (
-                          <label key={course} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-green-200 hover:bg-green-50">
+                          <label key={course} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                             <input
                               type="checkbox"
                               checked={recipients.faculty.courses.includes(course)}
                               onChange={() => handleMultiSelectChange('faculty', 'courses', course)}
-                              className="form-checkbox h-4 w-4 text-green-600 rounded"
+                              className="form-checkbox h-4 w-4 text-emerald-500 rounded"
                             />
-                            <span className="ml-1 text-sm">{course}</span>
+                            <span className="ml-1 text-sm text-white/90">{course}</span>
                           </label>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-green-800 mb-1">Departments</label>
+                      <label className="block text-sm font-medium text-emerald-200 mb-1">Departments</label>
                       <div className="flex flex-wrap gap-1">
                         {departments.map(dept => (
-                          <label key={dept} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-green-200 hover:bg-green-50">
+                          <label key={dept} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                             <input
                               type="checkbox"
                               checked={recipients.faculty.departments.includes(dept)}
                               onChange={() => handleMultiSelectChange('faculty', 'departments', dept)}
-                              className="form-checkbox h-4 w-4 text-green-600 rounded"
+                              className="form-checkbox h-4 w-4 text-emerald-500 rounded"
                             />
-                            <span className="ml-1 text-sm">{dept}</span>
+                            <span className="ml-1 text-sm text-white/90">{dept}</span>
                           </label>
                         ))}
                       </div>
@@ -759,8 +773,8 @@ const EditAptitudeTest = () => {
               </div>
 
               {/* HODs Section */}
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-100 shadow-sm">
-                <h5 className="font-medium mb-3 text-purple-800 flex items-center gap-3">
+              <div className="bg-purple-500/15 rounded-lg p-4 ring-1 ring-purple-300/25">
+                <h5 className="font-medium mb-3 text-purple-200 flex items-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -768,48 +782,48 @@ const EditAptitudeTest = () => {
                 </h5>
 
                 <div className="mb-3">
-                  <label className="inline-flex items-center p-2 rounded-md hover:bg-purple-100">
+                  <label className="inline-flex items-center p-2 rounded-md hover:bg-white/5">
                     <input
                       type="checkbox"
                       checked={recipients.hods.all}
                       onChange={(e) => handleRecipientChange('hods', 'all', e.target.checked)}
-                      className="form-checkbox h-5 w-5 text-purple-600 rounded"
+                      className="form-checkbox h-5 w-5 text-purple-500 rounded"
                     />
-                    <span className="ml-2 font-medium">All HODs</span>
+                    <span className="ml-2 font-medium text-white/90">All HODs</span>
                   </label>
                 </div>
 
                 {!recipients.hods.all && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-purple-800 mb-1">Courses</label>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">Courses</label>
                       <div className="flex flex-wrap gap-1">
                         {courses.map(course => (
-                          <label key={course} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-purple-200 hover:bg-purple-50">
+                          <label key={course} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                             <input
                               type="checkbox"
                               checked={recipients.hods.courses.includes(course)}
                               onChange={() => handleMultiSelectChange('hods', 'courses', course)}
-                              className="form-checkbox h-4 w-4 text-purple-600 rounded"
+                              className="form-checkbox h-4 w-4 text-purple-500 rounded"
                             />
-                            <span className="ml-1 text-sm">{course}</span>
+                            <span className="ml-1 text-sm text-white/90">{course}</span>
                           </label>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-purple-800 mb-1">Departments</label>
+                      <label className="block text-sm font-medium text-purple-200 mb-1">Departments</label>
                       <div className="flex flex-wrap gap-1">
                         {departments.map(dept => (
-                          <label key={dept} className="inline-flex items-center bg-white px-2 py-1 rounded-md border border-purple-200 hover:bg-purple-50">
+                          <label key={dept} className="inline-flex items-center bg-white/5 px-2 py-1 rounded-md ring-1 ring-white/15 hover:bg-white/10">
                             <input
                               type="checkbox"
                               checked={recipients.hods.departments.includes(dept)}
                               onChange={() => handleMultiSelectChange('hods', 'departments', dept)}
-                              className="form-checkbox h-4 w-4 text-purple-600 rounded"
+                              className="form-checkbox h-4 w-4 text-purple-500 rounded"
                             />
-                            <span className="ml-1 text-sm">{dept}</span>
+                            <span className="ml-1 text-sm text-white/90">{dept}</span>
                           </label>
                         ))}
                       </div>
@@ -819,8 +833,8 @@ const EditAptitudeTest = () => {
               </div>
 
               {/* Admins Section */}
-              <div className="bg-orange-50 rounded-lg p-4 border border-orange-100 shadow-sm">
-                <h5 className="font-medium mb-3 text-orange-800 flex items-center gap-3">
+              <div className="bg-orange-500/15 rounded-lg p-4 ring-1 ring-orange-300/25">
+                <h5 className="font-medium mb-3 text-orange-200 flex items-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
@@ -828,14 +842,14 @@ const EditAptitudeTest = () => {
                 </h5>
 
                 <div className="mb-3">
-                  <label className="inline-flex items-center p-2 rounded-md hover:bg-orange-100">
+                  <label className="inline-flex items-center p-2 rounded-md hover:bg-white/5">
                     <input
                       type="checkbox"
                       checked={recipients.admins.all}
                       onChange={(e) => handleRecipientChange('admins', 'all', e.target.checked)}
-                      className="form-checkbox h-5 w-5 text-orange-600 rounded"
+                      className="form-checkbox h-5 w-5 text-orange-500 rounded"
                     />
-                    <span className="ml-2 font-medium">All Admins</span>
+                    <span className="ml-2 font-medium text-white/90">All Admins</span>
                   </label>
                 </div>
               </div>
@@ -845,71 +859,71 @@ const EditAptitudeTest = () => {
           {/* Step 4: Review */}
           {currentStep === 4 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Review & Update</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Review & Update</h2>
 
               <div className="grid grid-cols-2 gap-6">
-                <div className="border border-gray-300 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-700 mb-3">Test Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Title:</span> {testData.title}</p>
-                    <p><span className="font-medium">Duration:</span> {testData.duration} minutes</p>
-                    <p><span className="font-medium">Total Questions:</span> {questions.length}</p>
-                    <p><span className="font-medium">Total Marks:</span> {questions.reduce((sum, q) => sum + (q.marks || 1), 0)}</p>
-                    <p><span className="font-medium">Pass Percentage:</span> {testData.passPercentage}%</p>
+                <div className="ring-1 ring-white/15 rounded-lg p-4 bg-white/5">
+                  <h3 className="font-semibold text-white/70 mb-3">Test Details</h3>
+                  <div className="space-y-2 text-sm text-white/90">
+                    <p><span className="font-medium text-white/70">Title:</span> {testData.title}</p>
+                    <p><span className="font-medium text-white/70">Duration:</span> {testData.duration} minutes</p>
+                    <p><span className="font-medium text-white/70">Total Questions:</span> {questions.length}</p>
+                    <p><span className="font-medium text-white/70">Total Marks:</span> {questions.reduce((sum, q) => sum + (q.marks || 1), 0)}</p>
+                    <p><span className="font-medium text-white/70">Pass Percentage:</span> {testData.passPercentage}%</p>
                   </div>
                 </div>
 
-                <div className="border border-gray-300 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-700 mb-3">Schedule</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Start:</span> {new Date(testData.schedule.startDate).toLocaleString()}</p>
-                    <p><span className="font-medium">End:</span> {new Date(testData.schedule.endDate).toLocaleString()}</p>
+                <div className="ring-1 ring-white/15 rounded-lg p-4 bg-white/5">
+                  <h3 className="font-semibold text-white/70 mb-3">Schedule</h3>
+                  <div className="space-y-2 text-sm text-white/90">
+                    <p><span className="font-medium text-white/70">Start:</span> {new Date(testData.schedule.startDate).toLocaleString()}</p>
+                    <p><span className="font-medium text-white/70">End:</span> {new Date(testData.schedule.endDate).toLocaleString()}</p>
                   </div>
                 </div>
 
-                <div className="border border-gray-300 rounded-lg p-4 col-span-2">
-                  <h3 className="font-semibold text-gray-700 mb-3">Recipients</h3>
+                <div className="ring-1 ring-white/15 rounded-lg p-4 col-span-2 bg-white/5">
+                  <h3 className="font-semibold text-white/70 mb-3">Recipients</h3>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <p className="font-medium text-blue-600 mb-1">Students:</p>
+                      <p className="font-medium text-sky-300 mb-1">Students:</p>
                       {recipients.students.all ? (
-                        <p className="text-gray-700 ml-4">All Students</p>
+                        <p className="text-white/90 ml-4">All Students</p>
                       ) : (
                         <div className="ml-4 space-y-1">
                           {recipients.students.courses.length > 0 && (
-                            <p className="text-gray-700">Courses: {recipients.students.courses.join(', ')}</p>
+                            <p className="text-white/90">Courses: {recipients.students.courses.join(', ')}</p>
                           )}
                           {recipients.students.branches.length > 0 && (
-                            <p className="text-gray-700">Branches: {recipients.students.branches.join(', ')}</p>
+                            <p className="text-white/90">Branches: {recipients.students.branches.join(', ')}</p>
                           )}
                           {recipients.students.passoutYears.length > 0 && (
-                            <p className="text-gray-700">Passout Years: {recipients.students.passoutYears.join(', ')}</p>
+                            <p className="text-white/90">Passout Years: {recipients.students.passoutYears.join(', ')}</p>
                           )}
                           {!recipients.students.all &&
                            recipients.students.courses.length === 0 &&
                            recipients.students.branches.length === 0 &&
                            recipients.students.passoutYears.length === 0 && (
-                            <p className="text-gray-500 italic">No students selected</p>
+                            <p className="text-white/55 italic">No students selected</p>
                           )}
                         </div>
                       )}
                     </div>
 
                     <div>
-                      <p className="font-medium text-green-600 mb-1">Faculty:</p>
+                      <p className="font-medium text-emerald-300 mb-1">Faculty:</p>
                       {recipients.faculty.all ? (
-                        <p className="text-gray-700 ml-4">All Faculty</p>
+                        <p className="text-white/90 ml-4">All Faculty</p>
                       ) : recipients.faculty.courses.length > 0 || recipients.faculty.departments.length > 0 ? (
                         <div className="ml-4 space-y-1">
                           {recipients.faculty.courses.length > 0 && (
-                            <p className="text-gray-700">Courses: {recipients.faculty.courses.join(', ')}</p>
+                            <p className="text-white/90">Courses: {recipients.faculty.courses.join(', ')}</p>
                           )}
                           {recipients.faculty.departments.length > 0 && (
-                            <p className="text-gray-700">Departments: {recipients.faculty.departments.join(', ')}</p>
+                            <p className="text-white/90">Departments: {recipients.faculty.departments.join(', ')}</p>
                           )}
                         </div>
                       ) : (
-                        <p className="text-gray-500 italic ml-4">No faculty selected</p>
+                        <p className="text-white/55 italic ml-4">No faculty selected</p>
                       )}
                     </div>
                   </div>
@@ -919,14 +933,14 @@ const EditAptitudeTest = () => {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
-              className={`px-6 py-3 rounded-lg font-semibold ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
                 currentStep === 1
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gray-600 text-white hover:bg-gray-700'
+                  ? 'bg-white/5 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+                  : 'bg-white/5 text-white/90 ring-1 ring-white/15 backdrop-blur-md hover:bg-white/10'
               }`}
             >
               Previous
@@ -935,7 +949,7 @@ const EditAptitudeTest = () => {
             {currentStep < 4 ? (
               <button
                 onClick={nextStep}
-                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+                className="ds-shimmer inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_30px_-8px_rgba(59,99,255,0.6)] ring-1 ring-white/20 transition-all hover:brightness-110 active:scale-[0.98]"
               >
                 Next
               </button>
@@ -943,17 +957,17 @@ const EditAptitudeTest = () => {
               <button
                 onClick={handleSubmitTest}
                 disabled={isSubmitting}
-                className={`px-8 py-3 rounded-lg font-semibold ${
+                className={`ds-shimmer inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 transition-all ${
                   isSubmitting
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-600 to-blue-600 hover:shadow-lg'
-                } text-white`}
+                    ? 'bg-white/10 text-white/60 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_10px_30px_-8px_rgba(59,99,255,0.6)] hover:brightness-110 active:scale-[0.98]'
+                }`}
               >
                 {isSubmitting ? 'Updating...' : 'Update Test'}
               </button>
             )}
           </div>
-        </div>
+        </LiquidGlass>
       </div>
     </div>
   );

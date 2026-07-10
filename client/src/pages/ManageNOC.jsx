@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Filter } from 'lucide-react';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 
 const ManageNOC = () => {
   const { user } = useContext(AuthContext);
@@ -24,7 +25,7 @@ const ManageNOC = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -36,7 +37,7 @@ const ManageNOC = () => {
     queryKey: ['adminNocRequests'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/noc/admin', {
+      const { data } = await axios.get(`${API_BASE}/noc/admin`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data.data;
@@ -47,7 +48,7 @@ const ManageNOC = () => {
   const { mutate: updateStatus, isPending: isUpdating } = useMutation({
     mutationFn: async ({ id, status, remarks }) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/noc/admin/${id}/status`, {
+      const { data } = await axios.put(`${API_BASE}/noc/admin/${id}/status`, {
         status,
         adminRemarks: remarks
       }, {

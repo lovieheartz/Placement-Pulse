@@ -7,13 +7,16 @@ import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Users, Ban, CheckCircle2, X } from 'lucide-react';
+import { Users, Ban, CheckCircle2, X, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 
 const HODStudents = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showUnblockModal, setShowUnblockModal] = useState(false);
@@ -31,7 +34,7 @@ const HODStudents = () => {
   } = useQuery({
     queryKey: ['hodProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/profile', {
+      const { data } = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -48,7 +51,7 @@ const HODStudents = () => {
   } = useQuery({
     queryKey: ['hodStudents'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/students', {
+      const { data } = await axios.get(`${API_BASE}/hod/students`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -64,7 +67,7 @@ const HODStudents = () => {
   const { mutate: blockStudentMutation, isPending: isBlocking } = useMutation({
     mutationFn: async ({ studentId, reason }) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/hod/students/${studentId}/block`, { reason }, {
+      const { data } = await axios.put(`${API_BASE}/hod/students/${studentId}/block`, { reason }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;
@@ -94,7 +97,7 @@ const HODStudents = () => {
   const { mutate: unblockStudentMutation, isPending: isUnblocking } = useMutation({
     mutationFn: async (studentId) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/hod/students/${studentId}/unblock`, {}, {
+      const { data } = await axios.put(`${API_BASE}/hod/students/${studentId}/unblock`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;
@@ -293,6 +296,13 @@ const HODStudents = () => {
                         </td>
                         <td className="px-3 py-3 text-muted-foreground">
                           <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/hod/students/${student.id || student._id}`)}
+                            >
+                              <Eye className="size-4" /> View
+                            </Button>
                             {student.isBlocked ? (
                               <Button
                                 variant="success"

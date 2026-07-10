@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import StudentSidebar from '../components/StudentSidebar';
 import StudentHeader from '../components/StudentHeader';
 import StudentFooter from '../components/StudentFooter';
+import { WS_BASE } from '../config/api';
 import './Dashboard.css';
 
 /**
@@ -192,7 +193,7 @@ const ProfessionalMockInterview = () => {
   // Connect WebSocket
   const connectWebSocket = () => {
     const token = sessionStorage.getItem('authToken');
-    const wsUrl = `ws://localhost:3001/api/live-interview?token=${token}`;
+    const wsUrl = `${WS_BASE}/api/live-interview?token=${token}`;
 
     const websocket = new WebSocket(wsUrl);
 

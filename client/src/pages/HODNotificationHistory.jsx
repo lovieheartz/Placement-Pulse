@@ -6,6 +6,7 @@ import PortalLayout from '@/components/app/PortalLayout';
 import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { History, Search, Inbox } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 const HODNotificationHistory = () => {
   const { user } = useContext(AuthContext);
@@ -20,7 +21,7 @@ const HODNotificationHistory = () => {
     queryKey: ['hodProfile'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:3001/hod/profile', {
+      const response = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.data;
@@ -43,7 +44,7 @@ const HODNotificationHistory = () => {
 
       if (searchTerm) params.append('search', searchTerm);
 
-      const response = await axios.get(`http://localhost:3001/notifications/history?${params}`, {
+      const response = await axios.get(`${API_BASE}/notifications/history?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;

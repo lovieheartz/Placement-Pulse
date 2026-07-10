@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { API_BASE } from '../config/api';
 import 'react-toastify/dist/ReactToastify.css';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../context/AuthContext';
@@ -31,7 +32,7 @@ const HODList = () => {
   } = useQuery({
     queryKey: ['hods'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/all-hods', {
+      const { data } = await axios.get(`${API_BASE}/admin/all-hods`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -52,7 +53,7 @@ const HODList = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -62,7 +63,7 @@ const HODList = () => {
 
   const { mutate: deleteHODMutation, isPending: isDeleting } = useMutation({
     mutationFn: async (hodId) => {
-      const { data } = await axios.delete(`http://localhost:3001/admin/hod/${hodId}`, {
+      const { data } = await axios.delete(`${API_BASE}/admin/hod/${hodId}`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data;

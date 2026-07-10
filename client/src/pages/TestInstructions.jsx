@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiCamera, FiMonitor, FiClock, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { API_BASE } from '../config/api';
 
 const TestInstructions = () => {
   const { testId } = useParams();
@@ -23,7 +24,7 @@ const TestInstructions = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.get(
-        `http://localhost:3001/api/aptitude/tests/${testId}/preview`,
+        `${API_BASE}/api/aptitude/tests/${testId}/preview`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

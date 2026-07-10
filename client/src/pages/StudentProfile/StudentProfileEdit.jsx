@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { UserCog } from 'lucide-react';
 import { FiCamera, FiUser } from 'react-icons/fi';
 import axios from 'axios';
+import SemesterResultsView from './SemesterResultsView';
+import { API_BASE } from '../../config/api';
 
 const StudentProfileEdit = () => {
   const { user, updateUser, refreshUser } = useContext(AuthContext);
@@ -33,10 +35,20 @@ const StudentProfileEdit = () => {
     queryKey: ['studentProfile'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/student/profile', {
+      // Read from the rich StudentProfile row (not the basic Student row) so that
+      // semesterMarks, universityRoll/registration and other academic fields load back.
+      const { data } = await axios.get(`${API_BASE}/student-profile/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return data.data;
+      const profile = data.data || {};
+      // The Basic tab registers name/email/branch, but the rich profile stores these
+      // as fullName/primaryEmail/stream. Map them so those inputs stay populated.
+      return {
+        ...profile,
+        name: profile.name ?? profile.fullName ?? '',
+        email: profile.email ?? profile.primaryEmail ?? '',
+        branch: profile.branch ?? profile.stream ?? '',
+      };
     },
     enabled: !!user,
     onSuccess: (data) => {
@@ -54,7 +66,7 @@ const StudentProfileEdit = () => {
   const updateProfileMutation = useMutation({
     mutationFn: async (formData) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put('http://localhost:3001/student-profile/profile', formData, {
+      const { data } = await axios.put(`${API_BASE}/student-profile/profile`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;
@@ -74,7 +86,7 @@ const StudentProfileEdit = () => {
       const formData = new FormData();
       formData.append('avatar', file);
       
-      const { data } = await axios.post('http://localhost:3001/auth/upload-avatar', formData, {
+      const { data } = await axios.post(`${API_BASE}/auth/upload-avatar`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -99,7 +111,7 @@ const StudentProfileEdit = () => {
   const addSubjectMutation = useMutation({
     mutationFn: async ({ classType, subject }) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.post('http://localhost:3001/student-profile/profile/subject', 
+      const { data } = await axios.post(`${API_BASE}/student-profile/profile/subject`, 
         { classType, subject }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -157,7 +169,7 @@ const StudentProfileEdit = () => {
     // Check profile data avatar first (most up-to-date)
     const avatarPath = profileData?.avatar || profileData?.profilePicture;
     if (avatarPath) {
-      const avatarUrl = avatarPath.startsWith('http') ? avatarPath : `http://localhost:3001${avatarPath}`;
+      const avatarUrl = avatarPath.startsWith('http') ? avatarPath : `${API_BASE}${avatarPath}`;
       console.log('Using profile data avatar:', avatarUrl);
       return avatarUrl;
     }
@@ -165,7 +177,7 @@ const StudentProfileEdit = () => {
     // Fallback to user avatar from AuthContext
     const userAvatarPath = user?.avatar || user?.profilePicture;
     if (userAvatarPath) {
-      const avatarUrl = userAvatarPath.startsWith('http') ? userAvatarPath : `http://localhost:3001${userAvatarPath}`;
+      const avatarUrl = userAvatarPath.startsWith('http') ? userAvatarPath : `${API_BASE}${userAvatarPath}`;
       console.log('Using user avatar:', avatarUrl);
       return avatarUrl;
     }
@@ -435,6 +447,28 @@ const StudentProfileEdit = () => {
                   {/* Academic Tab */}
                   {activeTab === 'academic' && (
                     <div className="space-y-8">
+                      {/* AI marksheet upload lives on the dedicated Academic Records page */}
+                      <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 sm:flex-row sm:items-center">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                          <UserCog className="size-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base font-bold text-foreground">Upload marksheets with AI</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Skip manual typing — upload your Class X, Class XII and semester grade cards and AI fills
+                            everything in. Saved results appear here automatically.
+                          </p>
+                        </div>
+                        <Button type="button" variant="gradient" onClick={() => navigate('/student/academic-records')} className="whitespace-nowrap">
+                          Go to Academic Records
+                        </Button>
+                      </div>
+
+                      {/* Read-only summary of saved semester results */}
+                      {profileData?.semesterMarks?.semesters?.length > 0 && (
+                        <SemesterResultsView semesterMarks={profileData.semesterMarks} />
+                      )}
+
                       {/* Class X */}
                       <div className="border-2 border-blue-100 rounded-xl p-6 bg-gradient-to-br from-white to-blue-50/30">
                         <div className="flex justify-between items-center mb-6">

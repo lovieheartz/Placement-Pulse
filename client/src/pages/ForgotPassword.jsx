@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ const ForgotPassword = () => {
 
   const mutation = useMutation({
     mutationFn: async (email) => {
-      const response = await axios.post('http://localhost:3001/forgot-password', { email });
+      const response = await axios.post(`${API_BASE}/forgot-password`, { email });
       return response.data;
     },
     onSuccess: (data) => {

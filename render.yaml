@@ -1,0 +1,47 @@
+# Render Blueprint for the backend (Express + WebSocket + Prisma).
+# In Render: New → Blueprint → connect this repo. Then fill in the env vars
+# marked `sync: false` (they are secrets and are NOT stored in the repo).
+services:
+  - type: web
+    name: placement-pulse-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: ALLOWED_DOMAIN
+        value: "@nsec.ac.in"
+      - key: OTP_EXPIRY_MINUTES
+        value: 10
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: uploads
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_REALTIME_MODEL
+        value: gpt-4o-realtime-preview-2024-12-17

@@ -5,10 +5,35 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import PortalLayout from '@/components/app/PortalLayout';
 import AIAvatar from '../components/AIAvatar';
+import { GlassPanel } from '@/components/ui/surface';
+import { Button } from '@/components/ui/button';
+import { API_BASE, WS_BASE } from '../config/api';
+import {
+  Building2,
+  Briefcase,
+  Factory,
+  Upload,
+  CheckCircle2,
+  X as XIcon,
+  Mic,
+  MicOff,
+  Camera,
+  Flag,
+  MessageSquare,
+  MessageSquareQuote,
+  BarChart3,
+  Home,
+  RotateCcw,
+  Users,
+  Code2,
+  Target,
+  Sparkles,
+  Info,
+  Loader2,
+} from 'lucide-react';
 import './Dashboard.css';
 import './RealtimeInterview.css';
 
-const API_BASE = 'http://localhost:3001';
 
 // Company options
 const COMPANIES = [
@@ -55,6 +80,21 @@ const INDUSTRIES = [
   { value: 'other', label: '✏️ Other (Type below)' }
 ];
 
+// Decorative chevron for native <select> fields
+const ChevronDownIcon = () => (
+  <svg
+    className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
 const RealtimeInterviewPage = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -65,7 +105,7 @@ const RealtimeInterviewPage = () => {
   const { data: profileData } = useQuery({
     queryKey: ['studentProfile'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/student/profile', {
+      const res = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -305,7 +345,7 @@ const RealtimeInterviewPage = () => {
 
   const connectWebSocket = (sessionId, token) => {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(`ws://localhost:3001/api/interview/ws`);
+      const ws = new WebSocket(`${WS_BASE}/api/interview/ws`);
 
       ws.onopen = () => {
         console.log('🔌 WebSocket connection opened');
@@ -700,953 +740,711 @@ const RealtimeInterviewPage = () => {
     }
   };
 
-  const renderSetup = () => (
-    <div className="px-6 md:px-8 py-6 md:py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
-      <div className="interview-setup-container">
-        <div className="interview-setup">
-          <div className="setup-header">
-            <h1>🎤 AI Mock Interview</h1>
-            <p>Practice with a production-grade AI interviewer powered by OpenAI</p>
-          </div>
+  const selectCls =
+    'w-full appearance-none rounded-xl border border-input bg-background/70 px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-colors focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
+  const inputCls =
+    'w-full rounded-xl border border-input bg-background/70 px-4 py-3 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
+  const labelCls = 'mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground';
 
-          <div className="setup-form">
-            {/* Company Selection */}
-            <div className="form-group">
-              <label>Target Company *</label>
+  const startDisabled =
+    isPreparing ||
+    !config.jobRole ||
+    !config.industry ||
+    (config.company === 'other' && !config.customCompany.trim()) ||
+    (config.industry === 'other' && !config.customIndustry.trim());
+
+  const INTERVIEW_TYPES = [
+    { id: 'hr', icon: Users, title: 'HR Round', desc: 'Behavioral, soft skills, culture fit' },
+    { id: 'technical', icon: Code2, title: 'Technical', desc: 'Domain knowledge & problem-solving' },
+    { id: 'mixed', icon: Target, title: 'Mixed', desc: 'HR + Technical combined', badge: 'Recommended' },
+  ];
+
+  const DIFFICULTIES = [
+    { id: 'easy', dot: 'bg-emerald-500', title: 'Easy', desc: '10–12 questions' },
+    { id: 'medium', dot: 'bg-amber-500', title: 'Medium', desc: '12–20 questions' },
+    { id: 'hard', dot: 'bg-rose-500', title: 'Hard', desc: '20–25 questions' },
+  ];
+
+  const renderSetup = () => (
+    <div className="mx-auto max-w-3xl">
+      {/* Hero */}
+      <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 p-7 text-white shadow-xl sm:p-9">
+        <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-10 size-56 rounded-full bg-black/10 blur-3xl" />
+        <div className="relative flex items-start gap-4">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
+            <Mic className="size-7" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">AI Mock Interview</h1>
+            <p className="mt-1 max-w-lg text-sm text-white/85 sm:text-base">
+              Practice with a production-grade AI interviewer. Configure your session below and get
+              detailed, personalized feedback.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <GlassPanel className="space-y-6 p-5 sm:p-7">
+        {/* Company + Job Role */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div>
+            <label className={labelCls}>
+              <Building2 className="size-4 text-primary" /> Target Company <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
               <select
-                className="form-select"
+                className={selectCls}
                 value={config.company}
-                onChange={(e) => setConfig({...config, company: e.target.value, customCompany: ''})}
+                onChange={(e) => setConfig({ ...config, company: e.target.value, customCompany: '' })}
               >
-                {COMPANIES.map(company => (
+                {COMPANIES.map((company) => (
                   <option key={company.value} value={company.value}>
                     {company.label}
                   </option>
                 ))}
               </select>
+              <ChevronDownIcon />
             </div>
-
-            {/* Custom Company Name - Only show if "Other" is selected */}
-            {config.company === 'other' && (
-              <div className="form-group">
-                <label>Company Name *</label>
-                <input
-                  type="text"
-                  placeholder="Enter company name"
-                  value={config.customCompany}
-                  onChange={(e) => setConfig({...config, customCompany: e.target.value})}
-                />
-              </div>
-            )}
-
-            <div className="form-group">
-              <label>Job Role *</label>
-              <input
-                type="text"
-                placeholder="e.g., Software Engineer, Data Analyst, Product Manager"
-                value={config.jobRole}
-                onChange={(e) => setConfig({...config, jobRole: e.target.value})}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Industry *</label>
-              <select
-                className="form-select"
-                value={config.industry}
-                onChange={(e) => setConfig({...config, industry: e.target.value, customIndustry: ''})}
-              >
-                {INDUSTRIES.map(industry => (
-                  <option key={industry.value} value={industry.value}>
-                    {industry.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Custom Industry Name - Only show if "Other" is selected */}
-            {config.industry === 'other' && (
-              <div className="form-group">
-                <label>Industry Name *</label>
-                <input
-                  type="text"
-                  placeholder="Enter industry name"
-                  value={config.customIndustry}
-                  onChange={(e) => setConfig({...config, customIndustry: e.target.value})}
-                />
-              </div>
-            )}
-
-            <div className="form-group">
-              <label>Interview Type</label>
-              <div className="interview-type-cards">
-                <div
-                  className={`type-card ${config.interviewType === 'hr' ? 'active' : ''}`}
-                  onClick={() => setConfig({...config, interviewType: 'hr'})}
-                >
-                  <div className="type-icon">👔</div>
-                  <div className="type-title">HR Interview</div>
-                  <div className="type-desc">Behavioral, soft skills, culture fit</div>
-                </div>
-
-                <div
-                  className={`type-card ${config.interviewType === 'technical' ? 'active' : ''}`}
-                  onClick={() => setConfig({...config, interviewType: 'technical'})}
-                >
-                  <div className="type-icon">💻</div>
-                  <div className="type-title">Technical</div>
-                  <div className="type-desc">Domain knowledge, problem-solving</div>
-                </div>
-
-                <div
-                  className={`type-card ${config.interviewType === 'mixed' ? 'active' : ''}`}
-                  onClick={() => setConfig({...config, interviewType: 'mixed'})}
-                >
-                  <div className="type-icon">🎯</div>
-                  <div className="type-title">Mixed (Recommended)</div>
-                  <div className="type-desc">HR + Technical combined</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Difficulty Level</label>
-              <div className="difficulty-buttons">
-                <button
-                  className={`diff-btn ${config.difficulty === 'easy' ? 'active' : ''}`}
-                  onClick={() => setConfig({...config, difficulty: 'easy'})}
-                >
-                  🟢 Easy (10-12 questions)
-                </button>
-                <button
-                  className={`diff-btn ${config.difficulty === 'medium' ? 'active' : ''}`}
-                  onClick={() => setConfig({...config, difficulty: 'medium'})}
-                >
-                  🟡 Medium (12-20 questions)
-                </button>
-                <button
-                  className={`diff-btn ${config.difficulty === 'hard' ? 'active' : ''}`}
-                  onClick={() => setConfig({...config, difficulty: 'hard'})}
-                >
-                  🔴 Hard (20-25 questions)
-                </button>
-              </div>
-            </div>
-
-            {/* Resume Upload (Optional) */}
-            <div className="form-group">
-              <label>Upload Resume (Optional) 📄</label>
-              <div style={{
-                border: '2px dashed #e2e8f0',
-                borderRadius: '10px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                background: config.resumeFile ? '#f0fdf4' : '#f7fafc',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer'
-              }}
-              onClick={() => document.getElementById('resumeUpload').click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.borderColor = '#667eea';
-                e.currentTarget.style.background = '#f0f4ff';
-              }}
-              onDragLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.background = config.resumeFile ? '#f0fdf4' : '#f7fafc';
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.background = config.resumeFile ? '#f0fdf4' : '#f7fafc';
-                const file = e.dataTransfer.files[0];
-                if (file && file.type === 'application/pdf') {
-                  setConfig({...config, resumeFile: file});
-                } else {
-                  alert('Please upload a PDF file');
-                }
-              }}
-              >
-                <input
-                  id="resumeUpload"
-                  type="file"
-                  accept=".pdf"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setConfig({...config, resumeFile: file});
-                    }
-                  }}
-                />
-                {config.resumeFile ? (
-                  <div>
-                    <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
-                    <div style={{ fontWeight: 600, color: '#059669', marginBottom: '0.25rem' }}>
-                      {config.resumeFile.name}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.75rem' }}>
-                      {(config.resumeFile.size / 1024).toFixed(2)} KB
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfig({...config, resumeFile: null});
-                        document.getElementById('resumeUpload').value = '';
-                      }}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        fontWeight: 600
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📄</div>
-                    <div style={{ fontWeight: 600, color: '#2d3748', marginBottom: '0.25rem' }}>
-                      Click to upload or drag and drop
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-                      PDF only (Max 5MB) - AI will ask questions about your projects & experience
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              className="start-button"
-              onClick={startInterview}
-              disabled={isPreparing || !config.jobRole || !config.industry || (config.company === 'other' && !config.customCompany.trim()) || (config.industry === 'other' && !config.customIndustry.trim())}
-            >
-              {isPreparing ? '🔄 Preparing Interview...' : '🎙️ Start Interview'}
-            </button>
           </div>
 
-          <div className="info-box">
-            <h3>💡 Before you start:</h3>
-            <ul>
-              <li>✓ Ensure you're in a quiet environment</li>
-              <li>✓ Test your microphone and speakers</li>
-              <li>✓ Speak clearly and at a natural pace</li>
-              <li>✓ The AI will intelligently decide when to end based on your performance</li>
-              <li>✓ You can also end the interview manually anytime</li>
-            </ul>
+          <div>
+            <label className={labelCls}>
+              <Briefcase className="size-4 text-primary" /> Job Role <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              className={inputCls}
+              placeholder="e.g., Software Engineer, Data Analyst"
+              value={config.jobRole}
+              onChange={(e) => setConfig({ ...config, jobRole: e.target.value })}
+            />
           </div>
         </div>
+
+        {config.company === 'other' && (
+          <div>
+            <label className={labelCls}>Company Name <span className="text-rose-500">*</span></label>
+            <input
+              type="text"
+              className={inputCls}
+              placeholder="Enter company name"
+              value={config.customCompany}
+              onChange={(e) => setConfig({ ...config, customCompany: e.target.value })}
+            />
+          </div>
+        )}
+
+        {/* Industry */}
+        <div>
+          <label className={labelCls}>
+            <Factory className="size-4 text-primary" /> Industry <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative">
+            <select
+              className={selectCls}
+              value={config.industry}
+              onChange={(e) => setConfig({ ...config, industry: e.target.value, customIndustry: '' })}
+            >
+              {INDUSTRIES.map((industry) => (
+                <option key={industry.value} value={industry.value}>
+                  {industry.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon />
+          </div>
+        </div>
+
+        {config.industry === 'other' && (
+          <div>
+            <label className={labelCls}>Industry Name <span className="text-rose-500">*</span></label>
+            <input
+              type="text"
+              className={inputCls}
+              placeholder="Enter industry name"
+              value={config.customIndustry}
+              onChange={(e) => setConfig({ ...config, customIndustry: e.target.value })}
+            />
+          </div>
+        )}
+
+        {/* Interview Type */}
+        <div>
+          <label className={labelCls}>Interview Type</label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {INTERVIEW_TYPES.map((t) => {
+              const active = config.interviewType === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setConfig({ ...config, interviewType: t.id })}
+                  className={`group relative flex flex-col items-start gap-2 rounded-2xl border-2 p-4 text-left transition-all duration-200 ${
+                    active
+                      ? 'border-primary bg-primary/[0.06] shadow-md'
+                      : 'border-border bg-card/60 hover:border-primary/40 hover:bg-primary/[0.03]'
+                  }`}
+                >
+                  {t.badge && (
+                    <span className="absolute right-2 top-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                      {t.badge}
+                    </span>
+                  )}
+                  <span
+                    className={`flex size-10 items-center justify-center rounded-xl transition-colors ${
+                      active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <t.icon className="size-5" />
+                  </span>
+                  <span className="text-sm font-bold text-foreground">{t.title}</span>
+                  <span className="text-xs leading-snug text-muted-foreground">{t.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Difficulty */}
+        <div>
+          <label className={labelCls}>Difficulty Level</label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {DIFFICULTIES.map((d) => {
+              const active = config.difficulty === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setConfig({ ...config, difficulty: d.id })}
+                  className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3 transition-all duration-200 ${
+                    active
+                      ? 'border-primary bg-primary/[0.06] shadow-md'
+                      : 'border-border bg-card/60 hover:border-primary/40'
+                  }`}
+                >
+                  <span className={`size-3 shrink-0 rounded-full ${d.dot}`} />
+                  <span className="text-left">
+                    <span className="block text-sm font-bold text-foreground">{d.title}</span>
+                    <span className="block text-xs text-muted-foreground">{d.desc}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Resume Upload */}
+        <div>
+          <label className={labelCls}>
+            <Upload className="size-4 text-primary" /> Upload Resume
+            <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              Optional
+            </span>
+          </label>
+          <div
+            className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-300 ${
+              config.resumeFile
+                ? 'border-emerald-500/40 bg-emerald-500/[0.05]'
+                : 'cursor-pointer border-border hover:border-primary/50 hover:bg-primary/[0.03]'
+            }`}
+            onClick={() => !config.resumeFile && document.getElementById('resumeUpload').click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              if (file && file.type === 'application/pdf') {
+                setConfig({ ...config, resumeFile: file });
+              } else {
+                alert('Please upload a PDF file');
+              }
+            }}
+          >
+            <input
+              id="resumeUpload"
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) setConfig({ ...config, resumeFile: file });
+              }}
+            />
+            {config.resumeFile ? (
+              <>
+                <div className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
+                  <CheckCircle2 className="size-6" />
+                </div>
+                <div className="text-sm font-semibold text-foreground">{config.resumeFile.name}</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  {(config.resumeFile.size / 1024).toFixed(2)} KB
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfig({ ...config, resumeFile: null });
+                    const el = document.getElementById('resumeUpload');
+                    if (el) el.value = '';
+                  }}
+                >
+                  <XIcon className="size-4" /> Remove
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                  <Upload className="size-6" />
+                </div>
+                <div className="text-sm font-semibold text-foreground">Click to upload or drag & drop</div>
+                <div className="mt-1 max-w-xs text-xs text-muted-foreground">
+                  PDF only (Max 5MB) — the AI will ask about your projects & experience
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Start button */}
+        <Button
+          variant="gradient"
+          size="xl"
+          className="w-full shadow-lg shadow-indigo-500/20"
+          onClick={startInterview}
+          disabled={startDisabled}
+        >
+          {isPreparing ? (
+            <>
+              <Loader2 className="size-5 animate-spin" /> Preparing Interview…
+            </>
+          ) : (
+            <>
+              <Mic className="size-5" /> Start Interview
+            </>
+          )}
+        </Button>
+      </GlassPanel>
+
+      {/* Tips */}
+      <div className="mt-5 rounded-2xl border border-blue-500/20 bg-blue-500/[0.06] p-5">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
+          <Info className="size-4 text-blue-600 dark:text-blue-400" /> Before you start
+        </h3>
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[
+            "Ensure you're in a quiet environment",
+            'Test your microphone and speakers',
+            'Speak clearly and at a natural pace',
+            'The AI decides when to end based on performance',
+            'You can end the interview manually anytime',
+          ].map((tip) => (
+            <li key={tip} className="flex items-start gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+              {tip}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 
   const renderInterview = () => (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%)' }}>
-      {/* FIXED Header - Top Bar with Camera, Avatar, and Status */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        padding: '0.75rem 1.5rem',
-        background: 'white',
-        boxShadow: '0 2px 15px rgba(0,0,0,0.1)',
-        borderBottom: '2px solid #e2e8f0',
-        flexWrap: 'wrap'
-      }}>
-            {/* Camera Mini Preview */}
-            <div style={{
-              width: '160px',
-              height: '120px',
-              flexShrink: 0
-            }}>
-              {isCameraOn ? (
-                <div style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  background: '#000',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                }}>
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    onLoadedMetadata={() => {
-                      console.log('✅ Video loaded successfully');
-                      if (videoRef.current) {
-                        videoRef.current.play().catch(e => console.error('Video play error:', e));
-                      }
-                    }}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transform: 'scaleX(-1)'
-                    }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    display: 'flex',
-                    gap: '8px'
-                  }}>
-                    {isRecording && <span style={{
-                      width: '8px',
-                      height: '8px',
-                      background: '#ef4444',
-                      borderRadius: '50%',
-                      animation: 'recPulse 1.5s ease-in-out infinite'
-                    }}></span>}
-                    <button
-                      onClick={toggleCamera}
-                      style={{
-                        background: 'rgba(0,0,0,0.6)',
-                        border: 'none',
-                        color: 'white',
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        fontSize: '1rem'
-                      }}
-                    >✕</button>
-                  </div>
-                </div>
-              ) : (
+    <div className="relative -mx-4 -my-6 flex min-h-[calc(100vh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
+      {/* Sticky control bar */}
+      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-6">
+        {/* Camera preview */}
+        <div className="h-[96px] w-[128px] shrink-0 sm:h-[108px] sm:w-[144px]">
+          {isCameraOn ? (
+            <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black shadow-md ring-1 ring-border">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                onLoadedMetadata={() => {
+                  if (videoRef.current) {
+                    videoRef.current.play().catch((e) => console.error('Video play error:', e));
+                  }
+                }}
+                className="h-full w-full -scale-x-100 object-cover"
+              />
+              <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                {isRecording && (
+                  <span className="size-2.5 animate-pulse rounded-full bg-rose-500 ring-2 ring-white/40" />
+                )}
                 <button
                   onClick={toggleCamera}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: '2px dashed rgba(255,255,255,0.5)',
-                    borderRadius: '12px',
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+                  className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
                 >
-                  📷 Enable Camera
+                  <XIcon className="size-3.5" />
                 </button>
-              )}
+              </div>
             </div>
-
-            {/* AI Avatar */}
-            <div style={{ flexShrink: 0 }}>
-              {console.log('🎨 Rendering Avatar - Speaking:', isAISpeaking, 'Listening:', isRecording && !isAISpeaking)}
-              <AIAvatar
-                isSpeaking={isAISpeaking}
-                isListening={isRecording && !isAISpeaking}
-              />
-            </div>
-
-            {/* Microphone Toggle Button */}
+          ) : (
             <button
-              onClick={toggleMicrophone}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.6rem 1rem',
-                background: isRecording ?
-                  'linear-gradient(135deg, #10b981 0%, #059669 100%)' :
-                  'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                boxShadow: isRecording ?
-                  '0 3px 10px rgba(16, 185, 129, 0.3)' :
-                  '0 3px 10px rgba(239, 68, 68, 0.3)',
-                transition: 'all 0.3s ease',
-                transform: isRecording ? 'scale(1.02)' : 'scale(1)'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = isRecording ? 'scale(1.02)' : 'scale(1)'}
+              onClick={toggleCamera}
+              className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-white/40 bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-semibold text-white transition-transform hover:scale-[1.02]"
             >
-              <span style={{
-                fontSize: '1.4rem',
-                animation: isRecording ? 'pulse 1.5s ease-in-out infinite' : 'none'
-              }}>
-                {isRecording ? '🎤' : '🔇'}
-              </span>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '0.85rem' }}>{isRecording ? 'SPEAKING' : 'CLICK TO SPEAK'}</div>
-                <div style={{ fontSize: '0.65rem', opacity: 0.85, fontWeight: 400 }}>
-                  {isRecording ? 'AI is listening...' : 'Turn on microphone'}
-                </div>
-              </div>
+              <Camera className="size-5" />
+              Enable Camera
             </button>
+          )}
+        </div>
 
-            {/* Status Info */}
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: '1rem'
-            }}>
-              <div style={{
-                padding: '0.75rem 1.25rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                borderRadius: '25px',
-                fontWeight: 600,
-                fontSize: '0.95rem'
-              }}>
-                Question {currentQuestion > 0 ? currentQuestion : '-'} / {estimatedQuestions}
-              </div>
-              {isRecording && (
-                <div className="status-badge recording">
-                  🔴 Recording
-                </div>
-              )}
-            </div>
-      </div>
+        {/* AI avatar */}
+        <div className="shrink-0">
+          <AIAvatar isSpeaking={isAISpeaking} isListening={isRecording && !isAISpeaking} />
+        </div>
 
-      {/* Conversation Window - Scrollable */}
-      <div style={{
-        margin: '1.5rem',
-        background: 'white',
-        borderRadius: '15px',
-        padding: '1.5rem',
-        boxShadow: '0 2px 15px rgba(0,0,0,0.08)',
-        minHeight: 'calc(100vh - 280px)',
-        maxHeight: 'calc(100vh - 280px)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <h3 style={{
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          color: '#2d3748',
-          marginBottom: '1rem',
-          borderBottom: '2px solid #e2e8f0',
-          paddingBottom: '0.5rem'
-        }}>
-          💬 Interview Conversation
-        </h3>
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          paddingRight: '0.5rem'
-        }}>
-              {conversationHistory.map((msg, idx) => (
-                <div key={idx} className={`message ${msg.role}`}>
-                  <div className="message-avatar">
-                    {msg.role === 'assistant' ? '🤖' : '👤'}
-                  </div>
-                  <div className="message-content">
-                    <div className="message-role">
-                      {msg.role === 'assistant' ? 'Alex (AI Interviewer)' : 'You'}
-                    </div>
-                    <div className="message-text">{msg.content}</div>
-                    <div className="message-time">
-                      {new Date(msg.timestamp).toLocaleTimeString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {conversationHistory.length === 0 && (
-                <div style={{
-                  textAlign: 'center',
-                  color: '#9ca3af',
-                  padding: '3rem',
-                  fontSize: '1.1rem'
-                }}>
-                  💭 Waiting for AI to start the interview...
-                </div>
-              )}
-          <div ref={messagesEndRef} />
+        {/* Mic toggle */}
+        <button
+          onClick={toggleMicrophone}
+          className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 font-semibold text-white shadow-md transition-all duration-300 ${
+            isRecording
+              ? 'scale-[1.02] bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/30'
+              : 'bg-gradient-to-r from-rose-500 to-red-600 shadow-rose-500/30 hover:scale-[1.03]'
+          }`}
+        >
+          {isRecording ? (
+            <Mic className="size-5 animate-pulse" />
+          ) : (
+            <MicOff className="size-5" />
+          )}
+          <span className="text-left leading-tight">
+            <span className="block text-sm font-bold">
+              {isRecording ? 'SPEAKING' : 'CLICK TO SPEAK'}
+            </span>
+            <span className="block text-[11px] font-normal opacity-85">
+              {isRecording ? 'AI is listening…' : 'Turn on microphone'}
+            </span>
+          </span>
+        </button>
+
+        {/* Status */}
+        <div className="ml-auto flex items-center gap-2.5">
+          <div className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm">
+            Question {currentQuestion > 0 ? currentQuestion : '—'} / {estimatedQuestions}
+          </div>
+          {isRecording && (
+            <span className="flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-600">
+              <span className="size-2 animate-pulse rounded-full bg-rose-500" /> Recording
+            </span>
+          )}
+          <Button variant="destructive" onClick={endInterview} className="rounded-full">
+            <Flag className="size-4" /> End
+          </Button>
         </div>
       </div>
 
-      {/* FIXED END BUTTON - Bottom Right */}
-      <button
-        onClick={endInterview}
-        style={{
-          position: 'fixed',
-          bottom: '1.5rem',
-          right: '1.5rem',
-          zIndex: 1000,
-          padding: '0.6rem 1.2rem',
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '25px',
-          fontSize: '0.9rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)',
-          transition: 'all 0.3s ease',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-          e.currentTarget.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-          e.currentTarget.style.boxShadow = '0 4px 15px rgba(239, 68, 68, 0.3)';
-        }}
-      >
-        <span style={{ fontSize: '1.1rem' }}>🏁</span>
-        <span>End Interview</span>
-      </button>
+      {/* Conversation */}
+      <div className="flex flex-1 flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30 p-4 dark:from-background dark:via-background dark:to-background sm:p-6">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+          <h3 className="flex items-center gap-2 border-b border-border px-6 py-4 text-base font-bold text-foreground">
+            <MessageSquare className="size-5 text-primary" /> Interview Conversation
+          </h3>
+          <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
+            {conversationHistory.map((msg, idx) => {
+              const isAI = msg.role === 'assistant';
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-end gap-2.5 ${isAI ? 'justify-start' : 'flex-row-reverse'}`}
+                >
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-full text-lg shadow-sm ${
+                      isAI ? 'bg-primary/10' : 'bg-emerald-500/10'
+                    }`}
+                  >
+                    {isAI ? '🤖' : '🧑'}
+                  </span>
+                  <div className={`max-w-[78%] ${isAI ? 'items-start' : 'items-end'} flex flex-col`}>
+                    <span className="mb-1 px-1 text-[11px] font-semibold text-muted-foreground">
+                      {isAI ? 'Alex · AI Interviewer' : 'You'}
+                    </span>
+                    <div
+                      className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
+                        isAI
+                          ? 'rounded-bl-md border border-border bg-muted/60 text-foreground'
+                          : 'rounded-br-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    <span className="mt-1 px-1 text-[10px] text-muted-foreground/70">
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            {conversationHistory.length === 0 && (
+              <div className="flex h-full flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                <span className="mb-3 flex size-14 items-center justify-center rounded-full bg-primary/10 text-2xl">
+                  💭
+                </span>
+                Waiting for the AI to start the interview…
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 
+  const readinessLabel = (level) =>
+    ({
+      excellent: '🌟 Excellent',
+      well_prepared: '✨ Well Prepared',
+      ready: '👍 Ready',
+      needs_improvement: '📈 Needs Improvement',
+      not_ready: '🔄 Not Ready',
+    }[level] || 'Overall Performance');
+
+  const scoreHex = (s) => (s >= 75 ? '#10b981' : s >= 60 ? '#f59e0b' : '#ef4444');
+  const scoreGrad = (s) =>
+    s >= 75 ? 'from-emerald-500 to-teal-600' : s >= 60 ? 'from-amber-500 to-orange-600' : 'from-rose-500 to-red-600';
+
   const renderResults = () => (
-    <div className="px-6 md:px-8 py-6 md:py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
-      <div className="interview-results-container">
-        <div className="interview-results">
-          {isAnalyzing ? (
-            <div className="analyzing" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '400px',
-              padding: '3rem',
-              background: 'white',
-              borderRadius: '20px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-            }}>
-              <div className="spinner" style={{
-                width: '80px',
-                height: '80px',
-                border: '6px solid #e2e8f0',
-                borderTop: '6px solid #667eea',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-                marginBottom: '2rem'
-              }}></div>
-              <h2 style={{
-                fontSize: '2rem',
-                fontWeight: 700,
-                color: '#1e293b',
-                marginBottom: '1rem',
-                textAlign: 'center'
-              }}>🔍 Analyzing your interview...</h2>
-              <p style={{
-                fontSize: '1.1rem',
-                color: '#64748b',
-                textAlign: 'center',
-                maxWidth: '500px'
-              }}>Please wait while we comprehensively evaluate your responses using advanced AI analysis</p>
-              <div style={{
-                marginTop: '2rem',
-                display: 'flex',
-                gap: '0.5rem'
-              }}>
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s ease-in-out 0s infinite'
-                }}></div>
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s ease-in-out 0.2s infinite'
-                }}></div>
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s ease-in-out 0.4s infinite'
-                }}></div>
+    <div className="mx-auto max-w-4xl">
+      {isAnalyzing ? (
+        <div className="flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
+          <Loader2 className="mb-6 size-16 animate-spin text-primary" />
+          <h2 className="mb-2 text-2xl font-extrabold text-foreground">Analyzing your interview…</h2>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Please wait while we comprehensively evaluate your responses using advanced AI analysis.
+          </p>
+          <div className="mt-6 flex gap-1.5">
+            {[0, 150, 300].map((d) => (
+              <span
+                key={d}
+                className="size-2.5 animate-bounce rounded-full bg-primary"
+                style={{ animationDelay: `${d}ms` }}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        analysis && (
+          <div className="space-y-6">
+            {/* Hero */}
+            <div
+              className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${scoreGrad(
+                analysis.overallScore
+              )} p-7 text-white shadow-xl sm:p-9`}
+            >
+              <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/15 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-20 left-10 size-56 rounded-full bg-black/10 blur-3xl" />
+              <div className="relative">
+                <h1 className="mb-6 flex items-center justify-center gap-2 text-center text-2xl font-extrabold tracking-tight sm:text-3xl">
+                  <BarChart3 className="size-7" /> Your Interview Results
+                </h1>
+                <div className="flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-10">
+                  <div className="flex size-40 shrink-0 flex-col items-center justify-center rounded-full bg-white shadow-2xl">
+                    <span
+                      className="text-6xl font-black leading-none"
+                      style={{ color: scoreHex(analysis.overallScore) }}
+                    >
+                      {analysis.overallScore}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-400">/ 100</span>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <div className="inline-block rounded-full bg-white/20 px-6 py-3 text-xl font-bold capitalize backdrop-blur-md sm:text-2xl">
+                      {readinessLabel(analysis.readinessLevel)}
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-white/85">Interview Readiness Level</p>
+                  </div>
+                </div>
               </div>
             </div>
-          ) : analysis && (
-            <>
-              <div className="results-header" style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '20px',
-                padding: '2.5rem',
-                color: 'white',
-                marginBottom: '2rem',
-                boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
-              }}>
-                <h1 style={{
-                  fontSize: '2.5rem',
-                  fontWeight: 800,
-                  marginBottom: '2rem',
-                  textAlign: 'center',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                }}>📊 Your Interview Results</h1>
-                <div className="overall-score" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '3rem',
-                  flexWrap: 'wrap'
-                }}>
-                  <div className="score-circle" style={{
-                    width: '180px',
-                    height: '180px',
-                    borderRadius: '50%',
-                    background: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                    fontSize: '4rem',
-                    fontWeight: 800,
-                    color: analysis.overallScore >= 75 ? '#10b981' : analysis.overallScore >= 60 ? '#f59e0b' : '#ef4444'
-                  }}>
-                    {analysis.overallScore}
-                    <span className="score-label" style={{
-                      fontSize: '1.2rem',
-                      color: '#64748b',
-                      fontWeight: 600
-                    }}>/ 100</span>
-                  </div>
-                  <div className="readiness-info" style={{
-                    textAlign: 'center'
-                  }}>
-                    <div className="readiness-level" style={{
-                      fontSize: '2rem',
-                      fontWeight: 700,
-                      marginBottom: '0.5rem',
-                      textTransform: 'capitalize',
-                      background: 'rgba(255,255,255,0.2)',
-                      padding: '0.75rem 2rem',
-                      borderRadius: '50px',
-                      backdropFilter: 'blur(10px)'
-                    }}>
-                      {analysis.readinessLevel === 'excellent' && '🌟 Excellent'}
-                      {analysis.readinessLevel === 'well_prepared' && '✨ Well Prepared'}
-                      {analysis.readinessLevel === 'ready' && '👍 Ready'}
-                      {analysis.readinessLevel === 'needs_improvement' && '📈 Needs Improvement'}
-                      {analysis.readinessLevel === 'not_ready' && '🔄 Not Ready'}
-                    </div>
-                    <div className="readiness-desc" style={{
-                      fontSize: '1.1rem',
-                      opacity: 0.9,
-                      fontWeight: 500
-                    }}>Interview Readiness Level</div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="results-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2rem'
-              }}>
-                <div className="results-card strengths" style={{
-                  background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                  borderRadius: '15px',
-                  padding: '1.5rem',
-                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.2)'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 700,
-                    color: '#065f46',
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>💪 Your Strengths</h3>
-                  <ul style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0
-                  }}>
-                    {analysis.strengthAreas?.map((strength, idx) => (
-                      <li key={idx} style={{
-                        padding: '0.75rem',
-                        marginBottom: '0.5rem',
-                        background: 'white',
-                        borderRadius: '8px',
-                        fontSize: '0.95rem',
-                        color: '#064e3b',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '0.5rem',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-                      }}>
-                        <span style={{ flexShrink: 0 }}>✅</span>
-                        <span>{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="results-card improvements" style={{
-                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                  borderRadius: '15px',
-                  padding: '1.5rem',
-                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.2)'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 700,
-                    color: '#92400e',
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>📈 Areas to Improve</h3>
-                  <ul style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0
-                  }}>
-                    {analysis.improvementAreas?.map((area, idx) => (
-                      <li key={idx} style={{
-                        padding: '0.75rem',
-                        marginBottom: '0.5rem',
-                        background: 'white',
-                        borderRadius: '8px',
-                        fontSize: '0.95rem',
-                        color: '#78350f',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '0.5rem',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-                      }}>
-                        <span style={{ flexShrink: 0 }}>🔸</span>
-                        <span>{area}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Detailed Performance Breakdown - Always Show */}
-              <div className="detailed-scores" style={{
-                background: 'white',
-                borderRadius: '15px',
-                padding: '2rem',
-                marginBottom: '2rem',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.08)'
-              }}>
-                <h3 style={{
-                  fontSize: '1.75rem',
-                  fontWeight: 700,
-                  color: '#1e293b',
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>📊 Detailed Performance Breakdown</h3>
-                <div className="score-bars" style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1.25rem'
-                }}>
-                  {analysis.detailedScores && Object.keys(analysis.detailedScores).length > 0 ? (
-                    Object.entries(analysis.detailedScores).map(([category, score]) => (
-                      <div key={category} style={{
-                        padding: '1rem',
-                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                        borderRadius: '12px',
-                        border: '1px solid #e2e8f0'
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '0.75rem'
-                        }}>
-                          <span style={{
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            color: '#334155',
-                            textTransform: 'capitalize'
-                          }}>{category.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          <span style={{
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
-                            color: score >= 8 ? '#10b981' : score >= 6 ? '#f59e0b' : '#ef4444',
-                            background: 'white',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '8px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                          }}>{score}/10</span>
-                        </div>
-                        <div style={{
-                          position: 'relative',
-                          width: '100%',
-                          height: '14px',
-                          background: '#e2e8f0',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
-                        }}>
-                          <div style={{
-                            width: `${score * 10}%`,
-                            height: '100%',
-                            background: score >= 8 ?
-                              'linear-gradient(90deg, #10b981 0%, #059669 100%)' :
-                              score >= 6 ?
-                              'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)' :
-                              'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)',
-                            transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                            borderRadius: '10px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                          }}>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    // Fallback: If no detailedScores, create default breakdown
-                    ['Technical Knowledge', 'Communication', 'Problem Solving', 'Behavioral Skills', 'Overall Fit'].map((category, idx) => {
-                      const baseScore = Math.round((analysis.overallScore / 100) * 10);
-                      const score = Math.max(1, Math.min(10, baseScore + (Math.random() * 2 - 1))); // Slight variation
-                      return (
-                        <div key={category} style={{
-                          padding: '1rem',
-                          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                          borderRadius: '12px',
-                          border: '1px solid #e2e8f0'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '0.75rem'
-                          }}>
-                            <span style={{
-                              fontSize: '1rem',
-                              fontWeight: 600,
-                              color: '#334155'
-                            }}>{category}</span>
-                            <span style={{
-                              fontSize: '1.25rem',
-                              fontWeight: 700,
-                              color: score >= 8 ? '#10b981' : score >= 6 ? '#f59e0b' : '#ef4444',
-                              background: 'white',
-                              padding: '0.25rem 0.75rem',
-                              borderRadius: '8px',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                            }}>{Math.round(score)}/10</span>
-                          </div>
-                          <div style={{
-                            position: 'relative',
-                            width: '100%',
-                            height: '14px',
-                            background: '#e2e8f0',
-                            borderRadius: '10px',
-                            overflow: 'hidden',
-                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
-                          }}>
-                            <div style={{
-                              width: `${score * 10}%`,
-                              height: '100%',
-                              background: score >= 8 ?
-                                'linear-gradient(90deg, #10b981 0%, #059669 100%)' :
-                                score >= 6 ?
-                                'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)' :
-                                'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)',
-                              transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                              borderRadius: '10px',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                            }}>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {analysis.questionAnalysis && analysis.questionAnalysis.length > 0 && (
-                <div className="question-breakdown">
-                  <h3>❓ Question-by-Question Analysis</h3>
-                  {analysis.questionAnalysis.map((qa, idx) => (
-                    <div key={idx} className="qa-card">
-                      <div className="qa-header">
-                        <span className="qa-number">Q{qa.questionNumber}</span>
-                        <span className="qa-score">Score: {qa.score}/10</span>
-                      </div>
-                      <div className="qa-question">
-                        <strong>Question:</strong> {qa.question}
-                      </div>
-                      <div className="qa-answer">
-                        <strong>Your Answer:</strong> {qa.answer}
-                      </div>
-                      <div className="qa-feedback">
-                        <strong>Feedback:</strong> {qa.feedback}
-                      </div>
-                      {qa.strengths && qa.strengths.length > 0 && (
-                        <div className="qa-strengths">
-                          <strong>✅ Strengths:</strong>
-                          <ul>
-                            {qa.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                      {qa.improvements && qa.improvements.length > 0 && (
-                        <div className="qa-improvements">
-                          <strong>📈 Improvements:</strong>
-                          <ul>
-                            {qa.improvements.map((imp, i) => <li key={i}>{imp}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="recommendations">
-                <h3>💡 Personalized Recommendations</h3>
-                <ul>
-                  {analysis.recommendations?.map((rec, idx) => (
-                    <li key={idx}>{rec}</li>
+            {/* Strengths & Improvements */}
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5 sm:p-6">
+                <h3 className="mb-4 flex items-center gap-2.5 text-base font-bold text-emerald-700 dark:text-emerald-300">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15">
+                    <TrendingUp className="size-4" />
+                  </span>
+                  Your Strengths
+                </h3>
+                <ul className="space-y-2.5">
+                  {(analysis.strengthAreas || []).map((s, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-card p-3.5 text-sm text-foreground shadow-sm"
+                    >
+                      <span className="shrink-0">✅</span>
+                      <span>{s}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="summary-feedback">
-                <h3>📝 Overall Summary</h3>
-                <p>{analysis.summaryFeedback}</p>
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] p-5 sm:p-6">
+                <h3 className="mb-4 flex items-center gap-2.5 text-base font-bold text-amber-700 dark:text-amber-300">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15">
+                    <TrendingUp className="size-4" />
+                  </span>
+                  Areas to Improve
+                </h3>
+                <ul className="space-y-2.5">
+                  {(analysis.improvementAreas || []).map((a, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-card p-3.5 text-sm text-foreground shadow-sm"
+                    >
+                      <span className="shrink-0">🔸</span>
+                      <span>{a}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            </div>
 
-              <div className="action-buttons">
-                <button onClick={() => navigate('/student-dashboard')}>
-                  🏠 Back to Dashboard
-                </button>
-                <button onClick={() => window.location.reload()}>
-                  🔄 Take Another Interview
-                </button>
+            {/* Detailed breakdown */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+              <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-foreground">
+                <BarChart3 className="size-5 text-primary" /> Detailed Performance Breakdown
+              </h3>
+              <div className="space-y-4">
+                {(analysis.detailedScores && Object.keys(analysis.detailedScores).length > 0
+                  ? Object.entries(analysis.detailedScores)
+                  : ['Technical Knowledge', 'Communication', 'Problem Solving', 'Behavioral Skills', 'Overall Fit'].map(
+                      (c) => [c, Math.max(1, Math.min(10, Math.round((analysis.overallScore / 100) * 10)))]
+                    )
+                ).map(([category, score]) => {
+                  const val = Math.round(score);
+                  const barHex = val >= 8 ? '#10b981' : val >= 6 ? '#f59e0b' : '#ef4444';
+                  return (
+                    <div key={category} className="rounded-xl border border-border bg-muted/40 p-4">
+                      <div className="mb-2.5 flex items-center justify-between">
+                        <span className="text-sm font-semibold capitalize text-foreground">
+                          {String(category).replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                        <span
+                          className="rounded-lg bg-card px-2.5 py-1 text-sm font-bold shadow-sm"
+                          style={{ color: barHex }}
+                        >
+                          {val}/10
+                        </span>
+                      </div>
+                      <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full transition-[width] duration-1000 ease-out"
+                          style={{ width: `${val * 10}%`, background: barHex }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+
+            {/* Question-by-question */}
+            {analysis.questionAnalysis?.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+                <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-foreground">
+                  <MessageSquare className="size-5 text-primary" /> Question-by-Question Analysis
+                </h3>
+                <div className="space-y-4">
+                  {analysis.questionAnalysis.map((qa, idx) => (
+                    <div key={idx} className="rounded-xl border border-border bg-muted/30 p-4 sm:p-5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                          Q{qa.questionNumber}
+                        </span>
+                        <span className="text-sm font-bold" style={{ color: scoreHex((qa.score || 0) * 10) }}>
+                          Score: {qa.score}/10
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <p className="text-foreground">
+                          <span className="font-semibold text-muted-foreground">Question: </span>
+                          {qa.question}
+                        </p>
+                        <p className="text-foreground">
+                          <span className="font-semibold text-muted-foreground">Your Answer: </span>
+                          {qa.answer}
+                        </p>
+                        <p className="rounded-lg bg-card p-3 text-foreground">
+                          <span className="font-semibold text-primary">Feedback: </span>
+                          {qa.feedback}
+                        </p>
+                      </div>
+                      {qa.strengths?.length > 0 && (
+                        <div className="mt-3 text-sm">
+                          <span className="font-semibold text-emerald-600">✅ Strengths</span>
+                          <ul className="mt-1 list-inside list-disc space-y-0.5 text-muted-foreground">
+                            {qa.strengths.map((s, i) => (
+                              <li key={i}>{s}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {qa.improvements?.length > 0 && (
+                        <div className="mt-3 text-sm">
+                          <span className="font-semibold text-amber-600">📈 Improvements</span>
+                          <ul className="mt-1 list-inside list-disc space-y-0.5 text-muted-foreground">
+                            {qa.improvements.map((imp, i) => (
+                              <li key={i}>{imp}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recommendations */}
+            {analysis.recommendations?.length > 0 && (
+              <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.06] p-5 sm:p-6">
+                <h3 className="mb-4 flex items-center gap-2.5 text-base font-bold text-indigo-700 dark:text-indigo-300">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-500/15">
+                    <Sparkles className="size-4" />
+                  </span>
+                  Personalized Recommendations
+                </h3>
+                <ul className="space-y-2.5">
+                  {analysis.recommendations.map((rec, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-card p-3.5 text-sm text-foreground shadow-sm"
+                    >
+                      <span className="shrink-0 text-indigo-500">→</span>
+                      <span>{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Summary */}
+            {analysis.summaryFeedback && (
+              <div className="rounded-2xl border border-border bg-muted/40 p-5 sm:p-6">
+                <h3 className="mb-2.5 flex items-center gap-2 text-base font-bold text-foreground">
+                  <MessageSquareQuote className="size-5 text-primary" /> Overall Summary
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{analysis.summaryFeedback}</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="outline" className="flex-1" onClick={() => navigate('/student-dashboard')}>
+                <Home className="size-4" /> Back to Dashboard
+              </Button>
+              <Button variant="gradient" className="flex-1" onClick={() => window.location.reload()}>
+                <RotateCcw className="size-4" /> Take Another Interview
+              </Button>
+            </div>
+          </div>
+        )
+      )}
     </div>
   );
 

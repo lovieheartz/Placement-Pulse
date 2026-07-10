@@ -38,3 +38,15 @@ html {
   outline: 2px solid #0ea5e9;
   outline-offset: 2px;
 }
+
+/* Inputs, selects and buttons inside a liquid-glass field communicate focus
+   through the wrapper's own `.ds-field:focus-within` glow. Suppress the default
+   per-element focus outline here so it doesn't draw an inner rectangle around
+   the transparent control (kept everywhere else for keyboard accessibility). */
+.ds-field:focus-within {
+  outline: none;
+}
+.ds-field :focus,
+.ds-field :focus-visible {
+  outline: none;
+}

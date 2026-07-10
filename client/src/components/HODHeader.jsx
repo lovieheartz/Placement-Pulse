@@ -3,6 +3,7 @@ import { FiBell, FiChevronDown } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { API_BASE } from '../config/api';
 
 const HODHeader = ({
   user,
@@ -27,7 +28,7 @@ const HODHeader = ({
   const profileImageUrl = rawImage
     ? rawImage.startsWith("http")
       ? rawImage
-      : `http://localhost:3001${rawImage}`
+      : `${API_BASE}${rawImage}`
     : null;
 
   // Debug logging
@@ -52,7 +53,7 @@ const HODHeader = ({
         return;
       }
 
-      const { data } = await axios.get('http://localhost:3001/notifications/unread-count', {
+      const { data } = await axios.get(`${API_BASE}/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -75,7 +76,7 @@ const HODHeader = ({
           return;
         }
 
-        const { data } = await axios.get('http://localhost:3001/notifications/user', {
+        const { data } = await axios.get(`${API_BASE}/notifications/user`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -96,7 +97,7 @@ const HODHeader = ({
   const markAsRead = async (notificationId) => {
     try {
       const token = sessionStorage.getItem('authToken');
-      await axios.put(`http://localhost:3001/notifications/${notificationId}/read`, {}, {
+      await axios.put(`${API_BASE}/notifications/${notificationId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

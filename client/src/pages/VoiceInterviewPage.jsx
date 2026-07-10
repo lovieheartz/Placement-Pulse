@@ -5,6 +5,7 @@ import { FiMic, FiMicOff, FiVolume2, FiVolumeX, FiPlay, FiX, FiCheckCircle, FiAl
 import StudentSidebar from '../components/StudentSidebar';
 import useVoiceRecognition from '../hooks/useVoiceRecognition';
 import useTextToSpeech from '../hooks/useTextToSpeech';
+import { API_BASE } from '../config/api';
 
 const VoiceInterviewPage = () => {
   const navigate = useNavigate();
@@ -85,7 +86,7 @@ const VoiceInterviewPage = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        'http://localhost:3001/api/mock-interview/start',
+        `${API_BASE}/api/mock-interview/start`,
         {
           ...interviewConfig,
           experienceLevel: 'fresher'
@@ -125,7 +126,7 @@ const VoiceInterviewPage = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:3001/api/mock-interview/${currentInterview}/submit`,
+        `${API_BASE}/api/mock-interview/${currentInterview}/submit`,
         { answer },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );

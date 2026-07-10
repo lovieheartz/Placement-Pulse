@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 
 const TrackNOC = () => {
   const { user } = useContext(AuthContext);
@@ -20,7 +21,7 @@ const TrackNOC = () => {
   const { data: profileData } = useQuery({
     queryKey: ['studentProfile'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/student/profile', {
+      const res = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.data;
@@ -31,7 +32,7 @@ const TrackNOC = () => {
   const { data: nocRequests = [], isLoading } = useQuery({
     queryKey: ['nocRequests'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/noc/student', {
+      const { data } = await axios.get(`${API_BASE}/noc/student`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data.data;

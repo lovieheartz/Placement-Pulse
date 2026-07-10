@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
+import { API_BASE } from '../config/api';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -19,7 +20,7 @@ const ResetPassword = () => {
   // React Query mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ token, password, type }) => {
-      const response = await fetch('http://localhost:3001/reset-password', {
+      const response = await fetch(`${API_BASE}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password, type }),

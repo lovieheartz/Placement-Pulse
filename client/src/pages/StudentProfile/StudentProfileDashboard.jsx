@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { UserCircle, Pencil } from 'lucide-react';
 import axios from 'axios';
 import { resolveFileUrl } from '../../lib/api';
+import { API_BASE } from '../../config/api';
 
 const StudentProfileDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -17,7 +18,7 @@ const StudentProfileDashboard = () => {
     queryKey: ['studentProfile'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/student/profile', {
+      const { data } = await axios.get(`${API_BASE}/student/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data.data;

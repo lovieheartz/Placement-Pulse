@@ -9,6 +9,7 @@ import { GlassPanel, PageHeader } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { UserPlus, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const AddFacultyByHOD = () => {
@@ -29,7 +30,7 @@ const AddFacultyByHOD = () => {
     queryKey: ['hodProfile'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/hod/profile', {
+      const { data } = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data.data;
@@ -39,7 +40,7 @@ const AddFacultyByHOD = () => {
     mutationFn: async (formData) => {
       const token = sessionStorage.getItem('authToken');
       const { data } = await axios.post(
-        'http://localhost:3001/hod/create-faculty',
+        `${API_BASE}/hod/create-faculty`,
         formData,
         {
           headers: {

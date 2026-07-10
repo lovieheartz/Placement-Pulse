@@ -4,6 +4,7 @@ import { FiMic, FiMicOff, FiCamera, FiVideoOff, FiMessageCircle } from 'react-ic
 import StudentSidebar from '../components/StudentSidebar';
 import useVoiceRecognition from '../hooks/useVoiceRecognition';
 import useTextToSpeech from '../hooks/useTextToSpeech';
+import { API_BASE } from '../config/api';
 
 const ConversationalMockInterview = () => {
   // Views: 'setup', 'conversation', 'results'
@@ -85,7 +86,7 @@ const ConversationalMockInterview = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        'http://localhost:3001/api/mock-interview/start',
+        `${API_BASE}/api/mock-interview/start`,
         { ...interviewConfig, experienceLevel: 'fresher' },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -143,7 +144,7 @@ const ConversationalMockInterview = () => {
     try {
       const token = sessionStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:3001/api/mock-interview/${interviewId}/submit`,
+        `${API_BASE}/api/mock-interview/${interviewId}/submit`,
         { answer },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );

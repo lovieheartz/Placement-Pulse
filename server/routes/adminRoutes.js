@@ -15,6 +15,7 @@ const {
   createFaculty,
   getManagedFaculty,
   getAllStudents,
+  getStudentProfileById,
   getFirstAdmin,
   getBlockedStudents,
   blockStudent,
@@ -69,6 +70,7 @@ router.get("/managed-faculty", authenticateToken, getManagedFaculty);
 // Student management routes
 router.get("/students", authenticateToken, getAllStudents);
 router.get("/students/blocked", authenticateToken, getBlockedStudents);
+router.get("/students/:id/profile", authenticateToken, getStudentProfileById);
 router.put("/students/:id/block", authenticateToken, blockStudent);
 router.put("/students/:id/unblock", authenticateToken, unblockStudent);
 

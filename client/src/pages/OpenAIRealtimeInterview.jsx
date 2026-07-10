@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AIAvatar from '../components/AIAvatar';
+import { API_BASE, WS_BASE } from '../config/api';
 
 /**
  * 🎤 OPENAI REALTIME INTERVIEW
@@ -82,7 +83,7 @@ const OpenAIRealtimeInterview = () => {
 
       // Create interview session
       const response = await axios.post(
-        'http://localhost:3001/api/openai-interview/start',
+        `${API_BASE}/api/openai-interview/start`,
         config,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -129,7 +130,7 @@ const OpenAIRealtimeInterview = () => {
    */
   const connectWebSocket = (sessionId, token) => {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket('ws://localhost:3001/api/openai-interview/ws');
+      const ws = new WebSocket(`${WS_BASE}/api/openai-interview/ws`);
       wsRef.current = ws;
 
       const timeout = setTimeout(() => {
@@ -412,7 +413,7 @@ const OpenAIRealtimeInterview = () => {
 
       // Get analysis
       const response = await axios.post(
-        'http://localhost:3001/api/openai-interview/end',
+        `${API_BASE}/api/openai-interview/end`,
         { sessionId, interviewId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

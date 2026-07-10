@@ -9,6 +9,7 @@ import { GlassPanel, PageHeader } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 import { courseOptions, courseToDepartments } from '../constants/departments';
 
@@ -37,7 +38,7 @@ const AddFaculty = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -50,7 +51,7 @@ const AddFaculty = () => {
       const token = sessionStorage.getItem('authToken');
       
       // First get the admin profile to get the ID
-      const adminProfile = await axios.get('http://localhost:3001/admin/profile', {
+      const adminProfile = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -68,7 +69,7 @@ const AddFaculty = () => {
       }
 
       const res = await axios.post(
-        'http://localhost:3001/faculty/create-faculty',
+        `${API_BASE}/faculty/create-faculty`,
         formData,
         {
           headers: {

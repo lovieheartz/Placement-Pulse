@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { BrandGlyph } from "./ui/BrandMark";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBell, FiUser, FiBookOpen, FiCheckSquare, FiTarget, FiCpu, FiVideo, FiMic, FiClipboard, FiBarChart2 } from 'react-icons/fi';
+import { API_BASE } from '../config/api';
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +29,7 @@ const Sidebar = () => {
         if (!token) return;
 
         // Get all notifications to count by type
-        const { data } = await axios.get('http://localhost:3001/notifications/user', {
+        const { data } = await axios.get(`${API_BASE}/notifications/user`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -86,9 +88,7 @@ const Sidebar = () => {
         <div className="w-full mt-8 md:mt-0">
           {/* Logo and Title */}
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-gradient-to-r from-blue-100 to-white p-3 rounded-xl shadow-lg border-2 border-white/30 transform hover:scale-105 transition-all duration-300">
-              <FiBookOpen className="w-5 h-5 text-blue-700" />
-            </div>
+            <BrandGlyph size={34} />
             <div className="ml-3">
               <h4 className="text-xl font-bold text-white">
                 Student Portal

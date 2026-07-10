@@ -442,3 +442,60 @@ model Notification {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+// ============================ ASSIGNMENTS ============================
+
+model Assignment {
+  id             String    @id @default(uuid())
+  title          String
+  description    String?
+  instructions   String?              // what students must do
+  questions      Json?                // [{ q, maxMarks, rubric }] optional structured rubric
+  totalMarks     Int?
+  dueDate        DateTime?
+
+  // Targeting (value-match, no FK): student.course == course && student.branch == department
+  course         String
+  department     String
+
+  attachmentUrl  String?              // optional question paper (pdf/image)
+
+  createdBy      String
+  createdByModel String               // 'Admin' | 'Faculty' | 'HOD'
+  createdByName  String?
+
+  status         String    @default("published") // draft | published
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([course, department])
+  @@index([createdBy])
+}
+
+model AssignmentSubmission {
+  id              String    @id @default(uuid())
+  assignmentId    String
+  studentId       String
+  studentName     String?
+  studentEmail    String?
+
+  fileUrl         String                // uploaded handwritten submission (pdf/image)
+  fileName        String?
+
+  status          String    @default("submitted") // submitted | evaluated | error
+
+  aiScore         Float?                // AI-awarded marks
+  aiMaxScore      Float?                // out of
+  aiPercentage    Float?
+  aiFeedback      String?               // overall feedback
+  aiBreakdown     Json?                 // per-question [{ q, awarded, max, comment }]
+  aiExtractedText String?               // OCR'd handwriting
+  evaluatedAt     DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([assignmentId])
+  @@index([studentId])
+}

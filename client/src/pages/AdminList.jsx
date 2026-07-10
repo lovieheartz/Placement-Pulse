@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const AdminList = () => {
@@ -28,7 +29,7 @@ const AdminList = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -45,7 +46,7 @@ const AdminList = () => {
     queryKey: ['admins'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/admin/all-admins', {
+      const { data } = await axios.get(`${API_BASE}/admin/all-admins`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -61,7 +62,7 @@ const AdminList = () => {
   const { mutate: deleteAdminMutation, isPending: isDeleting } = useMutation({
     mutationFn: async (adminId) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.delete(`http://localhost:3001/admin/${adminId}`, {
+      const { data } = await axios.delete(`${API_BASE}/admin/${adminId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;

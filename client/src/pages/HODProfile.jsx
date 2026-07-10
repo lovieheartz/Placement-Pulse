@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserCircle, Pencil } from 'lucide-react';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const HODProfile = () => {
@@ -29,7 +30,7 @@ const HODProfile = () => {
   const { data: profileData, isLoading } = useQuery({
     queryKey: ['hodProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/profile', {
+      const { data } = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -46,7 +47,7 @@ const HODProfile = () => {
     mutationFn: async (formData) => {
       const token = sessionStorage.getItem('authToken');
       const { data } = await axios.put(
-        'http://localhost:3001/hod/profile',
+        `${API_BASE}/hod/profile`,
         formData,
         {
           headers: {
@@ -72,7 +73,7 @@ const HODProfile = () => {
     mutationFn: async (formData) => {
       const token = sessionStorage.getItem('authToken');
       const { data } = await axios.post(
-        'http://localhost:3001/hod/upload-avatar',
+        `${API_BASE}/hod/upload-avatar`,
         formData,
         {
           headers: {

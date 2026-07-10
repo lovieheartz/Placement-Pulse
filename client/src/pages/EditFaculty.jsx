@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { UserCog } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { courseOptions, courseToDepartments } from '../constants/departments';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const EditFaculty = () => {
@@ -35,7 +36,7 @@ const EditFaculty = () => {
   } = useQuery({
     queryKey: ['adminProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/admin/profile', {
+      const { data } = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -46,7 +47,7 @@ const EditFaculty = () => {
   useEffect(() => {
     const fetchFaculty = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:3001/faculty/${id}`);
+        const { data } = await axios.get(`${API_BASE}/faculty/${id}`);
         if (data.success && data.data) {
           reset(data.data);
           // Set the selectedCourse state when data is loaded
@@ -89,7 +90,7 @@ const EditFaculty = () => {
         form.append('avatar', avatar);
       }
 
-      await axios.put(`http://localhost:3001/faculty/update/${id}`, form, {
+      await axios.put(`${API_BASE}/faculty/update/${id}`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 

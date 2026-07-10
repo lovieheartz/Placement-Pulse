@@ -222,7 +222,7 @@ export function PortalLayout({
       <aside
         className={cn(
           "hidden shrink-0 border-r border-sidebar-border transition-[width] duration-300 ease-in-out md:block",
-          collapsed ? "w-[76px]" : "w-[264px]"
+          collapsed ? "w-[68px]" : "w-[232px]"
         )}
       >
         <AppSidebar

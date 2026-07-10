@@ -8,6 +8,7 @@ import PortalLayout from '@/components/app/PortalLayout';
 import { GlassPanel, PageHeader } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { Send, X } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 const HODSendNotification = () => {
   const { user } = useContext(AuthContext);
@@ -54,7 +55,7 @@ const HODSendNotification = () => {
   } = useQuery({
     queryKey: ['hodProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/profile', {
+      const { data } = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -66,7 +67,7 @@ const HODSendNotification = () => {
   const { data: facultyData = [] } = useQuery({
     queryKey: ['hodFaculty', profileData?.course, profileData?.department],
     queryFn: async () => {
-      const { data} = await axios.get('http://localhost:3001/hod/faculties', {
+      const { data} = await axios.get(`${API_BASE}/hod/faculties`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data || [];
@@ -84,7 +85,7 @@ const HODSendNotification = () => {
 
       // Fetch students
       try {
-        const studentsResponse = await axios.get('http://localhost:3001/admin/all-students', {
+        const studentsResponse = await axios.get(`${API_BASE}/admin/all-students`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -117,7 +118,7 @@ const HODSendNotification = () => {
 
       // Fetch admins
       try {
-        const adminsResponse = await axios.get('http://localhost:3001/admin/all-admins', {
+        const adminsResponse = await axios.get(`${API_BASE}/admin/all-admins`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -348,7 +349,7 @@ const HODSendNotification = () => {
         formDataToSend.append('attachment', selectedFile);
       }
 
-      const response = await axios.post('http://localhost:3001/notifications/create', formDataToSend, {
+      const response = await axios.post(`${API_BASE}/notifications/create`, formDataToSend, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

@@ -5,13 +5,17 @@ import { AuthContext } from '../context/AuthContext';
 import PortalLayout from '@/components/app/PortalLayout';
 import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 
 const FacultyStudentList = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { register: registerSearch, watch } = useForm();
@@ -23,7 +27,7 @@ const FacultyStudentList = () => {
   } = useQuery({
     queryKey: ['facultyProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/faculty/profile', {
+      const { data } = await axios.get(`${API_BASE}/faculty/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -41,7 +45,7 @@ const FacultyStudentList = () => {
     queryKey: ['facultyStudents'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.get('http://localhost:3001/faculty/students', {
+      const { data } = await axios.get(`${API_BASE}/faculty/students`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -127,6 +131,7 @@ const FacultyStudentList = () => {
                     <th className="px-3 py-2.5 font-semibold">Branch</th>
                     <th className="px-3 py-2.5 font-semibold">Passout Year</th>
                     <th className="px-3 py-2.5 font-semibold">Status</th>
+                    <th className="px-3 py-2.5 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,11 +161,16 @@ const FacultyStudentList = () => {
                             {student.isBlocked ? 'Blocked' : 'Active'}
                           </Badge>
                         </td>
+                        <td className="px-3 py-3">
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/faculty/students/${student.id || student._id}`)}>
+                            <Eye className="size-4" /> View
+                          </Button>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="px-3 py-6">
+                      <td colSpan="8" className="px-3 py-6">
                         <EmptyState
                           icon={GraduationCap}
                           title={searchTerm ? 'No matching students found' : 'No students found'}

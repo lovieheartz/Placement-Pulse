@@ -6,6 +6,7 @@ import PortalLayout from '@/components/app/PortalLayout';
 import { GlassPanel, PageHeader, EmptyState } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { History, Inbox } from 'lucide-react';
+import { API_BASE } from '../config/api';
 import './Dashboard.css';
 
 const NotificationHistory = () => {
@@ -21,7 +22,7 @@ const NotificationHistory = () => {
     queryKey: ['adminProfile'],
     queryFn: async () => {
       const token = sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:3001/admin/profile', {
+      const response = await axios.get(`${API_BASE}/admin/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.data;
@@ -44,7 +45,7 @@ const NotificationHistory = () => {
 
       if (searchTerm) params.append('search', searchTerm);
 
-      const response = await axios.get(`http://localhost:3001/notifications/history?${params}`, {
+      const response = await axios.get(`${API_BASE}/notifications/history?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;

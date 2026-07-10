@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { BrandGlyph } from "./ui/BrandMark";
 import { useNavigate } from "react-router-dom";
 import { FiHome, FiFileText, FiMenu, FiX, FiChevronDown, FiBookOpen, FiCheckSquare, FiUsers } from 'react-icons/fi';
 
@@ -49,9 +50,7 @@ const Sidebar = () => {
         <div className="w-full mt-8 md:mt-0">
           {/* Logo and Title */}
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-gradient-to-r from-blue-100 to-white p-3 rounded-xl shadow-lg border-2 border-white/30 transform hover:scale-105 transition-all duration-300">
-              <FiBookOpen className="w-5 h-5 text-blue-700" />
-            </div>
+            <BrandGlyph size={34} />
             <div className="ml-3">
               <h4 className="text-xl font-bold text-white">
                 Faculty Portal

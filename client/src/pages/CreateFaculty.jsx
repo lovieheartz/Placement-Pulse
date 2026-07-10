@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from '../config/api';
 
 const CreateFaculty = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const CreateFaculty = () => {
     mutationFn: async (data) => {
       try {
         // First get an admin to use as createdBy
-        const adminRes = await axios.get("http://localhost:3001/admin/first");
+        const adminRes = await axios.get(`${API_BASE}/admin/first`);
         const adminId = adminRes.data.data._id;
         
         const config = {
@@ -45,7 +46,7 @@ const CreateFaculty = () => {
         
         if (avatar) formPayload.append("avatar", avatar);
 
-        const res = await axios.post("http://localhost:3001/faculty/create-faculty", formPayload, config);
+        const res = await axios.post(`${API_BASE}/faculty/create-faculty`, formPayload, config);
         return res.data;
       } catch (error) {
         console.error("Error in createFacultyMutation:", error);

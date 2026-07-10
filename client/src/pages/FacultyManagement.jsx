@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { ToastContainer, toast } from 'react-toastify';
+import { API_BASE } from '../config/api';
 import 'react-toastify/dist/ReactToastify.css';
 
 const FacultyManagement = () => {
@@ -15,7 +16,7 @@ const FacultyManagement = () => {
   const fetchFaculty = async () => {
     try {
       const token = sessionStorage.getItem('authToken');
-      const response = await fetch('http://localhost:3001/admin/managed-faculty', {
+      const response = await fetch(`${API_BASE}/admin/managed-faculty`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -30,7 +31,7 @@ const FacultyManagement = () => {
   const createFaculty = async (data) => {
     try {
       const token = sessionStorage.getItem('authToken');
-      const response = await fetch('http://localhost:3001/admin/create-faculty', {
+      const response = await fetch(`${API_BASE}/admin/create-faculty`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

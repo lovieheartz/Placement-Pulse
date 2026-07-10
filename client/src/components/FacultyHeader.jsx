@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiBell, FiChevronDown } from 'react-icons/fi';
+import { API_BASE } from '../config/api';
 
 const FacultyHeader = ({
   user,
@@ -24,7 +25,7 @@ const FacultyHeader = ({
   const profileImageUrl = rawImage
     ? rawImage.startsWith("http")
       ? rawImage
-      : `http://localhost:3001${rawImage}`
+      : `${API_BASE}${rawImage}`
     : null;
 
   return (

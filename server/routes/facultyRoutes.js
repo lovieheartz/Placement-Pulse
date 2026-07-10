@@ -11,6 +11,7 @@ const {
   getSingleFaculty,
   updateFacultyById,
   getAllStudents,
+  getStudentProfileById,
   blockStudent,
   unblockStudent,
   getBlockedStudents,
@@ -41,6 +42,7 @@ router.delete("/delete/:id", deleteFaculty);
 // ✅ Student management routes (faculty access - must come before /:id route)
 router.get("/students/blocked", authenticateToken, facultyOnly, getBlockedStudents);
 router.get("/students", authenticateToken, facultyOnly, getAllStudents);
+router.get("/students/:id/profile", authenticateToken, facultyOnly, getStudentProfileById);
 router.put("/students/:id/block", authenticateToken, facultyOnly, blockStudent);
 router.put("/students/:id/unblock", authenticateToken, facultyOnly, unblockStudent);
 

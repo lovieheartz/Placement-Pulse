@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FiBell, FiChevronDown } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
+import { API_BASE } from '../config/api';
 
 const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }) => {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -23,7 +24,7 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
         return;
       }
       
-      const { data } = await axios.get('http://localhost:3001/notifications/unread-count', {
+      const { data } = await axios.get(`${API_BASE}/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -46,7 +47,7 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
           return;
         }
         
-        const { data } = await axios.get('http://localhost:3001/notifications/user', {
+        const { data } = await axios.get(`${API_BASE}/notifications/user`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -67,7 +68,7 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
   const markAsRead = async (notificationId) => {
     try {
       const token = sessionStorage.getItem('authToken');
-      await axios.put(`http://localhost:3001/notifications/${notificationId}/read`, {}, {
+      await axios.put(`${API_BASE}/notifications/${notificationId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -99,7 +100,7 @@ const Header = ({ user, toggleDropdown, isDropdownOpen, handleLogout, navigate }
   const profilePictureUrl = avatarPath
     ? avatarPath.startsWith('http')
       ? avatarPath
-      : `http://localhost:3001${avatarPath}`
+      : `${API_BASE}${avatarPath}`
     : null;
 
   // Debug logging

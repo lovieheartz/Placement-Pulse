@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { API_BASE } from '../config/api';
 import 'react-toastify/dist/ReactToastify.css';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from '../context/AuthContext';
@@ -30,7 +31,7 @@ const HODFacultyList = () => {
   } = useQuery({
     queryKey: ['hodFaculties'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/my-faculties', {
+      const { data } = await axios.get(`${API_BASE}/hod/my-faculties`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -48,7 +49,7 @@ const HODFacultyList = () => {
   } = useQuery({
     queryKey: ['hodProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/profile', {
+      const { data } = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -58,7 +59,7 @@ const HODFacultyList = () => {
 
   const { mutate: deleteFacultyMutation, isPending: isDeleting } = useMutation({
     mutationFn: async (facultyId) => {
-      const { data } = await axios.delete(`http://localhost:3001/hod/faculty/${facultyId}`, {
+      const { data } = await axios.delete(`${API_BASE}/hod/faculty/${facultyId}`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE } from '../config/api';
 import {
   Clock,
   FileText,
@@ -30,7 +31,7 @@ const StudentTestPortal = () => {
   const fetchMyTests = async () => {
     try {
       const token = sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:3001/api/aptitude/my-tests', {
+      const response = await axios.get(`${API_BASE}/api/aptitude/my-tests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -51,7 +52,7 @@ const StudentTestPortal = () => {
 
       // Check eligibility first
       const eligibilityResponse = await axios.post(
-        `http://localhost:3001/api/aptitude/tests/${testId}/check-eligibility`,
+        `${API_BASE}/api/aptitude/tests/${testId}/check-eligibility`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

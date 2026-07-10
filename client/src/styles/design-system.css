@@ -339,6 +339,88 @@
   );
 }
 
+/* ============================================================
+   Rich section backgrounds — colored gradient "mesh" spotlights
+   layered over near-black so sections read premium, not flat.
+   Three variants stagger the light sources so adjacent sections
+   never look identical.
+   ============================================================ */
+.ds-mesh {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ds-mesh-1 {
+  background-image:
+    radial-gradient(48% 42% at 12% -4%, rgba(91, 140, 255, 0.20), transparent 72%),
+    radial-gradient(46% 44% at 88% 14%, rgba(139, 92, 246, 0.17), transparent 72%),
+    radial-gradient(65% 55% at 50% 118%, rgba(56, 99, 230, 0.16), transparent 72%);
+}
+.ds-mesh-2 {
+  background-image:
+    radial-gradient(46% 40% at 84% -6%, rgba(56, 189, 248, 0.16), transparent 72%),
+    radial-gradient(50% 46% at 8% 24%, rgba(139, 92, 246, 0.17), transparent 74%),
+    radial-gradient(60% 52% at 62% 116%, rgba(91, 140, 255, 0.15), transparent 72%);
+}
+.ds-mesh-3 {
+  background-image:
+    radial-gradient(52% 46% at 50% -8%, rgba(99, 102, 241, 0.18), transparent 70%),
+    radial-gradient(42% 40% at 6% 80%, rgba(56, 189, 248, 0.14), transparent 72%),
+    radial-gradient(46% 44% at 94% 78%, rgba(168, 85, 247, 0.15), transparent 72%);
+}
+
+/* Fine engineering grid, masked to fade at the edges */
+.ds-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 60px 60px;
+  -webkit-mask-image: radial-gradient(ellipse 78% 68% at 50% 38%, #000 22%, transparent 82%);
+  mask-image: radial-gradient(ellipse 78% 68% at 50% 38%, #000 22%, transparent 82%);
+}
+
+/* Dotted texture alternative */
+.ds-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 66% 60% at 50% 45%, #000 18%, transparent 78%);
+  mask-image: radial-gradient(ellipse 66% 60% at 50% 45%, #000 18%, transparent 78%);
+}
+
+/* Light seam at the top edge of a section, to blend the hard cut to black */
+.ds-seam {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  );
+  pointer-events: none;
+}
+/* Soft top glow that catches the seam like a light source */
+.ds-seam-glow {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 220px;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 100% at 50% 0%,
+    rgba(91, 140, 255, 0.12),
+    transparent 72%
+  );
+}
+
 /* Subtle floating accent */
 .ds-float {
   animation: dsFloat 7s ease-in-out infinite;
@@ -379,13 +461,20 @@
 /* Sticky navbar scroll state */
 .ds-nav {
   transition: background-color 0.35s ease, backdrop-filter 0.35s ease,
-    box-shadow 0.35s ease;
+    box-shadow 0.35s ease, border-color 0.35s ease;
+  border-bottom: 1px solid transparent;
 }
 .ds-nav.is-scrolled {
-  background: rgba(8, 10, 16, 0.55);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  background: rgba(7, 9, 15, 0.85);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Anchored sections land below the fixed nav, never underneath it */
+.ds-scope section[id] {
+  scroll-margin-top: 6rem;
 }
 
 /* ============================================================

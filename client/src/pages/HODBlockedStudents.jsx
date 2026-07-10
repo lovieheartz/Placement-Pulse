@@ -10,6 +10,7 @@ import { Ban, CheckCircle2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { resolveFileUrl } from '../lib/api';
+import { API_BASE } from '../config/api';
 
 const HODBlockedStudents = () => {
   const { user } = useContext(AuthContext);
@@ -26,7 +27,7 @@ const HODBlockedStudents = () => {
   } = useQuery({
     queryKey: ['hodProfile'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/profile', {
+      const { data } = await axios.get(`${API_BASE}/hod/profile`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       return data.data;
@@ -43,7 +44,7 @@ const HODBlockedStudents = () => {
   } = useQuery({
     queryKey: ['hodBlockedStudents'],
     queryFn: async () => {
-      const { data } = await axios.get('http://localhost:3001/hod/students/blocked', {
+      const { data } = await axios.get(`${API_BASE}/hod/students/blocked`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` },
       });
       if (!data.data || !Array.isArray(data.data)) {
@@ -59,7 +60,7 @@ const HODBlockedStudents = () => {
   const { mutate: unblockStudentMutation, isPending: isUnblocking } = useMutation({
     mutationFn: async (studentId) => {
       const token = sessionStorage.getItem('authToken');
-      const { data } = await axios.put(`http://localhost:3001/hod/students/${studentId}/unblock`, {}, {
+      const { data } = await axios.put(`${API_BASE}/hod/students/${studentId}/unblock`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return data;

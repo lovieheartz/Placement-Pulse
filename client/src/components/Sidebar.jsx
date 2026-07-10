@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BrandGlyph } from "./ui/BrandMark";
 import { useNavigate } from "react-router-dom";
 import { FiHome, FiUsers, FiUserPlus, FiUserCheck, FiLock, FiShield, FiBell, FiMenu, FiX, FiChevronDown, FiFileText, FiBriefcase, FiClipboard } from 'react-icons/fi';
 
@@ -95,9 +96,7 @@ const Sidebar = () => {
         <div className="w-full mt-8 md:mt-0">
           {/* Logo and Title */}
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-white p-2 rounded-xl shadow-md">
-              <FiShield className="w-8 h-8 text-blue-700" />
-            </div>
+            <BrandGlyph size={34} />
             <h4 className="text-xl font-bold ml-3 text-white">
               Admin Portal
             </h4>
