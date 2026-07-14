@@ -1,0 +1,30 @@
+# Keeps the free-tier stack warm.
+#
+# Render's free plan sleeps a service after ~15 minutes of inactivity (cold start
+# is then ~50s), and its in-process node-cron jobs don't fire while asleep.
+# Supabase's free plan pauses a project after ~7 days with no traffic.
+# Pinging the backend on a schedule prevents both.
+name: Keep Alive
+
+on:
+  schedule:
+    # Every 10 minutes. GitHub may delay scheduled runs under load; that's fine,
+    # we only need to beat Render's 15-minute idle timeout most of the time.
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # allows a manual run from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health check
+        run: |
+          # --max-time 120 tolerates a cold start (the whole point is to avoid them,
+          # but the first ping after a sleep can legitimately take ~50s).
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 \
+            https://placement-pulse-api-d36j.onrender.com/)
+          echo "Backend responded with HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Backend health check failed (HTTP $code)"
+            exit 1
+          fi

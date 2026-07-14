@@ -1,6 +1,22 @@
 # Deployment Guide (Free Tier)
 
-This project is now deployment-ready. Free stack that works 30+ days:
+## 🚀 Live URLs
+
+| | URL |
+|---|---|
+| **Frontend** | https://placement-pulse-dusky.vercel.app |
+| **Backend** | https://placement-pulse-api-d36j.onrender.com |
+| Render dashboard | https://dashboard.render.com/web/srv-d9b7q08k1i2s73b58dc0 |
+
+Both are deployed and verified. `.github/workflows/keep-alive.yml` pings the
+backend every 10 minutes so Render never sleeps and Supabase never pauses.
+
+**Redeploying:** both hosts auto-deploy on push to `working`. Render rebuilds the
+backend automatically; for the frontend run `vercel --prod` from `client/`.
+
+---
+
+This project is deployment-ready. Free stack that works 30+ days:
 
 | Part | Host | Notes |
 |------|------|-------|
