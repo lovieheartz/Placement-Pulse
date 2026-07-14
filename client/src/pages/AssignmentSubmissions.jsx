@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -23,6 +23,8 @@ const AssignmentSubmissions = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  // id of the submission whose PDF/image is expanded inline
+  const [previewId, setPreviewId] = useState(null);
 
   const { role, basePath } = useMemo(() => {
     if (location.pathname.startsWith('/hod')) return { role: 'hod', basePath: '/hod' };
@@ -96,8 +98,17 @@ const AssignmentSubmissions = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {s.fileUrl && (
+                      <Button
+                        variant={previewId === s.id ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPreviewId(previewId === s.id ? null : s.id)}
+                      >
+                        <FileText className="size-4" /> {previewId === s.id ? 'Hide answer sheet' : 'View answer sheet'}
+                      </Button>
+                    )}
+                    {s.fileUrl && (
                       <a href={resolveFileUrl(s.fileUrl)} target="_blank" rel="noreferrer">
-                        <Button variant="outline" size="sm"><ExternalLink className="size-4" /> View file</Button>
+                        <Button variant="outline" size="sm"><ExternalLink className="size-4" /> Open in new tab</Button>
                       </a>
                     )}
                     <Button variant="outline" size="sm" onClick={() => reevalMutation.mutate(s.id)} disabled={reevalMutation.isPending}>
@@ -105,6 +116,26 @@ const AssignmentSubmissions = () => {
                     </Button>
                   </div>
                 </div>
+
+                {/* The student's uploaded answer sheet, rendered inline.
+                    Images use <img>; PDFs use <iframe> (browsers render them natively). */}
+                {previewId === s.id && s.fileUrl && (
+                  <div className="mt-3 overflow-hidden rounded-xl border border-border bg-muted/30">
+                    {/\.(png|jpe?g|gif|webp)$/i.test(s.fileUrl) ? (
+                      <img
+                        src={resolveFileUrl(s.fileUrl)}
+                        alt={`${s.studentName || 'Student'} submission`}
+                        className="mx-auto max-h-[75vh] w-auto max-w-full object-contain"
+                      />
+                    ) : (
+                      <iframe
+                        src={resolveFileUrl(s.fileUrl)}
+                        title={`${s.studentName || 'Student'} answer sheet`}
+                        className="h-[75vh] w-full"
+                      />
+                    )}
+                  </div>
+                )}
 
                 {s.aiFeedback && (
                   <p className="mt-3 rounded-lg bg-muted/40 p-3 text-sm text-foreground">

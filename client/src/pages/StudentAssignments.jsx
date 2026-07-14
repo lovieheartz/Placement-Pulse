@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { API_BASE } from '../config/api';
+import { resolveFileUrl } from '../lib/api';
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -20,11 +21,33 @@ const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.
 const fmtDate = (d) => (d ? new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null);
 
 const SubmissionResult = ({ sub }) => {
+  const [showFile, setShowFile] = useState(false);
   if (!sub) return null;
+
+  // The answer sheet the student uploaded — shown inline so they can check
+  // exactly what the AI graded.
+  const filePreview = sub.fileUrl && (
+    <>
+      <Button variant="outline" size="sm" className="mt-2" onClick={() => setShowFile((v) => !v)}>
+        <FileText className="size-4" /> {showFile ? 'Hide my answer sheet' : 'View my answer sheet'}
+      </Button>
+      {showFile && (
+        <div className="mt-2 overflow-hidden rounded-lg border border-border bg-background">
+          {/\.(png|jpe?g|gif|webp)$/i.test(sub.fileUrl) ? (
+            <img src={resolveFileUrl(sub.fileUrl)} alt="My submission" className="mx-auto max-h-[70vh] w-auto max-w-full object-contain" />
+          ) : (
+            <iframe src={resolveFileUrl(sub.fileUrl)} title="My answer sheet" className="h-[70vh] w-full" />
+          )}
+        </div>
+      )}
+    </>
+  );
+
   if (sub.status === 'error') {
     return (
       <div className="mt-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
         <span className="inline-flex items-center gap-1.5 font-medium"><AlertTriangle className="size-4 text-warning" /> Submitted — AI evaluation couldn't be completed. Your teacher can re-evaluate.</span>
+        {filePreview}
       </div>
     );
   }
@@ -38,6 +61,31 @@ const SubmissionResult = ({ sub }) => {
         {sub.aiPercentage != null && <Badge variant="secondary">{sub.aiPercentage}%</Badge>}
       </div>
       {sub.aiFeedback && <p className="mt-2 text-sm text-muted-foreground"><span className="font-medium text-foreground">Feedback: </span>{sub.aiFeedback}</p>}
+
+      {Array.isArray(sub.aiBreakdown) && sub.aiBreakdown.length > 0 && (
+        <div className="mt-3 overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="px-3 py-2 font-semibold">Question</th>
+                <th className="px-3 py-2 text-center font-semibold">Marks</th>
+                <th className="px-3 py-2 font-semibold">Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sub.aiBreakdown.map((b, i) => (
+                <tr key={i} className="border-b border-border/50 last:border-0">
+                  <td className="px-3 py-2 text-foreground">{b.q}</td>
+                  <td className="px-3 py-2 text-center font-medium text-foreground">{b.awarded}/{b.max}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{b.comment}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {filePreview}
     </div>
   );
 };

@@ -118,7 +118,45 @@ const AptitudeTestAnalytics = () => {
     );
   }
 
-  const { statistics } = analytics;
+  // The API returns stats grouped as overallStats / scoreStats / timeStats.
+  // Flatten them into the single shape this page renders.
+  const {
+    overallStats = {},
+    scoreStats = {},
+    timeStats = {},
+    scoreDistribution = [],
+    topPerformers = [],
+    questionAnalytics = [],
+  } = analytics;
+
+  const statistics = {
+    totalAttempts: overallStats.totalAttempts,
+    completedAttempts: overallStats.completedAttempts,
+    inProgressAttempts: overallStats.inProgressAttempts,
+    notStartedCount: overallStats.notStartedCount,
+    averageScore: scoreStats.averageScore,
+    passRate: scoreStats.passRate,
+    highestScore: scoreStats.highestScore,
+    lowestScore: scoreStats.lowestScore,
+    medianScore: scoreStats.medianScore,
+    passedStudents: scoreStats.passCount,
+    failedStudents: scoreStats.failCount,
+    averagePercentage: test.totalMarks
+      ? ((scoreStats.averageScore || 0) / test.totalMarks) * 100
+      : 0,
+    // Attempt.timeTaken is persisted in MINUTES, so these are minutes too.
+    averageTimeTaken: timeStats.averageTimeTaken,
+    fastestCompletion: timeStats.fastestCompletion,
+    slowestCompletion: timeStats.slowestCompletion,
+  };
+
+  // minutes -> "2m 30s"
+  const fmtMins = (mins) => {
+    if (!mins) return '0m 0s';
+    const m = Math.floor(mins);
+    const s = Math.round((mins - m) * 60);
+    return `${m}m ${s}s`;
+  };
 
   return (
     <div className="relative min-h-screen text-white">
@@ -275,8 +313,8 @@ const AptitudeTestAnalytics = () => {
               </div>
 
               <div className="flex items-center justify-between rounded-lg bg-rose-500/10 p-3 ring-1 ring-rose-300/20">
-                <span className="text-sm font-medium text-white/70">Abandoned</span>
-                <span className="text-lg font-bold text-rose-300">{statistics?.abandonedAttempts || 0}</span>
+                <span className="text-sm font-medium text-white/70">Not Started</span>
+                <span className="text-lg font-bold text-rose-300">{Math.max(0, statistics?.notStartedCount || 0)}</span>
               </div>
             </div>
           </LiquidGlass>
@@ -310,32 +348,128 @@ const AptitudeTestAnalytics = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="rounded-2xl bg-sky-500/10 p-4 text-center ring-1 ring-sky-300/20">
               <p className="mb-2 text-sm font-medium text-white/55">Average Time Taken</p>
-              <p className="text-2xl font-bold text-sky-300">
-                {statistics?.averageTimeTaken
-                  ? `${Math.floor(statistics.averageTimeTaken / 60)}m ${statistics.averageTimeTaken % 60}s`
-                  : '0m 0s'}
-              </p>
+              <p className="text-2xl font-bold text-sky-300">{fmtMins(statistics?.averageTimeTaken)}</p>
             </div>
 
             <div className="rounded-2xl bg-emerald-500/10 p-4 text-center ring-1 ring-emerald-300/20">
               <p className="mb-2 text-sm font-medium text-white/55">Fastest Completion</p>
-              <p className="text-2xl font-bold text-emerald-300">
-                {statistics?.fastestCompletion
-                  ? `${Math.floor(statistics.fastestCompletion / 60)}m ${statistics.fastestCompletion % 60}s`
-                  : '0m 0s'}
-              </p>
+              <p className="text-2xl font-bold text-emerald-300">{fmtMins(statistics?.fastestCompletion)}</p>
             </div>
 
             <div className="rounded-2xl bg-amber-500/10 p-4 text-center ring-1 ring-amber-300/20">
               <p className="mb-2 text-sm font-medium text-white/55">Slowest Completion</p>
-              <p className="text-2xl font-bold text-amber-300">
-                {statistics?.slowestCompletion
-                  ? `${Math.floor(statistics.slowestCompletion / 60)}m ${statistics.slowestCompletion % 60}s`
-                  : '0m 0s'}
-              </p>
+              <p className="text-2xl font-bold text-amber-300">{fmtMins(statistics?.slowestCompletion)}</p>
             </div>
           </div>
         </LiquidGlass>
+
+        {/* Score Distribution */}
+        {scoreDistribution.length > 0 && (
+          <LiquidGlass className="mt-6 rounded-2xl p-6">
+            <h3 className="mb-4 text-xl font-bold text-white">Score Distribution</h3>
+            <div className="space-y-3">
+              {scoreDistribution.map((band) => (
+                <div key={band.range}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium text-white/70">{band.range}%</span>
+                    <span className="text-white/55">
+                      {band.count} student{band.count === 1 ? '' : 's'} ({Math.round(band.percentage)}%)
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-500"
+                      style={{ width: `${Math.min(100, band.percentage)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </LiquidGlass>
+        )}
+
+        {/* Top Performers */}
+        {topPerformers.length > 0 && (
+          <LiquidGlass className="mt-6 rounded-2xl p-6">
+            <h3 className="mb-4 text-xl font-bold text-white">Top Performers</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/50">
+                    <th className="px-3 py-2 font-semibold">Rank</th>
+                    <th className="px-3 py-2 font-semibold">Student</th>
+                    <th className="px-3 py-2 text-center font-semibold">Score</th>
+                    <th className="px-3 py-2 text-center font-semibold">Percentage</th>
+                    <th className="px-3 py-2 text-center font-semibold">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topPerformers.map((p) => (
+                    <tr key={p.attemptId} className="border-b border-white/5 last:border-0">
+                      <td className="px-3 py-2 font-bold text-white">#{p.rank}</td>
+                      <td className="px-3 py-2">
+                        <div className="font-medium text-white">{p.studentName || p.studentId}</div>
+                        {p.studentEmail && <div className="text-xs text-white/45">{p.studentEmail}</div>}
+                      </td>
+                      <td className="px-3 py-2 text-center font-semibold text-emerald-300">
+                        {p.score} / {test.totalMarks}
+                      </td>
+                      <td className="px-3 py-2 text-center text-sky-300">{Math.round(p.percentage)}%</td>
+                      <td className="px-3 py-2 text-center text-white/55">{fmtMins(p.timeTaken)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </LiquidGlass>
+        )}
+
+        {/* Question-wise Analytics — surfaces which questions students struggled with */}
+        {questionAnalytics.length > 0 && (
+          <LiquidGlass className="mt-6 rounded-2xl p-6">
+            <h3 className="mb-4 text-xl font-bold text-white">Question Analysis</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/50">
+                    <th className="px-3 py-2 font-semibold">Q#</th>
+                    <th className="px-3 py-2 text-center font-semibold">Correct</th>
+                    <th className="px-3 py-2 text-center font-semibold">Wrong</th>
+                    <th className="px-3 py-2 text-center font-semibold">Skipped</th>
+                    <th className="px-3 py-2 font-semibold">Success rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {questionAnalytics.map((q) => (
+                    <tr key={q.questionId} className="border-b border-white/5 last:border-0">
+                      <td className="px-3 py-2 font-medium text-white">Q{q.questionNumber}</td>
+                      <td className="px-3 py-2 text-center text-emerald-300">{q.correctCount}</td>
+                      <td className="px-3 py-2 text-center text-rose-300">{q.wrongCount}</td>
+                      <td className="px-3 py-2 text-center text-white/50">{q.skippedCount}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-24 overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className={`h-full rounded-full ${
+                                q.correctRate >= 60
+                                  ? 'bg-emerald-400'
+                                  : q.correctRate >= 30
+                                  ? 'bg-amber-400'
+                                  : 'bg-rose-400'
+                              }`}
+                              style={{ width: `${Math.min(100, q.correctRate)}%` }}
+                            />
+                          </div>
+                          <span className="text-white/70">{Math.round(q.correctRate)}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </LiquidGlass>
+        )}
 
         {/* Test Info */}
         <LiquidGlass className="mt-6 rounded-2xl p-6">

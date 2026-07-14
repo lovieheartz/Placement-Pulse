@@ -294,6 +294,9 @@ async function calculateForTest(testId) {
       .slice(0, 10)
       .map((attempt, index) => ({
         studentId: attempt.studentId.id,
+        // Name/email so the leaderboard can show a person, not a raw uuid.
+        studentName: attempt.studentId.name || 'Unknown student',
+        studentEmail: attempt.studentId.email || '',
         attemptId: attempt.id,
         score: attempt.score,
         percentage: attempt.percentage,
