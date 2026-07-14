@@ -36,13 +36,26 @@
   }
 
   * { box-sizing: border-box; }
-  body { margin: 0; background: #EDF1EC; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-  .deck { display: flex; flex-direction: column; align-items: center; gap: 26px; padding: 26px 14px 92px; }
+  html { scroll-snap-type: y proximity; }
+  body {
+    margin: 0; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased;
+    background: linear-gradient(180deg, #E4EAE2, #DCE4DB);
+  }
+  .deck { display: flex; flex-direction: column; align-items: center; gap: 30px; padding: 30px 16px 56px; }
 
   .slide {
-    position: relative; width: 100%; max-width: 1240px; aspect-ratio: 16/9;
-    background: var(--card); border: 1px solid var(--rule);
-    box-shadow: 0 1px 3px rgba(36,53,44,.05);
+    position: relative;
+    /* fit the viewport: never taller than the screen, never wider than the design */
+    width: min(1240px, 100%, calc((100vh - 60px) * 16 / 9));
+    aspect-ratio: 16/9;
+    scroll-snap-align: center;
+    background: var(--card);
+    border: 1px solid #9FB8A4;
+    box-shadow:
+      0 0 0 4px rgba(255,255,255,.55),
+      0 0 0 5px #C4D5C7,
+      0 16px 36px -14px rgba(36,53,44,.28),
+      0 3px 8px rgba(36,53,44,.08);
     display: flex; flex-direction: column; overflow: hidden;
     padding: 0 46px;
   }
@@ -247,26 +260,8 @@
   .credit .val { font-size: 13px; line-height: 1.65; color: var(--muted); }
   .credit .val b { color: var(--ink); font-weight: 650; }
 
-  /* ---------- hud ---------- */
+  /* ---------- progress hairline (the only chrome on screen) ---------- */
   .prog { position: fixed; top: 0; left: 0; height: 3px; background: var(--gold); z-index: 60; transition: width .18s; }
-  .hud {
-    position: fixed; bottom: 16px; right: 18px; z-index: 60;
-    display: flex; gap: 8px; align-items: center;
-    background: #fff; border: 1px solid var(--rule-2);
-    box-shadow: 0 2px 10px rgba(36,53,44,.10);
-    padding: 7px 10px;
-  }
-  .hud .hm { font-family: var(--serif); font-weight: 700; font-size: 13px; color: var(--green-d); margin-right: 2px; }
-  .hud .hm span { color: var(--gold); }
-  .hud .hc { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .08em; }
-  .hud button {
-    font-family: var(--sans); font-size: 12px; cursor: pointer;
-    background: #fff; color: var(--ink); border: 1px solid var(--rule-2);
-    padding: 3px 9px; line-height: 1.4;
-  }
-  .hud button:hover { background: var(--green-w); border-color: var(--green); color: var(--green-d); }
-  .hud button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
-  .hud .pdf { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
@@ -1108,39 +1103,26 @@
 
 </div>
 
-<div class="hud">
-  <span class="hm">Ascend<span>.</span></span>
-  <button id="prev" aria-label="Previous slide">&larr;</button>
-  <span class="hc" id="count">1 / 16</span>
-  <button id="next" aria-label="Next slide">&rarr;</button>
-  <button id="print" class="pdf" aria-label="Save as PDF">PDF</button>
-</div>
-
 <script>
+  // No on-screen chrome: navigate with ← → / PageUp PageDown / Space / Home / End.
+  // Save as PDF with Ctrl+P (page size is preset to landscape 16:9).
   const slides = Array.from(document.querySelectorAll('.slide'));
-  const countEl = document.getElementById('count');
   const progEl = document.getElementById('prog');
   let i = 0;
 
-  const sync = () => {
-    countEl.textContent = (i + 1) + ' / ' + slides.length;
-    progEl.style.width = ((i + 1) / slides.length * 100) + '%';
-  };
+  const sync = () => { progEl.style.width = ((i + 1) / slides.length * 100) + '%'; };
   const go = (n) => {
     i = Math.max(0, Math.min(slides.length - 1, n));
     slides[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
     sync();
   };
 
-  document.getElementById('next').onclick = () => go(i + 1);
-  document.getElementById('prev').onclick = () => go(i - 1);
-  document.getElementById('print').onclick = () => window.print();
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(i + 1); }
     if (e.key === 'ArrowLeft'  || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
     if (e.key === 'Home') { e.preventDefault(); go(0); }
     if (e.key === 'End')  { e.preventDefault(); go(slides.length - 1); }
+    if (e.key === 'p' && (e.ctrlKey || e.metaKey)) { /* native print — preset to 16:9 */ }
   });
 
   const io = new IntersectionObserver((es) => {
