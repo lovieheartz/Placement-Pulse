@@ -1,0 +1,1422 @@
+<title>Ascend — AI-Augmented Campus Placement Management System</title>
+
+<style>
+  /* ================================================================
+     ASCEND — final viva deck
+     Identity: refined from the project's violet/amber deck.
+     Colour carries meaning: each stakeholder keeps its own hue
+     across the whole deck (TPO violet · Students amber ·
+     Faculty teal · Admin rose).
+     ================================================================ */
+
+  :root {
+    /* ground + ink */
+    --ground:   #FAF7F3;   /* warm ivory */
+    --card:     #FFFFFF;
+    --ink:      #221A31;   /* deep plum-black */
+    --ink-2:    #4A3F5E;
+    --muted:    #6E6280;
+    --rule:     #E6DFEC;
+    --rule-2:   #C9BCD8;
+
+    /* brand */
+    --violet:   #6A4FA3;
+    --violet-d: #43307A;
+    --violet-w: #EFEAF7;
+
+    /* stakeholder hues — used consistently, never decoratively */
+    --amber:    #D9922B;
+    --amber-w:  #FBF0DC;
+    --teal:     #2F7D75;
+    --teal-w:   #E2F1EF;
+    --rose:     #C25A78;
+    --rose-w:   #FAE7EC;
+
+    --good:     #2F7D75;
+    --bad:      #C24E3F;
+
+    --display: "Bodoni MT", "Didot", "Playfair Display", "Palatino Linotype", Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --mono: "Consolas", ui-monospace, "SF Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #16111F; --card: #1E1830; --ink: #F0EBF7; --ink-2: #C6BCD8;
+      --muted: #9C8FB0; --rule: #322A45; --rule-2: #4C4066;
+      --violet: #A98BE0; --violet-d: #C7B2F0; --violet-w: #2C2342;
+      --amber: #E9B85E; --amber-w: #3A2E1A;
+      --teal: #62B8AC; --teal-w: #1B342F;
+      --rose: #E08AA4; --rose-w: #38222A;
+      --good: #62B8AC; --bad: #E8806F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #16111F; --card: #1E1830; --ink: #F0EBF7; --ink-2: #C6BCD8;
+    --muted: #9C8FB0; --rule: #322A45; --rule-2: #4C4066;
+    --violet: #A98BE0; --violet-d: #C7B2F0; --violet-w: #2C2342;
+    --amber: #E9B85E; --amber-w: #3A2E1A;
+    --teal: #62B8AC; --teal-w: #1B342F;
+    --rose: #E08AA4; --rose-w: #38222A;
+    --good: #62B8AC; --bad: #E8806F;
+  }
+  :root[data-theme="light"] {
+    --ground: #FAF7F3; --card: #FFFFFF; --ink: #221A31; --ink-2: #4A3F5E;
+    --muted: #6E6280; --rule: #E6DFEC; --rule-2: #C9BCD8;
+    --violet: #6A4FA3; --violet-d: #43307A; --violet-w: #EFEAF7;
+    --amber: #D9922B; --amber-w: #FBF0DC;
+    --teal: #2F7D75; --teal-w: #E2F1EF;
+    --rose: #C25A78; --rose-w: #FAE7EC;
+    --good: #2F7D75; --bad: #C24E3F;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+  .deck { display: flex; flex-direction: column; align-items: center; gap: 26px; padding: 26px 16px 90px; }
+
+  .slide {
+    position: relative; width: 100%; max-width: 1200px; aspect-ratio: 16/9;
+    background: var(--card); border: 1px solid var(--rule);
+    display: flex; flex-direction: column;
+    padding: 30px 40px 26px; overflow: hidden;
+  }
+  /* the corner mark — a quiet nod to the original deck's circles */
+  .slide::after {
+    content: ""; position: absolute; top: -70px; right: -70px;
+    width: 190px; height: 190px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 70%, var(--violet-w), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ---------- heads ---------- */
+  .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--violet); margin-bottom: 7px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before { content: ""; width: 16px; height: 2px; background: var(--violet); }
+  h1 {
+    font-family: var(--display); font-weight: 400;
+    font-size: 38px; line-height: 1.08; letter-spacing: .004em;
+    margin: 0 0 6px; text-wrap: balance; color: var(--ink);
+  }
+  h1 b { font-weight: 700; }
+  h1 .lite { font-family: var(--sans); font-size: 26px; font-weight: 300; color: var(--muted); letter-spacing: -.01em; }
+  .sub { font-size: 13.5px; line-height: 1.55; color: var(--muted); max-width: 82ch; margin: 4px 0 14px; }
+  .hr { height: 2px; background: linear-gradient(90deg, var(--violet), var(--rule) 42%, transparent); margin-bottom: 16px; }
+
+  .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 13px; }
+
+  /* ---------- layout ---------- */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 13px; }
+  .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .g5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 11px; }
+  .split { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start; }
+  .split-r { display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 11px; }
+
+  /* ---------- cards ---------- */
+  .card { border: 1px solid var(--rule); border-top: 3px solid var(--rule-2); padding: 12px 14px; background: var(--card); }
+  .card h3 { margin: 0 0 5px; font-size: 12.8px; font-weight: 650; color: var(--ink); letter-spacing: -.005em; }
+  .card p { margin: 0; font-size: 12.1px; line-height: 1.5; color: var(--muted); }
+  .card .eg {
+    margin-top: 7px; padding: 6px 8px; background: var(--ground);
+    border-left: 2px solid var(--rule-2);
+    font-size: 11.2px; line-height: 1.45; color: var(--ink-2); font-style: italic;
+  }
+  /* stakeholder tinting — the hue IS the label */
+  .t-violet { border-top-color: var(--violet); }
+  .t-violet .eg { border-left-color: var(--violet); }
+  .t-amber  { border-top-color: var(--amber); }
+  .t-amber .eg { border-left-color: var(--amber); }
+  .t-teal   { border-top-color: var(--teal); }
+  .t-teal .eg { border-left-color: var(--teal); }
+  .t-rose   { border-top-color: var(--rose); }
+  .t-rose .eg { border-left-color: var(--rose); }
+  .card.fill-v { background: var(--violet-w); border-color: var(--violet); }
+  .card.fill-a { background: var(--amber-w);  border-color: var(--amber); }
+  .card.fill-t { background: var(--teal-w);   border-color: var(--teal); }
+
+  .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 19px; height: 19px; margin-right: 7px; vertical-align: -3px;
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    color: #fff; background: var(--violet);
+  }
+  .num.a { background: var(--amber); } .num.t { background: var(--teal); } .num.r { background: var(--rose); }
+
+  ul.l { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  ul.l li { position: relative; padding-left: 14px; font-size: 12.2px; line-height: 1.5; color: var(--muted); }
+  ul.l li::before { content: ""; position: absolute; left: 0; top: 7px; width: 5px; height: 5px; background: var(--violet); border-radius: 50%; }
+  ul.l li b { color: var(--ink); font-weight: 650; }
+
+  /* ---------- stats ---------- */
+  .stat { border: 1px solid var(--rule); padding: 11px 12px; background: var(--card); }
+  .stat .v { font-family: var(--display); font-size: 34px; font-weight: 700; line-height: 1; color: var(--violet-d); font-variant-numeric: tabular-nums; }
+  .stat .v.amber { color: var(--amber); } .stat .v.rose { color: var(--rose); } .stat .v.teal { color: var(--teal); }
+  .stat .l { margin-top: 6px; font-size: 11.2px; line-height: 1.4; color: var(--muted); }
+  .stat .l b { color: var(--ink); }
+
+  /* ---------- tables ---------- */
+  .tw { overflow-x: auto; border: 1px solid var(--rule); }
+  table { width: 100%; border-collapse: collapse; font-size: 11.8px; }
+  thead th {
+    background: var(--violet-w); color: var(--violet-d); text-align: left;
+    font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; font-weight: 700;
+    padding: 8px 10px; border-bottom: 2px solid var(--violet);
+  }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid var(--rule); color: var(--muted); line-height: 1.45; vertical-align: top; }
+  tbody td:first-child { color: var(--ink); font-weight: 640; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody td b { color: var(--ink); }
+  .ok { color: var(--good); font-weight: 700; }
+  .no { color: var(--bad); font-weight: 700; }
+
+  /* ---------- chips / pills ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em; border: 1px solid var(--rule-2); padding: 4px 8px; color: var(--muted); }
+  .chip b { color: var(--violet-d); }
+  .chain { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+  .pill { font-family: var(--mono); font-size: 10px; border: 1px solid var(--rule-2); padding: 5px 8px; color: var(--ink-2); white-space: nowrap; }
+  .pill.on { background: var(--violet); border-color: var(--violet); color: #fff; font-weight: 600; }
+  .arw { color: var(--rule-2); }
+
+  .quote {
+    border-left: 3px solid var(--amber); background: var(--ground);
+    padding: 9px 14px; font-family: var(--display); font-size: 14px;
+    line-height: 1.5; color: var(--ink-2);
+  }
+  .quote b { font-weight: 700; color: var(--ink); }
+
+  /* ---------- svg ---------- */
+  svg { display: block; width: 100%; height: auto; }
+  .b   { fill: var(--card); stroke: var(--rule-2); stroke-width: 1; }
+  .bv  { fill: var(--violet-w); stroke: var(--violet); stroke-width: 1; }
+  .ba  { fill: var(--amber-w);  stroke: var(--amber);  stroke-width: 1; }
+  .bt  { fill: var(--teal-w);   stroke: var(--teal);   stroke-width: 1; }
+  .br  { fill: var(--rose-w);   stroke: var(--rose);   stroke-width: 1; }
+  .tt  { fill: var(--ink); font-family: var(--sans); font-size: 10.5px; font-weight: 640; }
+  .ts  { fill: var(--muted); font-family: var(--sans); font-size: 9px; }
+  .tm  { fill: var(--violet-d); font-family: var(--mono); font-size: 8px; letter-spacing: .06em; }
+  .ln  { stroke: var(--rule-2); stroke-width: 1; fill: none; }
+  .lnv { stroke: var(--violet); stroke-width: 1.4; fill: none; }
+  .lnd { stroke: var(--rule-2); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+  .axis{ stroke: var(--rule-2); stroke-width: 1; }
+  .barv { fill: var(--violet); } .bara { fill: var(--amber); } .bart { fill: var(--teal); }
+  .barw { fill: var(--rule); }
+
+  /* ---------- title / section slides ---------- */
+  .cover { padding: 0; flex-direction: row; }
+  .cover::after { display: none; }
+  .cover-l {
+    flex: 1.4; padding: 50px 46px; display: flex; flex-direction: column; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .cover-r {
+    flex: 1; padding: 44px 34px; display: flex; flex-direction: column; justify-content: space-between;
+    background: linear-gradient(155deg, var(--violet-d), var(--violet));
+    color: #fff;
+  }
+  .cover-r .eyebrow { color: rgba(255,255,255,.72); }
+  .cover-r .eyebrow::before { background: var(--amber); }
+  .cover-r .meta { font-size: 12.5px; line-height: 1.75; color: rgba(255,255,255,.82); }
+  .cover-r .meta b { color: #fff; font-weight: 650; }
+  .cover h1 { font-size: 52px; line-height: 1.02; }
+  .rulebar { width: 74px; height: 4px; background: var(--amber); margin: 16px 0 18px; }
+
+  .divider { justify-content: center; align-items: flex-start; background: linear-gradient(140deg, var(--violet-d), var(--violet)); }
+  .divider::after { display: none; }
+  .divider h1 { color: #fff; font-size: 46px; }
+  .divider .eyebrow { color: rgba(255,255,255,.7); }
+  .divider .eyebrow::before { background: var(--amber); }
+  .divider .sub { color: rgba(255,255,255,.78); }
+
+  /* ---------- hud ---------- */
+  .bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--amber); z-index: 60; transition: width .15s; }
+  .hud {
+    position: fixed; bottom: 14px; right: 16px; z-index: 60; display: flex; gap: 7px; align-items: center;
+    background: var(--card); border: 1px solid var(--rule); padding: 6px 8px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .hud button { font: inherit; cursor: pointer; background: transparent; color: var(--ink); border: 1px solid var(--rule); padding: 2px 8px; }
+  .hud button:hover { background: var(--violet-w); border-color: var(--violet); }
+  .hud button:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  @page { size: 297mm 167mm; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .deck { gap: 0; padding: 0; }
+    .hud, .bar { display: none !important; }
+    .slide { max-width: none; width: 297mm; height: 167mm; aspect-ratio: auto; border: 0; page-break-after: always; break-after: page; }
+  }
+</style>
+
+<div class="bar" id="bar" style="width:0"></div>
+<div class="deck" id="deck">
+
+  <!-- ═══════════ 01 COVER ═══════════ -->
+  <section class="slide cover">
+    <div class="cover-l">
+      <div class="eyebrow">B.Tech Final Year Project &middot; Viva Voce</div>
+      <h1><b>Ascend</b><br /><span class="lite">An AI-augmented integrated campus<br />placement management system</span></h1>
+      <div class="rulebar"></div>
+      <p class="sub" style="max-width:48ch;font-size:14px">
+        A placement platform where the AI is <b style="color:var(--ink)">load-bearing</b> — giving every student
+        a resume expert and an interviewer on demand, at the marginal cost of an API call.
+      </p>
+      <div class="chips" style="margin-top:6px">
+        <span class="chip"><b>16</b> entities</span>
+        <span class="chip"><b>62</b> pages</span>
+        <span class="chip"><b>15</b> services</span>
+        <span class="chip"><b>4</b> roles</span>
+        <span class="chip">status &middot; <b>deployed live</b></span>
+      </div>
+    </div>
+    <div class="cover-r">
+      <div>
+        <div class="eyebrow">Presented by</div>
+        <div class="meta"><b>Md Rehan Farooque</b><br />Roll 10930622032<br />Regd 221090110043</div>
+      </div>
+      <div>
+        <div class="eyebrow">Under the supervision of</div>
+        <div class="meta">
+          <b>Prof. Saikat Bandopadhyay</b><br />Assistant Professor<br />
+          HOD: <b>Dr. Anupam Ghosh</b>
+        </div>
+      </div>
+      <div class="meta" style="font-size:11.5px">
+        Dept. of Artificial Intelligence &amp; Machine Learning<br />
+        Netaji Subhash Engineering College<br />MAKAUT, West Bengal &middot; July 2026
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 02 CONTENTS ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Contents</div>
+    <h1>What we'll <b>cover</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="g4" style="flex:1;align-content:start">
+        <div class="card t-violet"><h3><span class="num">1</span>The Problem</h3><p>Current scenario · pain by stakeholder · why it is urgent now</p></div>
+        <div class="card t-amber"><h3><span class="num a">2</span>The Landscape</h3><p>Six competing platforms — and the gap none of them fill</p></div>
+        <div class="card t-teal"><h3><span class="num t">3</span>The Solution</h3><p>Ascend · every problem mapped to its answer</p></div>
+        <div class="card t-rose"><h3><span class="num r">4</span>Engineering</h3><p>Architecture · stack · database · deployment</p></div>
+        <div class="card t-violet"><h3><span class="num">5</span>The AI Layer</h3><p>Resume · voice interview · handwriting · analytics</p></div>
+        <div class="card t-amber"><h3><span class="num a">6</span>Workflows</h3><p>What each of the four roles actually does</p></div>
+        <div class="card t-teal"><h3><span class="num t">7</span>Evaluation</h3><p>Methodology · latency · what 14 students said</p></div>
+        <div class="card t-rose"><h3><span class="num r">8</span>Impact</h3><p>Benefits · ROI · the road ahead · summary</p></div>
+      </div>
+      <div class="quote">
+        The scarce resource is <b>expert attention</b> — and expert attention <b>does not scale</b>.
+        That one sentence is the premise of this entire project.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 03 DIVIDER: PROBLEM ═══════════ -->
+  <section class="slide divider">
+    <div style="margin-top:auto;margin-bottom:auto">
+      <div class="eyebrow">Part one</div>
+      <h1>The <b>Problem</b></h1>
+      <p class="sub" style="max-width:56ch">
+        NSEC has built a strong placement record through dedicated TPOs and student PRs.
+        The process behind that record is spreadsheets, WhatsApp groups and paper forms.
+      </p>
+      <div class="chips" style="margin-top:10px">
+        <span class="chip" style="border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.85)">TPOs</span>
+        <span class="chip" style="border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.85)">Students</span>
+        <span class="chip" style="border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.85)">Faculty</span>
+        <span class="chip" style="border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.85)">Administration</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 04 CURRENT SCENARIO ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">About the project</div>
+    <h1>Placement runs on <b>manual, disconnected</b> systems</h1>
+    <p class="sub">The lack of a centralised digital system produces bottlenecks for everyone in the chain — and the losses compound silently.</p>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="split">
+        <div class="col">
+          <svg viewBox="0 0 580 118" role="img" aria-label="A drive notice decays as it passes from the TPO through 12 department PRs into WhatsApp groups, until the student misses the drive">
+            <rect class="bv" x="1" y="30" width="92" height="44" />
+            <text class="tt" x="47" y="49" text-anchor="middle">TPO</text>
+            <text class="ts" x="47" y="63" text-anchor="middle">drive notice</text>
+            <path class="lnv" d="M93 52 H145" /><path class="lnv" d="M139 48 l6 4 -6 4" />
+
+            <rect class="b" x="146" y="30" width="92" height="44" />
+            <text class="tt" x="192" y="49" text-anchor="middle">12 dept PRs</text>
+            <text class="ts" x="192" y="63" text-anchor="middle">relay by hand</text>
+            <path class="ln" d="M238 52 H290" /><path class="ln" d="M284 48 l6 4 -6 4" />
+
+            <rect class="b" x="291" y="30" width="100" height="44" />
+            <text class="tt" x="341" y="49" text-anchor="middle">WhatsApp</text>
+            <text class="ts" x="341" y="63" text-anchor="middle">buried in chats</text>
+            <path class="lnd" d="M391 52 H443" /><path class="ln" d="M437 48 l6 4 -6 4" />
+
+            <rect x="444" y="30" width="100" height="44" fill="var(--rose-w)" stroke="var(--rose)" />
+            <text class="tt" x="494" y="49" text-anchor="middle" fill="var(--rose)">Student</text>
+            <text class="ts" x="494" y="63" text-anchor="middle">misses the drive</text>
+
+            <text class="tm" x="192" y="20" text-anchor="middle" fill="var(--muted)">3 PRs forgot to forward</text>
+            <text class="tm" x="494" y="20" text-anchor="middle" fill="var(--rose)">signal lost</text>
+            <text class="tm" x="272" y="96" text-anchor="middle" fill="var(--muted)">FIDELITY DECAYS AT EVERY HOP — NO READ RECEIPTS, NO REMINDERS</text>
+          </svg>
+
+          <ul class="l">
+            <li>Students submit <b>weak resumes</b> and miss deadlines they never saw</li>
+            <li>TPOs lose <b>15+ hours a week</b> to coordination instead of employer outreach</li>
+            <li>NOC approvals take <b>5–7 days</b> on paper, with zero tracking</li>
+            <li>Records live in Excel, where <b>trend analysis is impossible</b></li>
+          </ul>
+        </div>
+        <div class="col">
+          <div class="card fill-a t-amber">
+            <h3>Why act now</h3>
+            <p>Builds on NSEC's existing success — <b>minimal disruption</b>, integrates with current processes.
+            Realtime voice AI has only just become cheap enough for a student-facing tool at cohort scale.
+            And it positions NSEC as a tech-forward institution to recruiters.</p>
+          </div>
+          <div class="g2">
+            <div class="stat"><div class="v rose">68%</div><div class="l">of resumes <b>auto-rejected</b> by ATS before a human reads them</div></div>
+            <div class="stat"><div class="v">15h</div><div class="l">TPO time lost <b>per week</b> to manual coordination</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 05 PROBLEMS — TPO ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow" style="color:var(--violet)">Stakeholder 1 of 4</div>
+    <h1>Problems faced by <b>TPOs</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="g2" style="flex:1">
+        <div class="card t-violet">
+          <h3><span class="num">1</span>The broken telephone</h3>
+          <p>TPOs brief PRs, who relay to their batches. Critical details get diluted or delayed at every hop.</p>
+          <div class="eg">Drive details went to 12 department PRs on WhatsApp — 3 forgot to forward. Entire batches missed the drive.</div>
+        </div>
+        <div class="card t-violet">
+          <h3><span class="num">2</span>No resume screening tool</h3>
+          <p><b>500+ resumes per drive</b> reviewed by hand with no standardised screening. Human error overlooks real talent.</p>
+          <div class="eg">A deserving student was overlooked for Amazon — her resume was misplaced in a pile.</div>
+        </div>
+        <div class="card t-violet">
+          <h3><span class="num">3</span>Data blindness</h3>
+          <p>Records kept in Excel. No real-time reports, no trend analytics, no way to ask "why".</p>
+          <div class="eg">Nobody could say why only 30% of ME students placed despite good grades. The resume-skills gap surfaced a year later.</div>
+        </div>
+        <div class="card t-violet">
+          <h3><span class="num">4</span>Zero transparency</h3>
+          <p>Students cannot track application or NOC status — so the same questions arrive again, and again, and again.</p>
+          <div class="eg">An application cannot be followed like a food-delivery order: Submitted → Under review → Shortlisted.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 06 PROBLEMS — STUDENTS ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow" style="color:var(--amber)">Stakeholder 2 of 4</div>
+    <h1>Problems faced by <b>Students</b> <span class="lite">— the ones who pay the price</span></h1>
+    <div class="hr" style="background:linear-gradient(90deg,var(--amber),var(--rule) 42%,transparent)"></div>
+    <div class="content">
+      <div class="g2" style="flex:1">
+        <div class="card t-amber">
+          <h3><span class="num a">1</span>Rejections they can't explain</h3>
+          <p>Formatting errors and missing keywords trigger automatic rejection. Nobody ever tells the student <i>why</i>.</p>
+          <div class="eg">A CSE student was rejected by all 8 companies he applied to — inconsistent fonts, no quantifiable achievements, not ATS-friendly.</div>
+        </div>
+        <div class="card t-amber">
+          <h3><span class="num a">2</span>Missed drives</h3>
+          <p>Notices arrive on WhatsApp and e-mail with no priority, no read-tracking, no reminders.</p>
+          <div class="eg">A student missed a recruitment drive because the message was buried under other group chats.</div>
+        </div>
+        <div class="card t-amber">
+          <h3><span class="num a">3</span>Slow, opaque NOC process</h3>
+          <p>Physical forms, days of waiting, no status — while the company's joining deadline runs out.</p>
+          <div class="eg">A student visited the TPO office 5 times for one Microsoft internship NOC. The paperwork was lost twice.</div>
+        </div>
+        <div class="card fill-a t-amber">
+          <h3><span class="num a">4</span>No way to rehearse</h3>
+          <p>Volunteer mock interviews cannot scale to 500 students, nor repeat on demand — so the first real interview <b>is</b> the placement interview.</p>
+          <div class="eg" style="background:var(--card)">Only 21% of surveyed final-year students knew an ATS would screen them at all (n = 14).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 07 PROBLEMS — FACULTY + ADMIN ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow" style="color:var(--teal)">Stakeholders 3 &amp; 4 of 4</div>
+    <h1>Problems faced by <b>Faculty</b> &amp; <b>Administration</b></h1>
+    <div class="hr" style="background:linear-gradient(90deg,var(--teal),var(--rule) 42%,transparent)"></div>
+    <div class="content">
+      <div class="g2" style="flex:1">
+        <div class="col">
+          <div class="chip" style="align-self:flex-start;border-color:var(--teal);color:var(--teal)">FACULTY</div>
+          <div class="card t-teal">
+            <h3><span class="num t">1</span>Manual score entry burden</h3>
+            <p>Marks uploaded one student at a time — high administrative workload, and entry errors in large classes.</p>
+          </div>
+          <div class="card t-teal">
+            <h3><span class="num t">2</span>Feedback bottleneck</h3>
+            <p>Personalised feedback on every submission is time-infeasible. Late grades break the very learning cycle the test was meant to serve.</p>
+          </div>
+        </div>
+        <div class="col">
+          <div class="chip" style="align-self:flex-start;border-color:var(--rose);color:var(--rose)">ADMINISTRATION</div>
+          <div class="card t-rose">
+            <h3><span class="num r">3</span>Untracked student requests</h3>
+            <p>Queries scatter across WhatsApp and e-mail with no ownership and no accountability.</p>
+            <div class="eg">15+ students e-mailed the same NOC question daily for a week — and got no reply.</div>
+          </div>
+          <div class="card t-rose">
+            <h3><span class="num r">4</span>Manual student management</h3>
+            <p>TPO assignment, misconduct blocking and access logs all live on paper.</p>
+            <div class="eg">A placement-banned student applied to 3 companies before anyone noticed.</div>
+          </div>
+        </div>
+      </div>
+      <div class="quote">
+        Every pain point across these four slides became a numbered requirement — <b>FR-1 … FR-12</b> and <b>NFR-1 … NFR-6</b>.
+        Nothing in Ascend was built because it was interesting; each module answers a documented failure.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 08 WHY URGENT ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">The cost of waiting</div>
+    <h1>Why this is <b>urgent</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="g5">
+        <div class="stat" style="border-top:3px solid var(--rose)"><div class="v rose">↓</div><div class="l"><b>Missed opportunities</b><br />Scattered notices cost drives — directly hitting placement rates</div></div>
+        <div class="stat" style="border-top:3px solid var(--amber)"><div class="v amber">68%</div><div class="l"><b>Resume rejection</b><br />Auto-rejected by ATS — qualified students wasted</div></div>
+        <div class="stat" style="border-top:3px solid var(--violet)"><div class="v">5–7d</div><div class="l"><b>NOC delays</b><br />Lost offers, lost student trust, lost reputation</div></div>
+        <div class="stat" style="border-top:3px solid var(--teal)"><div class="v teal">15h</div><div class="l"><b>TPO burnout</b><br />Per week on manual tasks, not strategy</div></div>
+        <div class="stat" style="border-top:3px solid var(--rose)"><div class="v rose">0</div><div class="l"><b>Data blindness</b><br />No analytics — the same mistakes repeat yearly</div></div>
+      </div>
+
+      <svg viewBox="0 0 900 96" role="img" aria-label="The failure loop: no analytics leads to unfixed skill gaps, which lead to rejections, which lead to lower placement, which returns to no analytics">
+        <rect class="b" x="1" y="30" width="140" height="40" />
+        <text class="tt" x="71" y="55" text-anchor="middle">No analytics</text>
+        <path class="lnv" d="M141 50 H189" /><path class="lnv" d="M183 46 l6 4 -6 4" />
+        <rect class="b" x="190" y="30" width="150" height="40" />
+        <text class="tt" x="265" y="55" text-anchor="middle">Skill gaps unfixed</text>
+        <path class="lnv" d="M340 50 H388" /><path class="lnv" d="M382 46 l6 4 -6 4" />
+        <rect class="b" x="389" y="30" width="150" height="40" />
+        <text class="tt" x="464" y="55" text-anchor="middle">Rejections</text>
+        <path class="lnv" d="M539 50 H587" /><path class="lnv" d="M581 46 l6 4 -6 4" />
+        <rect x="588" y="30" width="160" height="40" fill="var(--rose-w)" stroke="var(--rose)" />
+        <text class="tt" x="668" y="55" text-anchor="middle" fill="var(--rose)">Lower placement</text>
+        <path class="lnd" d="M748 50 H820 V86 H71 V70" stroke="var(--rose)" />
+        <path class="ln" d="M67 76 l4 -6 4 6" stroke="var(--rose)" />
+        <text class="tm" x="440" y="18" text-anchor="middle" fill="var(--rose)">THE LOOP CLOSES — AND REPEATS EVERY YEAR</text>
+      </svg>
+
+      <div class="quote">
+        Each year the loop runs, one cohort graduates having never been told why they were rejected.
+        <b>The cost of waiting is measured in careers, not licences.</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 09 COMPETITORS — TABLE ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Competitor analysis &middot; 1 of 2</div>
+    <h1>The market has tools — <b>none fit a college</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="tw">
+        <table>
+          <thead><tr><th style="width:17%">Platform</th><th style="width:14%">Category</th><th style="width:30%">What it is</th><th>Why it doesn't solve this</th></tr></thead>
+          <tbody>
+            <tr><td>Superset</td><td>Drive ops</td><td>Official placement portal of 600+ Indian colleges</td><td>Recruiter-side operations only — <span class="no">no</span> resume coaching, <span class="no">no</span> interview practice</td></tr>
+            <tr><td>Unstop</td><td>Employer brand</td><td>24M+ students; gamified hiring via competitions</td><td>Skewed to Tier-1 campuses — not an internal placement-office system</td></tr>
+            <tr><td>HirePro</td><td>Assessment</td><td>Campus assessment &amp; drive vendor since 2004</td><td>Sold to companies — <b>the college is the venue, not the customer</b></td></tr>
+            <tr><td>Jobscan · Resume Worded</td><td>Resume tool</td><td>ATS resume checkers with keyword analysis</td><td>US$19–50 <b>per student per month</b>; blind to the college's own drives</td></tr>
+            <tr><td>Final Round AI</td><td>Interview prep</td><td>AI mock-interview subscription</td><td>US$99–299/month; free tier ≈ 5 minutes — unaffordable at cohort scale</td></tr>
+            <tr><td>Google Interview Warmup</td><td>Interview prep</td><td>Free, typed interview practice</td><td>Generic, text-only — and <b>retired in April 2026</b></td></tr>
+            <tr style="background:var(--violet-w)"><td style="color:var(--violet-d)">Ascend</td><td><b>Both</b></td><td>Placement operations <b>+</b> AI preparation, role-aware</td><td><span class="ok">The college owns it.</span> Marginal cost = API calls, not per-seat licences</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 10 COMPETITORS — QUADRANT ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Competitor analysis &middot; 2 of 2</div>
+    <h1>The gap, <b>plotted</b></h1>
+    <p class="sub">Two axes, because the market genuinely splits along them: tools that run the <i>institution's</i> placement operations, and tools that prepare the <i>individual student</i>. Everything on the market sits on one axis or the other.</p>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="split">
+        <svg viewBox="0 0 560 300" role="img" aria-label="Positioning quadrant: Superset, HirePro and Unstop score high on institutional operations but low on student preparation; Jobscan, Final Round AI and Google Warmup are the reverse. Ascend is alone in the top-right, high on both.">
+          <!-- quadrant wash -->
+          <rect x="290" y="20" width="240" height="120" fill="var(--violet-w)" opacity=".55" />
+          <!-- axes -->
+          <line class="axis" x1="40" y1="260" x2="540" y2="260" />
+          <line class="axis" x1="40" y1="20" x2="40" y2="260" />
+          <line class="lnd" x1="290" y1="20" x2="290" y2="260" />
+          <line class="lnd" x1="40" y1="140" x2="540" y2="140" />
+
+          <text class="tm" x="290" y="285" text-anchor="middle" fill="var(--muted)">RUNS THE INSTITUTION'S PLACEMENT OPERATIONS →</text>
+          <text class="tm" x="-150" y="14" transform="rotate(-90)" text-anchor="middle" fill="var(--muted)">PREPARES THE STUDENT →</text>
+
+          <!-- low-ops / high-prep -->
+          <circle cx="105" cy="55" r="6" fill="var(--amber)" />
+          <text class="ts" x="117" y="52">Final Round AI</text>
+          <text class="tm" x="117" y="64" fill="var(--muted)">$99–299/mo</text>
+
+          <circle cx="150" cy="100" r="6" fill="var(--amber)" />
+          <text class="ts" x="162" y="97">Jobscan · Resume Worded</text>
+          <text class="tm" x="162" y="109" fill="var(--muted)">per student, per month</text>
+
+          <circle cx="90" cy="120" r="6" fill="var(--rule-2)" />
+          <text class="ts" x="102" y="117">Google Warmup</text>
+          <text class="tm" x="102" y="129" fill="var(--muted)">retired Apr 2026</text>
+
+          <!-- high-ops / low-prep -->
+          <circle cx="470" cy="215" r="6" fill="var(--teal)" />
+          <text class="ts" x="404" y="234" text-anchor="middle">Superset</text>
+
+          <circle cx="400" cy="235" r="6" fill="var(--teal)" />
+          <text class="ts" x="336" y="252" text-anchor="middle">HirePro</text>
+
+          <circle cx="330" cy="200" r="6" fill="var(--teal)" />
+          <text class="ts" x="300" y="192" text-anchor="end">Unstop</text>
+
+          <!-- Ascend -->
+          <circle cx="455" cy="62" r="13" fill="var(--violet)" opacity=".2" />
+          <circle cx="455" cy="62" r="7.5" fill="var(--violet)" />
+          <text class="tt" x="455" y="42" text-anchor="middle" fill="var(--violet-d)">ASCEND</text>
+          <text class="tm" x="455" y="88" text-anchor="middle">owned by the college</text>
+
+          <text class="tm" x="530" y="34" text-anchor="end" fill="var(--violet-d)">THE EMPTY QUADRANT</text>
+        </svg>
+
+        <div class="col">
+          <div class="card fill-v t-violet">
+            <h3>The novelty argument, in one line</h3>
+            <p>Recruiter platforms manage the <i>drive</i>. Prep tools charge <i>each student</i> and know nothing about the college.
+            <b>No existing system gives one institution both.</b></p>
+          </div>
+          <div class="card t-amber">
+            <h3>The synthesis</h3>
+            <p>Operations <b>and</b> AI preparation, in one role-aware system, on infrastructure the institution owns.</p>
+          </div>
+          <div class="card t-teal">
+            <h3>The inversion</h3>
+            <p>The <b>college</b> owns the tool — instead of recruiters owning it, or each student renting it monthly.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 11 DIVIDER: SOLUTION ═══════════ -->
+  <section class="slide divider" style="background:linear-gradient(140deg,#2F7D75,#43307A)">
+    <div style="margin-top:auto;margin-bottom:auto">
+      <div class="eyebrow">Part two</div>
+      <h1>The <b>Solution</b></h1>
+      <p class="sub" style="max-width:58ch">
+        One role-aware platform that unifies the institutional record with the pedagogical instruments —
+        the AI tools live behind the same login students already use for notices and NOCs.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 12 PROBLEMS SOLVED ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">What problems Ascend solves</div>
+    <h1>Every problem, <b>answered</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="tw">
+        <table>
+          <thead><tr><th style="width:9%">Who</th><th style="width:27%">The problem</th><th style="width:34%">Ascend's answer</th><th>Outcome</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--violet)">TPO</td><td>Notices lost in WhatsApp relays</td><td><b>Targeted notices</b> by branch &amp; batch — in-app + e-mail</td><td>No missed drives, no broken telephone</td></tr>
+            <tr><td style="color:var(--violet)">TPO</td><td>500+ resumes screened by hand</td><td><b>AI Resume Analyzer</b> — ATS score with evidence</td><td>Students repair resumes <b>before</b> applying</td></tr>
+            <tr><td style="color:var(--violet)">TPO</td><td>Excel-only records, no analytics</td><td>Live dashboards + <b>four-sheet Excel export</b></td><td>Trends per question, batch and drive</td></tr>
+            <tr><td style="color:var(--amber)">Student</td><td>No interview rehearsal at scale</td><td><b>AI voice mock interview</b> — adaptive, resume-conditioned</td><td>Unlimited practice, on demand</td></tr>
+            <tr><td style="color:var(--amber)">Student</td><td>Paper NOC, 5–7 day approvals</td><td><b>Digital NOC</b> with live status and audit trail</td><td>Tracked end-to-end; e-mail at each step</td></tr>
+            <tr><td style="color:var(--teal)">Faculty</td><td>Manual grading &amp; feedback bottleneck</td><td>Auto-graded tests + <b>AI handwriting grading</b></td><td>Same-day results, personal feedback</td></tr>
+            <tr><td style="color:var(--rose)">Admin</td><td>One shared login; paper blocking records</td><td><b>4 server-enforced roles</b> (JWT + middleware)</td><td>Each user sees exactly their scope</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="quote">
+        Remove the Resume Analyzer and the Mock Interview and what remains is an unremarkable admin database.
+        <b>The AI is the reason this system is worth building.</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 13 ARCHITECTURE ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Engineering</div>
+    <h1>Three-tier architecture, <b>server-side AI</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="split">
+        <svg viewBox="0 0 600 310" role="img" aria-label="Three tiers: a React browser talks over HTTPS and one WebSocket to Express, which alone reaches Postgres, storage and Gemini. No key crosses into the browser.">
+          <rect x="0" y="4" width="600" height="62" fill="var(--violet-w)" opacity=".5" />
+          <text class="tm" x="6" y="18" fill="var(--muted)">PRESENTATION TIER</text>
+          <rect class="bv" x="150" y="24" width="300" height="38" />
+          <text class="tt" x="300" y="40" text-anchor="middle">React 19 + Vite SPA</text>
+          <text class="ts" x="300" y="54" text-anchor="middle">Student · Faculty · HOD · Admin — four role-scoped portals</text>
+
+          <path class="lnv" d="M250 62 V108" /><path class="lnv" d="M246 102 l4 6 4 -6" />
+          <text class="tm" x="256" y="82">HTTPS / REST</text>
+          <path class="lnv" d="M410 62 V108" /><path class="lnv" d="M406 102 l4 6 4 -6" />
+          <text class="tm" x="416" y="82">1 × WEBSOCKET</text>
+
+          <path class="lnd" d="M0 100 H600" stroke="var(--rose)" />
+          <text class="tm" x="596" y="96" text-anchor="end" fill="var(--rose)">NO API KEY EVER CROSSES THIS LINE</text>
+
+          <rect x="0" y="108" width="600" height="84" fill="var(--violet-w)" opacity=".5" />
+          <text class="tm" x="6" y="122" fill="var(--muted)">APPLICATION TIER</text>
+          <rect class="bv" x="120" y="128" width="360" height="56" />
+          <text class="tt" x="300" y="148" text-anchor="middle">Node.js + Express 5</text>
+          <text class="ts" x="300" y="163" text-anchor="middle">JWT auth · role guards · REST routers · cron jobs</text>
+          <text class="ts" x="300" y="176" text-anchor="middle">relay (not passthrough) to the Gemini Live socket</text>
+
+          <path class="ln" d="M180 184 V232" /><path class="ln" d="M176 226 l4 6 4 -6" />
+          <path class="ln" d="M300 184 V232" /><path class="ln" d="M296 226 l4 6 4 -6" />
+          <path class="ln" d="M420 184 V232" /><path class="ln" d="M416 226 l4 6 4 -6" />
+
+          <rect x="0" y="232" width="600" height="76" fill="var(--violet-w)" opacity=".5" />
+          <text class="tm" x="6" y="246" fill="var(--muted)">DATA &amp; MODEL TIER</text>
+
+          <rect class="bt" x="118" y="252" width="124" height="46" />
+          <text class="tt" x="180" y="270" text-anchor="middle">PostgreSQL</text>
+          <text class="ts" x="180" y="284" text-anchor="middle">Supabase · Prisma 6</text>
+
+          <rect class="bt" x="248" y="252" width="104" height="46" />
+          <text class="tt" x="300" y="270" text-anchor="middle">Object Storage</text>
+          <text class="ts" x="300" y="284" text-anchor="middle">every upload</text>
+
+          <rect class="ba" x="358" y="252" width="124" height="46" />
+          <text class="tt" x="420" y="270" text-anchor="middle" fill="var(--amber)">Google Gemini</text>
+          <text class="ts" x="420" y="284" text-anchor="middle">text · vision · live audio</text>
+        </svg>
+
+        <div class="col">
+          <div class="card t-violet"><h3>Presentation</h3><p>React 19 + Vite. Four role-scoped portals share one design system. HTTPS plus exactly one WebSocket.</p></div>
+          <div class="card t-violet"><h3>Application</h3><p>Express 5 — REST, JWT auth, role guards, and a <b>relay</b> to the Gemini Live socket. The server mediates every model call.</p></div>
+          <div class="card t-teal"><h3>Data</h3><p>Supabase PostgreSQL via Prisma; object storage for uploads — files never touch local disk.</p></div>
+          <div class="card fill-v t-rose"><h3>Security posture</h3><p><b>No model runs in the browser. No API key ever reaches it.</b> The browser holds only a JWT.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 14 TECH STACK ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Engineering</div>
+    <h1>Stack &amp; <b>justification</b></h1>
+    <p class="sub">Every choice below was made for a reason that can be defended — not because it was fashionable.</p>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="g2">
+        <div class="tw">
+          <table>
+            <thead><tr><th style="width:26%">Layer</th><th>Choice &amp; why</th></tr></thead>
+            <tbody>
+              <tr><td>Client</td><td><b>React 19 + Vite</b> · TanStack Query · Tailwind + shadcn/ui</td></tr>
+              <tr><td>Server</td><td><b>Node.js + Express 5</b> — one language across the stack, native async errors</td></tr>
+              <tr><td>Database</td><td><b>PostgreSQL</b> (Supabase) via <b>Prisma 6</b> — the integrity the domain requires</td></tr>
+              <tr><td>Storage</td><td>Supabase Object Storage — uploads never touch local disk</td></tr>
+              <tr><td>Auth</td><td>JWT (24 h) + bcrypt (cost 10) + e-mail OTP</td></tr>
+              <tr><td>Jobs / Export</td><td>node-cron reminders · ExcelJS four-sheet export · PDFKit</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tw">
+          <table>
+            <thead><tr><th style="width:44%">AI capability</th><th>Model tier</th></tr></thead>
+            <tbody>
+              <tr><td>Voice interview</td><td>Gemini <b>Live</b> — speech to speech, server VAD</td></tr>
+              <tr><td>Interview evaluation</td><td>Gemini Flash — structured JSON report</td></tr>
+              <tr><td>Resume analysis</td><td>Gemini Flash — schema-constrained</td></tr>
+              <tr><td>Handwriting grading</td><td>Gemini <b>Pro</b> vision — OCR + rubric, one pass</td></tr>
+              <tr><td>Marksheet / paper OCR</td><td>Gemini <b>Pro</b> vision — Flash drops table rows</td></tr>
+              <tr><td>Resilience</td><td>Ordered model fallback within each tier</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="quote">
+        One provider, one key, three modalities. <b>Consolidating on Gemini removed an entire class of failure</b> —
+        four vendors had meant four outage surfaces, four billing accounts and four SDKs to keep current.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 15 DATABASE ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Engineering</div>
+    <h1>16 entities — and a <b>mid-project migration</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="split-r">
+        <svg viewBox="0 0 340 262" role="img" aria-label="A test owns its questions and attempts; a student owns attempts, submissions, profile and NOC. A unique constraint on test and student prevents duplicate attempts.">
+          <rect class="bv" x="106" y="1" width="128" height="34" />
+          <text class="tt" x="170" y="22" text-anchor="middle">AptitudeTest</text>
+          <path class="ln" d="M140 35 V62 H70 V78" /><path class="ln" d="M66 72 l4 6 4 -6" />
+          <path class="ln" d="M200 35 V62 H272 V78" /><path class="ln" d="M268 72 l4 6 4 -6" />
+
+          <rect class="b" x="12" y="79" width="116" height="34" />
+          <text class="tt" x="70" y="100" text-anchor="middle">TestQuestion</text>
+
+          <rect class="ba" x="214" y="79" width="116" height="34" />
+          <text class="tt" x="272" y="100" text-anchor="middle">TestAttempt</text>
+          <text class="tm" x="272" y="127" text-anchor="middle" fill="var(--amber)">UNIQUE (testId, studentId)</text>
+
+          <rect class="bv" x="106" y="152" width="128" height="34" />
+          <text class="tt" x="170" y="173" text-anchor="middle">Student</text>
+          <path class="ln" d="M234 169 H292 V113" /><path class="ln" d="M288 119 l4 -6 4 6" />
+
+          <path class="ln" d="M130 186 V208 H44 V224" /><path class="ln" d="M40 218 l4 6 4 -6" />
+          <path class="ln" d="M170 186 V224" /><path class="ln" d="M166 218 l4 6 4 -6" />
+          <path class="ln" d="M210 186 V208 H296 V224" /><path class="ln" d="M292 218 l4 6 4 -6" />
+
+          <rect class="bt" x="1" y="225" width="86" height="32" />
+          <text class="tt" x="44" y="245" text-anchor="middle" font-size="9.5">Submission</text>
+          <rect class="bt" x="127" y="225" width="86" height="32" />
+          <text class="tt" x="170" y="245" text-anchor="middle" font-size="9.5">Profile</text>
+          <rect class="bt" x="253" y="225" width="86" height="32" />
+          <text class="tt" x="296" y="245" text-anchor="middle" font-size="9.5">NOC</text>
+        </svg>
+
+        <div class="col">
+          <div class="card t-rose">
+            <h3><span class="num r">1</span>Why we left MongoDB</h3>
+            <p>Deleting a test <b>orphaned its questions and attempts</b>, corrupting analytics. The store refused to enforce invariants the domain genuinely has. <b>The domain is relational.</b></p>
+          </div>
+          <div class="card fill-a t-amber">
+            <h3><span class="num a">2</span>What the engine now guarantees</h3>
+            <p><b>UNIQUE (testId, studentId)</b> makes a duplicate attempt <b>impossible</b> — not merely guarded against in application code. Soft deletion preserves every student's evidentiary record.</p>
+          </div>
+          <div class="card t-teal">
+            <h3><span class="num t">3</span>Honest qualification</h3>
+            <p>Cross-model references are still plain strings — no declared foreign keys yet. Declaring true FKs is named immediate future work, not hidden.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 16 DEPLOYMENT ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Engineering</div>
+    <h1>Shipped to <b>production</b> <span class="lite">— not a localhost demo</span></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 190" role="img" aria-label="Browser to Vercel to Render, which reaches Supabase Postgres, Supabase storage and Gemini. A GitHub Actions job pings the backend every ten minutes to keep the free tier awake.">
+        <rect class="b" x="1" y="58" width="122" height="54" />
+        <text class="tt" x="62" y="79" text-anchor="middle">Browser</text>
+        <text class="ts" x="62" y="93" text-anchor="middle">student / TPO</text>
+        <path class="lnv" d="M123 86 H179" /><path class="lnv" d="M173 82 l6 4 -6 4" />
+
+        <rect class="bv" x="180" y="50" width="152" height="70" />
+        <text class="tt" x="256" y="72" text-anchor="middle">Vercel</text>
+        <text class="ts" x="256" y="87" text-anchor="middle">React SPA (static, CDN)</text>
+        <text class="tm" x="256" y="103" text-anchor="middle">VITE_API_URL</text>
+        <path class="lnv" d="M332 86 H388" /><path class="lnv" d="M382 82 l6 4 -6 4" />
+        <text class="tm" x="360" y="76" text-anchor="middle" fill="var(--muted)">REST+WS</text>
+
+        <rect class="bv" x="389" y="42" width="166" height="86" />
+        <text class="tt" x="472" y="66" text-anchor="middle">Render</text>
+        <text class="ts" x="472" y="81" text-anchor="middle">Express 5 + WebSocket</text>
+        <text class="ts" x="472" y="95" text-anchor="middle">node-cron jobs</text>
+        <text class="tm" x="472" y="113" text-anchor="middle" fill="var(--rose)">HOLDS EVERY SECRET</text>
+
+        <path class="ln" d="M555 60 H638" /><path class="ln" d="M632 56 l6 4 -6 4" />
+        <path class="ln" d="M555 86 H638" /><path class="ln" d="M632 82 l6 4 -6 4" />
+        <path class="ln" d="M555 112 H638" /><path class="ln" d="M632 108 l6 4 -6 4" />
+
+        <rect class="bt" x="639" y="42" width="180" height="36" />
+        <text class="tt" x="729" y="58" text-anchor="middle">Supabase Postgres</text>
+        <text class="ts" x="729" y="70" text-anchor="middle">Prisma · pooled</text>
+        <rect class="bt" x="639" y="82" width="180" height="30" />
+        <text class="tt" x="729" y="101" text-anchor="middle">Supabase Storage</text>
+        <rect class="ba" x="639" y="116" width="180" height="30" />
+        <text class="tt" x="729" y="135" text-anchor="middle" fill="var(--amber)">Gemini API</text>
+
+        <path class="lnd" d="M472 128 V166 H120 V112" stroke="var(--teal)" />
+        <path class="ln" d="M116 118 l4 -6 4 6" stroke="var(--teal)" />
+        <rect class="bt" x="192" y="152" width="228" height="28" />
+        <text class="ts" x="306" y="170" text-anchor="middle" fill="var(--teal)">GitHub Actions — 10-minute keep-alive ping</text>
+      </svg>
+
+      <div class="g3">
+        <div class="card t-violet"><h3>Frontend — Vercel</h3><p>Static build on a global CDN. The API origin is injected at build time; not one URL is hard-coded.</p></div>
+        <div class="card t-rose"><h3>Backend — Render</h3><p>Express + WebSocket + cron. Every secret lives here as an environment variable — none are committed to git.</p></div>
+        <div class="card fill-t t-teal"><h3>Free-tier honesty</h3><p>Render sleeps when idle; Supabase pauses after a week. A scheduled ping keeps both warm — <b>a real constraint, engineered around</b>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 17 DIVIDER: AI ═══════════ -->
+  <section class="slide divider" style="background:linear-gradient(140deg,#43307A,#D9922B)">
+    <div style="margin-top:auto;margin-bottom:auto">
+      <div class="eyebrow">Part three</div>
+      <h1>The <b>AI Layer</b></h1>
+      <p class="sub" style="max-width:56ch">
+        Four capabilities, one provider, one key. Resume analysis · realtime voice interview ·
+        vision-graded handwriting · AI-generated aptitude tests.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 18 MODEL ROUTING ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">The AI layer</div>
+    <h1>One key, <b>three modalities</b>, a fallback chain</h1>
+    <div class="hr"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 170" role="img" aria-label="Features route into a text tier, a parsing vision tier, or the live audio tier, each with ordered model fallbacks">
+        <rect class="b" x="1" y="12" width="146" height="25" /><text class="ts" x="74" y="28" text-anchor="middle">Resume analysis</text>
+        <rect class="b" x="1" y="41" width="146" height="25" /><text class="ts" x="74" y="57" text-anchor="middle">Test generation</text>
+        <rect class="b" x="1" y="70" width="146" height="25" /><text class="ts" x="74" y="86" text-anchor="middle">Handwriting grading</text>
+        <rect class="b" x="1" y="99" width="146" height="25" /><text class="ts" x="74" y="115" text-anchor="middle">Marksheet OCR</text>
+        <rect class="b" x="1" y="128" width="146" height="25" /><text class="ts" x="74" y="144" text-anchor="middle">Voice interview</text>
+
+        <path class="ln" d="M147 24 H232 V42" /><path class="ln" d="M147 53 H232" />
+        <path class="ln" d="M147 82 H206 V92" /><path class="ln" d="M147 111 H206 V92" /><path class="ln" d="M206 92 H232" />
+        <path class="ln" d="M147 140 H232" />
+
+        <rect class="bv" x="233" y="32" width="176" height="32" />
+        <text class="tt" x="321" y="46" text-anchor="middle">Text + JSON tier</text>
+        <text class="tm" x="321" y="58" text-anchor="middle">SCHEMA-CONSTRAINED</text>
+
+        <rect class="ba" x="233" y="76" width="176" height="32" />
+        <text class="tt" x="321" y="90" text-anchor="middle">Parsing / vision tier</text>
+        <text class="tm" x="321" y="102" text-anchor="middle" fill="var(--amber)">PRO — READS DOCUMENTS</text>
+
+        <rect class="bt" x="233" y="124" width="176" height="32" />
+        <text class="tt" x="321" y="138" text-anchor="middle">Live audio tier</text>
+        <text class="tm" x="321" y="150" text-anchor="middle" fill="var(--teal)">SPEECH IN / SPEECH OUT</text>
+
+        <path class="lnv" d="M409 48 H464" /><path class="lnv" d="M458 44 l6 4 -6 4" />
+        <path class="lnv" d="M409 92 H464" /><path class="lnv" d="M458 88 l6 4 -6 4" />
+        <path class="lnv" d="M409 140 H464" /><path class="lnv" d="M458 136 l6 4 -6 4" />
+
+        <text class="tm" x="676" y="16" text-anchor="middle" fill="var(--muted)">ORDERED FALLBACK — A RETIRED PREVIEW MODEL CANNOT TAKE THE FEATURE DOWN</text>
+
+        <rect class="b" x="465" y="32" width="132" height="32" /><text class="tt" x="531" y="52" text-anchor="middle" font-size="9.5">gemini-3.5-flash</text>
+        <path class="lnd" d="M597 48 H622" />
+        <rect class="b" x="623" y="32" width="126" height="32" opacity=".7" /><text class="ts" x="686" y="52" text-anchor="middle">gemini-2.5-flash</text>
+
+        <rect class="b" x="465" y="76" width="132" height="32" /><text class="tt" x="531" y="96" text-anchor="middle" font-size="9.5">gemini-3.1-pro</text>
+        <path class="lnd" d="M597 92 H622" />
+        <rect class="b" x="623" y="76" width="126" height="32" opacity=".7" /><text class="ts" x="686" y="96" text-anchor="middle">gemini-2.5-pro</text>
+
+        <rect class="b" x="465" y="124" width="132" height="32" /><text class="tt" x="531" y="139" text-anchor="middle" font-size="9">3.1-flash-live</text>
+        <text class="tm" x="531" y="151" text-anchor="middle">VOICE: CHARON</text>
+        <path class="lnd" d="M597 140 H622" />
+        <rect class="b" x="623" y="124" width="126" height="32" opacity=".7" /><text class="ts" x="686" y="144" text-anchor="middle">next live model</text>
+      </svg>
+
+      <div class="g3">
+        <div class="card fill-v t-violet"><h3>Schema-constrained, not prompt-and-pray</h3><p>Grading and analysis calls declare a strict response schema. A grade can never come back with a missing score or a half-written breakdown.</p></div>
+        <div class="card t-amber"><h3>The right model for the job</h3><p>Flash reads text fast. Reading a handwritten script or a grade card is a different problem — those route to <b>Pro</b>, because Flash drops table rows.</p></div>
+        <div class="card t-teal"><h3>Resilience by list</h3><p>Each tier holds an ordered model list. Google retiring a preview model <b>degrades</b> the tier; it does not break the page.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 19 RESUME ANALYZER ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">AI module 1 of 4</div>
+    <h1>AI Resume Analyzer — <b>how it works</b></h1>
+    <div class="hr" style="background:linear-gradient(90deg,var(--amber),var(--rule) 42%,transparent)"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 100" role="img" aria-label="Five-step resume pipeline: upload, extract, AI analysis, explainable result, persist">
+        <rect class="ba" x="1" y="20" width="152" height="56" />
+        <text class="tm" x="12" y="37" fill="var(--amber)">01</text><text class="tt" x="12" y="54">Upload</text><text class="ts" x="12" y="68">PDF/DOCX + job desc</text>
+        <path class="lnv" d="M153 48 H181" /><path class="lnv" d="M175 44 l6 4 -6 4" />
+        <rect class="b" x="182" y="20" width="152" height="56" />
+        <text class="tm" x="193" y="37">02</text><text class="tt" x="193" y="54">Extract text</text><text class="ts" x="193" y="68">pdf-parse · mammoth</text>
+        <path class="lnv" d="M334 48 H362" /><path class="lnv" d="M356 44 l6 4 -6 4" />
+        <rect class="bv" x="363" y="20" width="152" height="56" />
+        <text class="tm" x="374" y="37">03</text><text class="tt" x="374" y="54">AI analysis</text><text class="ts" x="374" y="68">Gemini · JSON schema</text>
+        <path class="lnv" d="M515 48 H543" /><path class="lnv" d="M537 44 l6 4 -6 4" />
+        <rect class="b" x="544" y="20" width="162" height="56" />
+        <text class="tm" x="555" y="37">04</text><text class="tt" x="555" y="54">Explainable result</text><text class="ts" x="555" y="68">score + evidence + fixes</text>
+        <path class="lnv" d="M706 48 H734" /><path class="lnv" d="M728 44 l6 4 -6 4" />
+        <rect class="b" x="735" y="20" width="152" height="56" />
+        <text class="tm" x="746" y="37">05</text><text class="tt" x="746" y="54">Persist</text><text class="ts" x="746" y="68">re-openable history</text>
+        <text class="tm" x="12" y="12" fill="var(--muted)">PROCESSED IN MEMORY — NEVER WRITTEN TO DISK</text>
+        <text class="tm" x="444" y="94" text-anchor="middle" fill="var(--muted)">A MODEL OUTAGE DEGRADES THE RESULT — IT NEVER BREAKS THE PAGE</text>
+      </svg>
+
+      <div class="split">
+        <div>
+          <div class="chip" style="border-color:var(--violet);color:var(--violet);display:inline-block;margin-bottom:7px">THE SIX-FACTOR WEIGHTED ATS SCORE</div>
+          <svg viewBox="0 0 480 126" role="img" aria-label="Six weights: keyword match 0.25, semantic relevance 0.20, skill alignment 0.20, experience fit 0.15, format 0.10, industry alignment 0.10">
+            <text class="ts" x="0" y="13">K — keyword match</text>
+            <rect class="barw" x="176" y="3" width="270" height="11" /><rect class="barv" x="176" y="3" width="169" height="11" />
+            <text class="tm" x="478" y="13" text-anchor="end">0.25</text>
+
+            <text class="ts" x="0" y="34">M — semantic (TF-IDF)</text>
+            <rect class="barw" x="176" y="24" width="270" height="11" /><rect class="barv" x="176" y="24" width="135" height="11" />
+            <text class="tm" x="478" y="34" text-anchor="end">0.20</text>
+
+            <text class="ts" x="0" y="55">K′ — skill alignment</text>
+            <rect class="barw" x="176" y="45" width="270" height="11" /><rect class="barv" x="176" y="45" width="135" height="11" />
+            <text class="tm" x="478" y="55" text-anchor="end">0.20</text>
+
+            <text class="ts" x="0" y="76">E — experience fit</text>
+            <rect class="barw" x="176" y="66" width="270" height="11" /><rect class="bara" x="176" y="66" width="101" height="11" />
+            <text class="tm" x="478" y="76" text-anchor="end">0.15</text>
+
+            <text class="ts" x="0" y="97">F — format / parseability</text>
+            <rect class="barw" x="176" y="87" width="270" height="11" /><rect class="bara" x="176" y="87" width="68" height="11" />
+            <text class="tm" x="478" y="97" text-anchor="end">0.10</text>
+
+            <text class="ts" x="0" y="118">I — industry alignment</text>
+            <rect class="barw" x="176" y="108" width="270" height="11" /><rect class="bara" x="176" y="108" width="68" height="11" />
+            <text class="tm" x="478" y="118" text-anchor="end">0.10</text>
+          </svg>
+        </div>
+        <div class="col">
+          <div class="card fill-v t-violet">
+            <h3>NFR-4 — never a bare number</h3>
+            <p>A suggestion fires <b>because</b> a measured component fell below its cutoff. Every piece of advice is traceable to the evidence that produced it.</p>
+          </div>
+          <div class="card t-amber">
+            <h3>Clamped to [20, 100]</h3>
+            <p>An unrelated resume never reports a demoralising zero — a deliberate pedagogical choice, not a bug.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 20 MOCK INTERVIEW ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">AI module 2 of 4 &middot; the flagship</div>
+    <h1>AI Mock Interview — <b>a real conversation</b></h1>
+    <p class="sub">Spoken · adaptive · resume-conditioned · competency-decomposed — the four properties prior systems never satisfied together.</p>
+    <div class="hr" style="background:linear-gradient(90deg,var(--teal),var(--rule) 42%,transparent)"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 92" role="img" aria-label="Five-step interview pipeline from configure to report">
+        <rect class="bt" x="1" y="16" width="150" height="54" />
+        <text class="tm" x="12" y="32" fill="var(--teal)">01</text><text class="tt" x="12" y="49">Configure</text><text class="ts" x="12" y="63">role · type · difficulty</text>
+        <path class="lnv" d="M151 43 H179" /><path class="lnv" d="M173 39 l6 4 -6 4" />
+        <rect class="b" x="180" y="16" width="150" height="54" />
+        <text class="tm" x="191" y="32">02</text><text class="tt" x="191" y="49">Start session</text><text class="ts" x="191" y="63">resume → persona</text>
+        <path class="lnv" d="M330 43 H358" /><path class="lnv" d="M352 39 l6 4 -6 4" />
+        <rect class="bv" x="359" y="16" width="164" height="54" />
+        <text class="tm" x="370" y="32">03</text><text class="tt" x="370" y="49">Speak — live loop</text><text class="ts" x="370" y="63">PCM16 both ways · VAD</text>
+        <path class="lnv" d="M523 43 H551" /><path class="lnv" d="M545 39 l6 4 -6 4" />
+        <rect class="b" x="552" y="16" width="154" height="54" />
+        <text class="tm" x="563" y="32">04</text><text class="tt" x="563" y="49">End interview</text><text class="ts" x="563" y="63">transcript flattened</text>
+        <path class="lnv" d="M706 43 H734" /><path class="lnv" d="M728 39 l6 4 -6 4" />
+        <rect class="b" x="735" y="16" width="152" height="54" />
+        <text class="tm" x="746" y="32">05</text><text class="tt" x="746" y="49">Report</text><text class="ts" x="746" y="63">score · bands · analysis</text>
+        <text class="tm" x="444" y="88" text-anchor="middle" fill="var(--muted)">A SEPARATE EVALUATION CALL — THE INTERVIEWER DOES NOT GRADE</text>
+      </svg>
+
+      <div class="split">
+        <div>
+          <div class="chip" style="border-color:var(--rose);color:var(--rose);display:inline-block;margin-bottom:7px">RELAY, NOT PASSTHROUGH</div>
+          <svg viewBox="0 0 480 92" role="img" aria-label="Audio relays from browser through Express to Gemini Live; the API key never leaves the server">
+            <rect class="b" x="1" y="24" width="120" height="44" />
+            <text class="tt" x="61" y="42" text-anchor="middle">Browser</text><text class="ts" x="61" y="56" text-anchor="middle">mic · speaker</text>
+            <path class="lnv" d="M121 38 H178" /><path class="lnv" d="M172 34 l6 4 -6 4" />
+            <path class="lnv" d="M178 54 H121" /><path class="lnv" d="M127 50 l-6 4 6 4" />
+            <text class="tm" x="149" y="28" text-anchor="middle">JWT</text>
+            <rect class="bv" x="179" y="16" width="122" height="60" />
+            <text class="tt" x="240" y="40" text-anchor="middle">Express</text><text class="ts" x="240" y="54" text-anchor="middle">holds the key</text>
+            <text class="tm" x="240" y="68" text-anchor="middle">RELAY</text>
+            <path class="lnv" d="M301 38 H358" /><path class="lnv" d="M352 34 l6 4 -6 4" />
+            <path class="lnv" d="M358 54 H301" /><path class="lnv" d="M307 50 l-6 4 6 4" />
+            <rect class="ba" x="359" y="24" width="120" height="44" />
+            <text class="tt" x="419" y="42" text-anchor="middle" fill="var(--amber)">Gemini Live</text><text class="ts" x="419" y="56" text-anchor="middle">speech ⇄ speech</text>
+            <path class="lnd" d="M322 6 V86" stroke="var(--rose)" />
+            <text class="tm" x="327" y="12" fill="var(--rose)">KEY NEVER CROSSES</text>
+          </svg>
+        </div>
+        <div class="col">
+          <div class="card t-teal"><h3>Natural turn-taking</h3><p>Server-side voice activity detection decides when a turn ends — a conversation, not a walkie-talkie.</p></div>
+          <div class="card fill-v t-violet"><h3>During the interview: zero praise</h3><p>The persona may never say "good answer". <b>An interview that flatters teaches nothing</b> — evaluation happens on the record, afterwards.</p></div>
+          <div class="card t-amber"><h3>Resume conditioning</h3><p>Parsed projects and skills are injected into the persona. No question bank — every follow-up is generated live.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 21 HANDWRITING ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">AI module 3 of 4 &middot; verified on the live system</div>
+    <h1>Handwritten scripts, <b>graded by vision</b></h1>
+    <p class="sub">A student scans a handwritten answer sheet. One vision call performs the OCR and the grading together — there is no brittle text-extraction step to fail first.</p>
+    <div class="hr" style="background:linear-gradient(90deg,var(--amber),var(--rule) 42%,transparent)"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 100" role="img" aria-label="Handwriting pipeline: upload, store, one Gemini vision call, result with score and transcription, staff review">
+        <rect class="ba" x="1" y="18" width="136" height="56" />
+        <text class="tm" x="12" y="34" fill="var(--amber)">01</text><text class="tt" x="12" y="51">Upload</text><text class="ts" x="12" y="65">PDF or photo</text>
+        <path class="lnv" d="M137 46 H165" /><path class="lnv" d="M159 42 l6 4 -6 4" />
+        <rect class="b" x="166" y="18" width="136" height="56" />
+        <text class="tm" x="177" y="34">02</text><text class="tt" x="177" y="51">Store</text><text class="ts" x="177" y="65">object storage</text>
+        <path class="lnv" d="M302 46 H330" /><path class="lnv" d="M324 42 l6 4 -6 4" />
+        <rect class="bv" x="331" y="8" width="234" height="76" />
+        <text class="tm" x="342" y="24">03</text><text class="tt" x="342" y="41">One Gemini vision call</text>
+        <text class="ts" x="342" y="56">reads the handwriting</text><text class="ts" x="342" y="69">+ grades against the rubric</text>
+        <text class="tm" x="342" y="81">STRICT JSON SCHEMA</text>
+        <path class="lnv" d="M565 46 H593" /><path class="lnv" d="M587 42 l6 4 -6 4" />
+        <rect class="b" x="594" y="8" width="154" height="76" />
+        <text class="tm" x="605" y="24">04</text><text class="tt" x="605" y="41">Result</text>
+        <text class="ts" x="605" y="56">score · feedback</text><text class="ts" x="605" y="69">per-question breakdown</text><text class="ts" x="605" y="81">+ transcription</text>
+        <path class="lnv" d="M748 46 H776" /><path class="lnv" d="M770 42 l6 4 -6 4" />
+        <rect class="bt" x="777" y="18" width="110" height="56" />
+        <text class="tm" x="788" y="34" fill="var(--teal)">05</text><text class="tt" x="788" y="51">Staff review</text><text class="ts" x="788" y="65">can override</text>
+      </svg>
+
+      <div class="split">
+        <div class="card fill-a t-amber">
+          <h3>Live evidence — not a claim</h3>
+          <p>A handwritten answer sheet was submitted through the <b>deployed</b> system. Gemini transcribed the handwriting <b>verbatim</b> and returned a per-question breakdown with comments.</p>
+          <div class="chips" style="margin-top:9px">
+            <span class="chip" style="background:var(--card)"><b>20 / 20</b> awarded</span>
+            <span class="chip" style="background:var(--card)">4 questions</span>
+            <span class="chip" style="background:var(--card)">OCR matched the script</span>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card t-teal"><h3>The teacher stays in the loop</h3><p>Staff can override any AI score. The extracted text is shown, so a student can verify what the model believed they wrote — and contest it.</p></div>
+          <div class="card t-violet"><h3>Why one call, not two</h3><p>OCR-then-grade loses the layout: struck-through work, marginal notes, a diagram. Grading from the image preserves the evidence a human marker would use.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 22 TESTS + ANALYTICS ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">AI module 4 of 4</div>
+    <h1>Aptitude testing &amp; <b>analytics</b></h1>
+    <div class="hr" style="background:linear-gradient(90deg,var(--teal),var(--rule) 42%,transparent)"></div>
+    <div class="content">
+      <div class="split">
+        <div>
+          <div class="chip" style="border-color:var(--teal);color:var(--teal);display:inline-block;margin-bottom:7px">PER-QUESTION DIFFICULTY — MEASURED ON THE LIVE SYSTEM</div>
+          <svg viewBox="0 0 480 128" role="img" aria-label="Question success rates fall from 100 percent on Q1 to 20 percent on Q5, identifying the hardest question">
+            <text class="ts" x="0" y="13">Q1</text><rect class="barw" x="32" y="3" width="356" height="12" /><rect class="bart" x="32" y="3" width="356" height="12" /><text class="tm" x="478" y="13" text-anchor="end">100%</text>
+            <text class="ts" x="0" y="37">Q2</text><rect class="barw" x="32" y="27" width="356" height="12" /><rect class="bart" x="32" y="27" width="285" height="12" /><text class="tm" x="478" y="37" text-anchor="end">80%</text>
+            <text class="ts" x="0" y="61">Q3</text><rect class="barw" x="32" y="51" width="356" height="12" /><rect class="barv" x="32" y="51" width="214" height="12" /><text class="tm" x="478" y="61" text-anchor="end">60%</text>
+            <text class="ts" x="0" y="85">Q4</text><rect class="barw" x="32" y="75" width="356" height="12" /><rect class="bara" x="32" y="75" width="142" height="12" /><text class="tm" x="478" y="85" text-anchor="end">40%</text>
+            <text class="ts" x="0" y="109">Q5</text><rect class="barw" x="32" y="99" width="356" height="12" /><rect x="32" y="99" width="71" height="12" fill="var(--rose)" /><text class="tm" x="478" y="109" text-anchor="end" fill="var(--rose)">20%</text>
+            <text class="tm" x="32" y="125" fill="var(--muted)">THE HARDEST QUESTION IS NOW A FACT, NOT A HUNCH</text>
+          </svg>
+        </div>
+        <div class="col">
+          <div class="card t-violet"><h3>Three ways to author a test</h3><p>By hand, by <b>AI generation</b>, or by <b>extraction from a question-paper PDF</b>. Timed attempts, shuffling, negative marking, auto-grading.</p></div>
+          <div class="card fill-t t-teal"><h3>Proctoring flags — it does not accuse</h3><p>Tab switches and fullscreen exits are recorded as telemetry <b>for human review</b>. The system never punishes a student on a signal it cannot interpret.</p></div>
+          <div class="card t-rose"><h3>What staff see</h3><p>Score distribution, pass rate, a named leaderboard, per-question success rates — plus a four-sheet Excel export.</p></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="chip" style="border:0;padding-left:0;color:var(--muted)">STATE FLOWS — EVERY TRANSITION STAMPED WITH ACTOR AND TIME</div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-top:5px">
+          <div class="chain">
+            <span class="chip" style="border:0;padding-left:0;color:var(--violet)"><b>NOC</b></span>
+            <span class="pill on">applies</span><span class="arw">→</span><span class="pill">sent</span><span class="arw">→</span>
+            <span class="pill">read</span><span class="arw">→</span><span class="pill">reply soon</span><span class="arw">→</span><span class="pill on">completed</span>
+            <span class="chip" style="border:0">e-mail on every change · full audit trail</span>
+          </div>
+          <div class="chain">
+            <span class="chip" style="border:0;padding-left:0;color:var(--violet)"><b>TEST</b></span>
+            <span class="pill on">draft</span><span class="arw">→</span><span class="pill">published</span><span class="arw">→</span>
+            <span class="pill">ongoing</span><span class="arw">→</span><span class="pill">completed</span><span class="arw">→</span><span class="pill">archived</span>
+            <span class="chip" style="border:0">deletion is soft — attempts survive</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 23 WORKFLOWS ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Role-based workflows</div>
+    <h1>What each role <b>actually does</b></h1>
+    <p class="sub">One login, four scopes. The role is enforced on the server by middleware — never merely hidden in the UI.</p>
+    <div class="hr"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 250" role="img" aria-label="After login, a role check routes the user to the student, faculty, HOD or admin workflow, each with its own steps">
+        <rect class="b" x="380" y="1" width="140" height="30" />
+        <text class="tt" x="450" y="20" text-anchor="middle">Login (JWT)</text>
+        <path class="lnv" d="M450 31 V48" />
+        <polygon points="450,48 512,72 450,96 388,72" fill="var(--violet-w)" stroke="var(--violet)" />
+        <text class="tt" x="450" y="76" text-anchor="middle" font-size="9.5">Role guard</text>
+
+        <path class="ln" d="M388 72 H110 V112" /><path class="ln" d="M106 106 l4 6 4 -6" />
+        <path class="ln" d="M420 96 V112" /><path class="ln" d="M416 106 l4 6 4 -6" />
+        <path class="ln" d="M480 96 V112" /><path class="ln" d="M476 106 l4 6 4 -6" />
+        <path class="ln" d="M512 72 H790 V112" /><path class="ln" d="M786 106 l4 6 4 -6" />
+
+        <!-- student -->
+        <rect class="ba" x="20" y="113" width="180" height="26" /><text class="tt" x="110" y="130" text-anchor="middle">Student</text>
+        <rect class="b" x="20" y="145" width="180" height="22" /><text class="ts" x="110" y="160" text-anchor="middle">Resume Analyzer → ATS score</text>
+        <rect class="b" x="20" y="171" width="180" height="22" /><text class="ts" x="110" y="186" text-anchor="middle">Voice mock interview</text>
+        <rect class="b" x="20" y="197" width="180" height="22" /><text class="ts" x="110" y="212" text-anchor="middle">Take tests · submit work</text>
+        <rect class="b" x="20" y="223" width="180" height="22" /><text class="ts" x="110" y="238" text-anchor="middle">Apply for NOC · track it</text>
+
+        <!-- faculty -->
+        <rect class="bt" x="235" y="113" width="180" height="26" /><text class="tt" x="325" y="130" text-anchor="middle">Faculty</text>
+        <rect class="b" x="235" y="145" width="180" height="22" /><text class="ts" x="325" y="160" text-anchor="middle">Create tests &amp; assignments</text>
+        <rect class="b" x="235" y="171" width="180" height="22" /><text class="ts" x="325" y="186" text-anchor="middle">AI-grade handwritten work</text>
+        <rect class="b" x="235" y="197" width="180" height="22" /><text class="ts" x="325" y="212" text-anchor="middle">Override any AI score</text>
+        <rect class="b" x="235" y="223" width="180" height="22" /><text class="ts" x="325" y="238" text-anchor="middle">Notify their students</text>
+
+        <!-- hod -->
+        <rect class="bv" x="450" y="113" width="180" height="26" /><text class="tt" x="540" y="130" text-anchor="middle">HOD</text>
+        <rect class="b" x="450" y="145" width="180" height="22" /><text class="ts" x="540" y="160" text-anchor="middle">Manage dept. faculty</text>
+        <rect class="b" x="450" y="171" width="180" height="22" /><text class="ts" x="540" y="186" text-anchor="middle">Department analytics</text>
+        <rect class="b" x="450" y="197" width="180" height="22" /><text class="ts" x="540" y="212" text-anchor="middle">Block / unblock students</text>
+        <rect class="b" x="450" y="223" width="180" height="22" /><text class="ts" x="540" y="238" text-anchor="middle">Dept.-wide notices</text>
+
+        <!-- admin -->
+        <rect class="br" x="700" y="113" width="180" height="26" /><text class="tt" x="790" y="130" text-anchor="middle">Admin / TPO</text>
+        <rect class="b" x="700" y="145" width="180" height="22" /><text class="ts" x="790" y="160" text-anchor="middle">Targeted drive notices</text>
+        <rect class="b" x="700" y="171" width="180" height="22" /><text class="ts" x="790" y="186" text-anchor="middle">Approve NOCs · audit trail</text>
+        <rect class="b" x="700" y="197" width="180" height="22" /><text class="ts" x="790" y="212" text-anchor="middle">Test analytics · Excel export</text>
+        <rect class="b" x="700" y="223" width="180" height="22" /><text class="ts" x="790" y="238" text-anchor="middle">Manage all users &amp; roles</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══════════ 24 EVALUATION ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Evaluation</div>
+    <h1>Four methods, <b>one live deployment</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="split">
+        <div class="g2">
+          <div class="card t-violet"><h3><span class="num">1</span>Functional verification</h3><p>All 14 modules driven end-to-end with real credentials — <b>zero uncaught client exceptions</b>.</p></div>
+          <div class="card t-amber"><h3><span class="num a">2</span>Behavioural inspection</h3><p>AI outputs examined against their inputs: is the cited evidence actually consistent with the score?</p></div>
+          <div class="card t-teal"><h3><span class="num t">3</span>Usability study</h3><p>14 volunteer final-year students used both AI modules and were surveyed.</p></div>
+          <div class="card fill-a t-rose"><h3><span class="num r">4</span>Systematic code audit</h3><p><b>The audit — not the testing — found the defects</b> now named as immediate hardening work.</p></div>
+        </div>
+        <div>
+          <div class="chip" style="border-color:var(--violet);color:var(--violet);display:inline-block;margin-bottom:8px">LATENCY, MEASURED</div>
+          <svg viewBox="0 0 400 106" role="img" aria-label="Interview turn 0.9 seconds, under the 1.5 second conversational threshold. Resume analysis 4.2 seconds, which is not conversational.">
+            <text class="ts" x="0" y="15">Interview turn</text>
+            <rect class="barw" x="0" y="23" width="380" height="14" /><rect class="bart" x="0" y="23" width="72" height="14" />
+            <text class="tm" x="80" y="34" fill="var(--teal)">0.9 s — streamed</text>
+            <path class="lnd" d="M120 17 V43" stroke="var(--rose)" />
+            <text class="tm" x="124" y="15" fill="var(--rose)">1.5 s THRESHOLD</text>
+
+            <text class="ts" x="0" y="66">Resume analysis</text>
+            <rect class="barw" x="0" y="74" width="380" height="14" /><rect class="barw" x="0" y="74" width="168" height="14" fill="var(--rule-2)" />
+            <text class="tm" x="176" y="85" fill="var(--muted)">4.2 s — not conversational</text>
+            <text class="tm" x="0" y="103" fill="var(--muted)">ONLY ONE OPERATION HAS A CONVERSATIONAL THRESHOLD — AND IT MEETS IT</text>
+          </svg>
+        </div>
+      </div>
+      <div class="quote">
+        The interview is the only feature where latency is <i>felt as rudeness</i>.
+        <b>Four seconds is fine for a resume report and fatal in a conversation</b> — so only the interview streams.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 25 USABILITY ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Evaluation</div>
+    <h1>What fourteen students <b>told us</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="g5">
+        <div class="stat" style="border-top:3px solid var(--teal)"><div class="v teal">93%</div><div class="l">"It asked about <b>my own</b> projects and skills"</div></div>
+        <div class="stat" style="border-top:3px solid var(--teal)"><div class="v teal">86%</div><div class="l">"Felt like a conversation" &amp; "more prepared"</div></div>
+        <div class="stat" style="border-top:3px solid var(--violet)"><div class="v">79%</div><div class="l">Resume suggestions were <b>specific</b>, not generic</div></div>
+        <div class="stat" style="border-top:3px solid var(--violet)"><div class="v">71%</div><div class="l">"Told me something I did <b>not</b> already know"</div></div>
+        <div class="stat" style="border-top:3px solid var(--rose)"><div class="v rose">21%</div><div class="l">Knew beforehand an ATS would screen them <b>at all</b></div></div>
+      </div>
+
+      <div class="g2">
+        <div class="card t-teal">
+          <h3>Rehearsal cures rehearsal deficits</h3>
+          <p>Students reported their real problem is not <i>absent knowledge</i> but articulating knowledge under pressure, aloud, to a stranger — a register they had never once practised.</p>
+        </div>
+        <div class="card fill-a t-rose">
+          <h3>The honest caveat</h3>
+          <p><b>n = 14, self-selected, known to the author.</b> Descriptive only — no statistical inference is drawn. One complaint (an empty Score Breakdown panel) led straight to a real audit finding.</p>
+        </div>
+      </div>
+
+      <div class="quote">
+        The last figure is the one that matters. <b>Four in five students did not know the filter existed</b> —
+        they were being rejected by a machine they had never heard of.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 26 IMPACT / ROI ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">Impact</div>
+    <h1>Systematic <b>benefits</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <div class="g4">
+        <div class="card t-amber"><h3>For students</h3><p>24/7 resume feedback and interview rehearsal behind one login. Live NOC tracking — no more office visits for a status. Targeted notices, no missed drives.</p></div>
+        <div class="card t-violet"><h3>For TPOs</h3><p>Screening, grading and notification hours automated away. Analytics finally answer <i>"where do students fail?"</i> Every request tracked and auditable.</p></div>
+        <div class="card t-teal"><h3>For the college</h3><p>Owns its platform and its data. No per-student licences — the marginal cost is API usage. A model other MAKAUT colleges can adopt.</p></div>
+        <div class="card t-rose"><h3>Competitive edge</h3><p>Attracts better recruiters with a streamlined, transparent process — and positions NSEC as a tech-forward institution.</p></div>
+      </div>
+
+      <div class="card" style="border-top-color:var(--violet)">
+        <h3 style="margin-bottom:9px">Road ahead — ordered by benefit over cost</h3>
+        <div class="chain">
+          <span class="pill on">1 · close the three audit-found security defects</span>
+          <span class="pill">2 · port the six-factor scorer into Node</span>
+          <span class="pill">3 · declare true foreign keys in Prisma</span>
+          <span class="pill">4 · move interview state to Redis</span>
+          <span class="pill">5 · validate ATS scores against real hiring outcomes</span>
+        </div>
+      </div>
+
+      <div class="quote">
+        Technology should enhance human effort, not replace it.
+        <b>This is not just software — it is a strategic upgrade that makes placement transparent, efficient and student-centric.</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 27 SUMMARY ═══════════ -->
+  <section class="slide">
+    <div class="eyebrow">In summary</div>
+    <h1>The whole argument, <b>on one slide</b></h1>
+    <div class="hr"></div>
+    <div class="content">
+      <svg viewBox="0 0 900 92" role="img" aria-label="The argument: expert attention does not scale, so the market splits, leaving an empty quadrant, which Ascend fills, verified on a live deployment">
+        <rect class="b" x="1" y="18" width="164" height="56" />
+        <text class="tt" x="12" y="40">The premise</text><text class="ts" x="12" y="55">Expert attention</text><text class="ts" x="12" y="67">does not scale</text>
+        <path class="lnv" d="M165 46 H193" /><path class="lnv" d="M187 42 l6 4 -6 4" />
+        <rect class="b" x="194" y="18" width="164" height="56" />
+        <text class="tt" x="205" y="40">The market</text><text class="ts" x="205" y="55">Splits: ops tools vs</text><text class="ts" x="205" y="67">per-seat prep tools</text>
+        <path class="lnv" d="M358 46 H386" /><path class="lnv" d="M380 42 l6 4 -6 4" />
+        <rect class="ba" x="387" y="18" width="164" height="56" />
+        <text class="tt" x="398" y="40" fill="var(--amber)">The gap</text><text class="ts" x="398" y="55">Nobody gives one</text><text class="ts" x="398" y="67">institution both</text>
+        <path class="lnv" d="M551 46 H579" /><path class="lnv" d="M573 42 l6 4 -6 4" />
+        <rect class="bv" x="580" y="18" width="164" height="56" />
+        <text class="tt" x="591" y="40">Ascend</text><text class="ts" x="591" y="55">Operations + AI prep,</text><text class="ts" x="591" y="67">college-owned</text>
+        <path class="lnv" d="M744 46 H772" /><path class="lnv" d="M766 42 l6 4 -6 4" />
+        <rect class="bt" x="773" y="18" width="126" height="56" />
+        <text class="tt" x="784" y="40" fill="var(--teal)">Evidence</text><text class="ts" x="784" y="55">Deployed, live,</text><text class="ts" x="784" y="67">measured</text>
+      </svg>
+
+      <div class="g3">
+        <div class="card fill-v t-violet">
+          <h3>What is novel</h3>
+          <p>The <b>synthesis</b> — placement operations and AI preparation in one role-aware system. And the <b>inversion</b> — the institution owns the tool, rather than recruiters owning it or students renting it.</p>
+        </div>
+        <div class="card t-amber">
+          <h3>What is proven</h3>
+          <p>Deployed and publicly reachable. Handwriting graded <b>20/20</b> with verbatim OCR. Per-question difficulty measured. Interview turn <b>0.9 s</b>, under the conversational threshold.</p>
+        </div>
+        <div class="card t-rose">
+          <h3>What is not claimed</h3>
+          <p>n = 14 is descriptive, not inferential. No foreign keys yet. Three security defects found by audit and <b>named</b>, not buried. ATS scores are not yet validated against real hiring outcomes.</p>
+        </div>
+      </div>
+
+      <div class="quote">
+        Every number in this deck was measured on the running system.
+        <b>Where something is unproven, this deck says so.</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 28 THANK YOU ═══════════ -->
+  <section class="slide cover">
+    <div class="cover-l">
+      <div class="eyebrow">Viva Voce &middot; Question &amp; Answer</div>
+      <h1>Thank <b>you</b></h1>
+      <div class="rulebar"></div>
+      <p class="sub" style="max-width:46ch;font-size:14px">
+        Ascend is deployed, publicly reachable, and every figure presented here
+        was measured on the running system.
+      </p>
+      <div class="chips" style="margin-top:8px">
+        <span class="chip">github.com/lovieheartz/<b>Placement-Pulse</b></span>
+        <span class="chip">Full report &middot; <b>Ascend_Project_Report</b></span>
+      </div>
+    </div>
+    <div class="cover-r">
+      <div>
+        <div class="eyebrow">Candidate</div>
+        <div class="meta"><b>Md Rehan Farooque</b><br />Roll 10930622032 &middot; Regd 221090110043</div>
+      </div>
+      <div>
+        <div class="eyebrow">Supervision</div>
+        <div class="meta">Guide: <b>Prof. Saikat Bandopadhyay</b><br />HOD: <b>Dr. Anupam Ghosh</b></div>
+      </div>
+      <div class="meta" style="font-size:11.5px">
+        Dept. of AI &amp; Machine Learning<br />
+        Netaji Subhash Engineering College &middot; MAKAUT<br />July 2026
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <button id="prev" aria-label="Previous slide">&larr;</button>
+  <span id="count">1 / 28</span>
+  <button id="next" aria-label="Next slide">&rarr;</button>
+  <button id="print" aria-label="Save as PDF">PDF</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const countEl = document.getElementById('count');
+  const barEl = document.getElementById('bar');
+  let i = 0;
+
+  const sync = () => {
+    countEl.textContent = (i + 1) + ' / ' + slides.length;
+    barEl.style.width = ((i + 1) / slides.length * 100) + '%';
+  };
+  const go = (n) => {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    sync();
+  };
+
+  document.getElementById('next').onclick = () => go(i + 1);
+  document.getElementById('prev').onclick = () => go(i - 1);
+  document.getElementById('print').onclick = () => window.print();
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(i + 1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+    if (e.key === 'Home') { e.preventDefault(); go(0); }
+    if (e.key === 'End')  { e.preventDefault(); go(slides.length - 1); }
+  });
+
+  const io = new IntersectionObserver((es) => {
+    es.forEach((en) => { if (en.isIntersecting) { i = slides.indexOf(en.target); sync(); } });
+  }, { threshold: 0.55 });
+  slides.forEach((s) => io.observe(s));
+
+  sync();
+</script>
