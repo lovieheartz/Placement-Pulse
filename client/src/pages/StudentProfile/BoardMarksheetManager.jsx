@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { Sparkles, Upload, FileText, Loader2, Plus, X, Save, ScanLine, BookOpen } from 'lucide-react';
+import { Sparkles, Upload, FileText, Loader2, Plus, X, Save, ScanLine, BookOpen, AlertTriangle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +28,14 @@ const pct = (obj) => {
  *  - label: display label, e.g. "Class X (10th)"
  *  - profileData: fetched student profile (reads profileData[classType])
  */
-const BoardMarksheetManager = ({ classType, label, profileData }) => {
+const TYPE_LABEL = { classX: 'Class X (10th)', classXII: 'Class XII (12th)', semester: 'a semester grade card' };
+
+const BoardMarksheetManager = ({ classType, label, profileData, onSwitchTab }) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [review, setReview] = useState(null);
+  const [mismatch, setMismatch] = useState(null);   // { detected } when the doc isn't this type
 
   const token = sessionStorage.getItem('authToken');
   const authHeader = { headers: { Authorization: `Bearer ${token}` } };
@@ -49,6 +52,17 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
       return data.data;
     },
     onSuccess: (data) => {
+      // The AI classifies the document. Refuse to file a semester grade card (or the other
+      // board year) under this tab — that is exactly how the wrong data got saved before.
+      const detected = data.documentType;
+      if (detected && detected !== 'unknown' && detected !== classType) {
+        setMismatch({ detected });
+        setReview(null);
+        toast.error(`That looks like ${TYPE_LABEL[detected] || 'a different document'} — not ${label}.`);
+        return;
+      }
+
+      setMismatch(null);
       setReview({
         examName: data.examName ?? '',
         boardName: data.boardName ?? '',
@@ -59,11 +73,25 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
           name: s.name ?? '',
           marksScored: s.marksScored ?? '',
           totalMarks: s.totalMarks ?? '',
+          grade: s.grade ?? '',
         })),
       });
       toast.success('Marksheet extracted! Review and edit before saving.');
     },
     onError: (error) => toast.error(error.response?.data?.message || 'Failed to extract marksheet.'),
+  });
+
+  // Remove a wrongly-saved record.
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.put(`${API_BASE}/student-profile/profile`, { [classType]: null }, authHeader);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(`${label} record cleared.`);
+      queryClient.invalidateQueries(['studentProfile']);
+    },
+    onError: (error) => toast.error(error.response?.data?.message || 'Failed to clear record.'),
   });
 
   const saveMutation = useMutation({
@@ -108,7 +136,12 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
   const handleSave = () => {
     const subjects = review.subjects
       .filter((s) => s.name)
-      .map((s) => ({ name: s.name, marksScored: toNum(s.marksScored), totalMarks: toNum(s.totalMarks) }));
+      .map((s) => ({
+        name: s.name,
+        marksScored: toNum(s.marksScored),
+        totalMarks: toNum(s.totalMarks),
+        grade: s.grade || undefined,     // boards that print grades instead of marks
+      }));
     const computed = pct({ subjects });
     const payload = {
       [classType]: {
@@ -165,6 +198,37 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
         </div>
       </div>
 
+      {/* Wrong document type — refuse to save it under this tab */}
+      {mismatch && (
+        <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+              <AlertTriangle className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-foreground">This isn't a {label} marksheet</h4>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                The AI read this as <span className="font-medium text-foreground">{TYPE_LABEL[mismatch.detected] || mismatch.detected}</span>.
+                Saving it here would file the wrong data under {label}.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {mismatch.detected === 'semester' && onSwitchTab && (
+                  <Button type="button" variant="gradient" size="sm" onClick={() => { setMismatch(null); onSwitchTab('semesters'); }}>
+                    Go to Semesters →
+                  </Button>
+                )}
+                {(mismatch.detected === 'classX' || mismatch.detected === 'classXII') && onSwitchTab && (
+                  <Button type="button" variant="gradient" size="sm" onClick={() => { setMismatch(null); onSwitchTab(mismatch.detected); }}>
+                    Go to {TYPE_LABEL[mismatch.detected]} →
+                  </Button>
+                )}
+                <Button type="button" variant="ghost" size="sm" onClick={() => setMismatch(null)}>Dismiss</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Review */}
       {review && (
         <div className="mt-5 rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
@@ -187,8 +251,9 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="p-2 font-semibold">Subject</th>
-                    <th className="p-2 font-semibold w-28">Marks</th>
-                    <th className="p-2 font-semibold w-28">Out of</th>
+                    <th className="p-2 font-semibold w-24">Marks</th>
+                    <th className="p-2 font-semibold w-24">Out of</th>
+                    <th className="p-2 font-semibold w-20">Grade</th>
                     <th className="p-2"></th>
                   </tr>
                 </thead>
@@ -198,6 +263,7 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
                       <td className="p-1"><Input className="h-8" value={s.name} onChange={(e) => updateSubject(i, 'name', e.target.value)} /></td>
                       <td className="p-1"><Input className="h-8" type="number" value={s.marksScored} onChange={(e) => updateSubject(i, 'marksScored', e.target.value)} /></td>
                       <td className="p-1"><Input className="h-8" type="number" value={s.totalMarks} onChange={(e) => updateSubject(i, 'totalMarks', e.target.value)} /></td>
+                      <td className="p-1"><Input className="h-8" value={s.grade} placeholder="—" onChange={(e) => updateSubject(i, 'grade', e.target.value)} /></td>
                       <td className="p-1 text-center">
                         <button type="button" onClick={() => removeRow(i)} className="inline-flex size-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 transition-colors" title="Remove row"><X className="size-4" /></button>
                       </td>
@@ -223,7 +289,14 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
       {/* Saved subjects */}
       {saved?.subjects?.length > 0 && (
         <div className="mt-6">
-          <h4 className="mb-3 text-sm font-semibold text-foreground">Saved Subjects</h4>
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-foreground">Saved Subjects</h4>
+            <Button type="button" variant="ghost" size="sm" onClick={() => {
+              if (confirm(`Clear the saved ${label} record? This removes it from your profile.`)) clearMutation.mutate();
+            }} disabled={clearMutation.isPending} className="text-destructive hover:bg-destructive/10">
+              <Trash2 className="size-4" /> {clearMutation.isPending ? 'Clearing…' : 'Clear record'}
+            </Button>
+          </div>
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-sm">
               <thead>
@@ -231,6 +304,7 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
                   <th className="px-4 py-2 font-semibold">Subject</th>
                   <th className="px-4 py-2 font-semibold text-center">Marks</th>
                   <th className="px-4 py-2 font-semibold text-center">Out of</th>
+                  <th className="px-4 py-2 font-semibold text-center">Grade</th>
                   <th className="px-4 py-2 font-semibold text-center">%</th>
                 </tr>
               </thead>
@@ -238,8 +312,9 @@ const BoardMarksheetManager = ({ classType, label, profileData }) => {
                 {saved.subjects.map((s, i) => (
                   <tr key={i} className="border-b border-border/50 last:border-0 hover:bg-accent/30 transition-colors">
                     <td className="px-4 py-2.5 text-foreground">{s.name}</td>
-                    <td className="px-4 py-2.5 text-center text-muted-foreground">{s.marksScored}</td>
-                    <td className="px-4 py-2.5 text-center text-muted-foreground">{s.totalMarks}</td>
+                    <td className="px-4 py-2.5 text-center text-muted-foreground">{s.marksScored ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-center text-muted-foreground">{s.totalMarks ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-center text-muted-foreground">{s.grade || '—'}</td>
                     <td className="px-4 py-2.5 text-center font-medium text-foreground">
                       {s.totalMarks ? ((Number(s.marksScored) / Number(s.totalMarks)) * 100).toFixed(1) : '—'}
                     </td>

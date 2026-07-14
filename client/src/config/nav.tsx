@@ -23,6 +23,7 @@ import {
   Send,
   GraduationCap,
   Award,
+  ShieldAlert,
 } from "lucide-react";
 
 export type Role = "student" | "faculty" | "hod" | "admin";
@@ -163,6 +164,7 @@ export const NAV: Record<Role, NavGroup[]> = {
       items: [
         { id: "dashboard", title: "Dashboard", icon: LayoutDashboard, to: "/faculty-dashboard" },
         { id: "students", title: "Students", icon: Users, to: "/faculty/students" },
+        { id: "edit-requests", title: "Edit Requests", icon: ShieldAlert, to: "/faculty/edit-requests" },
       ],
     },
     {
@@ -201,6 +203,7 @@ export const NAV: Record<Role, NavGroup[]> = {
           children: [
             { id: "students-all", title: "All Students", icon: Users, to: "/hod/students" },
             { id: "students-blocked", title: "Blocked Students", icon: UserX, to: "/hod/blocked-students" },
+            { id: "hod-edit-requests", title: "Edit Requests", icon: ShieldAlert, to: "/hod/edit-requests" },
           ],
         },
       ],
@@ -257,6 +260,7 @@ export const NAV: Record<Role, NavGroup[]> = {
           children: [
             { id: "students-list", title: "Student List", icon: Users, to: "/admin/students" },
             { id: "students-blocked", title: "Blocked Students", icon: Lock, to: "/admin/students/blocked" },
+            { id: "students-edit-requests", title: "Edit Requests", icon: ShieldAlert, to: "/admin/edit-requests" },
           ],
         },
         {

@@ -12,6 +12,7 @@
 // =============================================
 
 const prisma = require('../lib/prisma');
+const { sendTestScoreEmail } = require('./mailService');
 
 // ---------------------------------------------
 // JSON-column normalizers
@@ -489,7 +490,42 @@ async function submitTest(attempt, submissionType = 'manual') {
     await updateBatchStats(updated.batchId);
   }
 
+  // Compute the rank now so the score email can include it. The controller may call
+  // calculateRank again afterwards — it's idempotent.
+  try {
+    const ranked = await calculateRank(updated);
+    updated = ranked.attempt;
+  } catch (err) {
+    console.error('Rank calculation failed:', err.message);
+  }
+
+  // Email the student their score. Fire-and-forget: a mail failure must never
+  // fail the submission or slow the response down.
+  sendScoreEmail(updated).catch((err) =>
+    console.error('Score email failed:', err.message)
+  );
+
   return updated;
+}
+
+// Look up the student + test, then send the score report email.
+async function sendScoreEmail(attempt) {
+  const [student, test] = await Promise.all([
+    prisma.student.findUnique({
+      where: { id: attempt.studentId },
+      select: { name: true, email: true }
+    }),
+    prisma.aptitudeTest.findUnique({
+      where: { id: attempt.testId },
+      select: { title: true, totalMarks: true, passPercentage: true }
+    })
+  ]);
+
+  if (!student?.email || !test) {
+    console.warn('Score email skipped: missing student email or test');
+    return;
+  }
+  await sendTestScoreEmail(student, test, attempt);
 }
 
 // TestAttempt.calculateRank

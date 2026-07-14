@@ -625,13 +625,7 @@ Provide comprehensive, personalized overall feedback in JSON format:
 
 Return ONLY valid JSON, no markdown or extra text.`;
 
-      const result = await geminiService.model.generateContent(prompt);
-      const response = await result.response;
-      let text = response.text().trim();
-
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-      return JSON.parse(text);
+      return await geminiService.generateJSON(prompt);
 
     } catch (error) {
       console.error('❌ Error generating overall feedback:', error);

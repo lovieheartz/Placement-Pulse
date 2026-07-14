@@ -1,39 +1,68 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const aiProvider = require('./aiProvider');
+const { Type } = aiProvider;
 
-class GeminiService {
-  constructor() {
-    const apiKey = process.env.GEMINI_API_KEY;
+const pct = { type: Type.INTEGER, description: '0-100' };
 
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-      console.warn('⚠️  Gemini API key not configured. Using fallback analysis.');
-      this.genAI = null;
-      return;
-    }
-
-    try {
-      this.genAI = new GoogleGenerativeAI(apiKey);
-      const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
-      this.model = this.genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.9,
-          topK: 40,
-          maxOutputTokens: 2048,
+const RESUME_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    atsScore: pct,
+    scoreBreakdown: {
+      type: Type.OBJECT,
+      properties: {
+        keywordMatching: pct,
+        skillAlignment: pct,
+        experienceRelevance: pct,
+        formatCompatibility: pct,
+        industryAlignment: pct,
+        semanticRelevance: pct,
+      },
+      required: [
+        'keywordMatching', 'skillAlignment', 'experienceRelevance',
+        'formatCompatibility', 'industryAlignment', 'semanticRelevance',
+      ],
+    },
+    detectedIndustry: { type: Type.STRING },
+    matchedKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    suggestions: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          suggestion: { type: Type.STRING },
+          priority: { type: Type.STRING, enum: ['high', 'medium', 'low'] },
+          impact: { type: Type.STRING },
         },
-      });
-      console.log(`✅ Gemini AI initialized successfully with model: ${modelName}`);
-    } catch (error) {
-      console.error('❌ Failed to initialize Gemini:', error.message);
-      this.genAI = null;
-    }
-  }
+        required: ['title', 'suggestion', 'priority', 'impact'],
+      },
+    },
+    skillGapAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        presentSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
+        missingSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+      },
+      required: ['presentSkills', 'missingSkills', 'recommendations'],
+    },
+  },
+  required: [
+    'atsScore', 'scoreBreakdown', 'detectedIndustry', 'matchedKeywords',
+    'missingKeywords', 'suggestions', 'skillGapAnalysis',
+  ],
+};
 
+/**
+ * Resume / interview helpers.
+ *
+ * All model selection lives in aiProvider — this file only owns the prompts.
+ * (It used to pin gemini-2.0-flash-exp, which Google has since deleted, so
+ * every call here was failing.)
+ */
+class GeminiService {
   async analyzeResume(resumeText, jobDescription) {
-    if (!this.genAI) {
-      throw new Error('Gemini API not configured. Please add GEMINI_API_KEY to .env file');
-    }
-
     const prompt = `You are an expert ATS (Applicant Tracking System) resume analyzer and career consultant.
 
 **Resume:**
@@ -43,7 +72,7 @@ ${resumeText}
 ${jobDescription}
 
 **Task:**
-Perform a comprehensive analysis of this resume against the job description and provide detailed, actionable feedback.
+Analyze this resume against the job description and give detailed, actionable feedback.
 
 **Response Format (MUST be valid JSON):**
 {
@@ -57,8 +86,8 @@ Perform a comprehensive analysis of this resume against the job description and 
     "semanticRelevance": <number 0-100>
   },
   "detectedIndustry": "<industry name>",
-  "matchedKeywords": ["keyword1", "keyword2", ...],
-  "missingKeywords": ["keyword1", "keyword2", ...],
+  "matchedKeywords": ["keyword1", "keyword2"],
+  "missingKeywords": ["keyword1", "keyword2"],
   "suggestions": [
     {
       "title": "Suggestion Title",
@@ -68,65 +97,38 @@ Perform a comprehensive analysis of this resume against the job description and 
     }
   ],
   "skillGapAnalysis": {
-    "presentSkills": ["skill1", "skill2"],
-    "missingSkills": ["skill1", "skill2"],
+    "presentSkills": ["skill1"],
+    "missingSkills": ["skill1"],
     "recommendations": ["Learn X", "Get certified in Y"]
   }
 }
 
-**Important:**
-1. Be precise and realistic with scores
-2. Provide actionable, specific suggestions
-3. Focus on both content and ATS compatibility
-4. Return ONLY valid JSON, no markdown or additional text`;
+Be precise and realistic with scores. Make every suggestion specific and actionable.`;
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      let text = response.text();
+    const analysis = await aiProvider.generateJSON(prompt, {
+      schema: RESUME_SCHEMA,
+      temperature: 0.7,
+      maxTokens: 16384,
+    });
 
-      // Clean up the response - remove markdown code blocks if present
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-      const analysisData = JSON.parse(text);
-
-      // Validate the response structure
-      if (!analysisData.atsScore || !analysisData.scoreBreakdown) {
-        throw new Error('Invalid response structure from Gemini');
-      }
-
-      console.log('✅ Gemini analysis completed successfully');
-      return analysisData;
-
-    } catch (error) {
-      console.error('❌ Gemini analysis error:', error.message);
-      throw new Error(`Gemini API error: ${error.message}`);
-    }
+    console.log(`✅ Resume analyzed: ATS score ${analysis.atsScore}`);
+    return analysis;
   }
 
   async generateInterviewQuestions(topic, level, count = 10) {
-    if (!this.genAI) {
-      throw new Error('Gemini API not configured');
-    }
+    const prompt = `Generate ${count} ${level}-level interview questions for the topic "${topic}".
+Return a JSON array: [{"question": "...", "expectedAnswer": "...", "difficulty": "..."}]`;
 
-    const prompt = `Generate ${count} ${level}-level interview questions for ${topic} topic.
-Return as JSON array: [{"question": "...", "expectedAnswer": "...", "difficulty": "..."}]`;
+    return aiProvider.generateJSON(prompt, { temperature: 0.8, maxTokens: 4096 });
+  }
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      let text = response.text();
-
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(text);
-    } catch (error) {
-      console.error('Gemini interview generation error:', error);
-      throw error;
-    }
+  /** Free-form structured generation for callers that own their own prompt. */
+  async generateJSON(prompt, options = {}) {
+    return aiProvider.generateJSON(prompt, { temperature: 0.7, maxTokens: 4096, ...options });
   }
 
   isAvailable() {
-    return this.genAI !== null;
+    return aiProvider.isAvailable();
   }
 }
 

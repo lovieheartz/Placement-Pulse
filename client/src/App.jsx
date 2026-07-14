@@ -11,6 +11,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
 import AdminCreateAdmin from './pages/AdminCreateAdmin';
 import ProtectedRoute from './pages/ProtectedRoute';
+import ErrorBoundary from './components/app/ErrorBoundary';
 import FacultyList from './pages/FacultyList';
 import AddFaculty from './pages/AddFaculty';
 import './index.css';
@@ -35,6 +36,8 @@ import StudentAssignments from './pages/StudentAssignments';
 import StudentGrades from './pages/StudentGrades';
 import FacultyAssignments from './pages/FacultyAssignments';
 import AssignmentSubmissions from './pages/AssignmentSubmissions';
+import TestResults from './pages/TestResults';
+import EditRequests from './pages/EditRequests';
 import ResumeAnalyzerPage from './pages/ResumeAnalyzerPage';
 import RealtimeInterviewPage from './pages/RealtimeInterviewPage';
 import InterviewHistoryPage from './pages/InterviewHistoryPage';
@@ -83,6 +86,7 @@ function App() {
         theme="dark"
       />
 
+      <ErrorBoundary>
       <Routes>
         {/* Public routes */}
         <Route path='/' element={<LandingPage />} />
@@ -106,6 +110,7 @@ function App() {
         <Route path='/faculty-dashboard' element={<ProtectedRoute><FacultyDashboard /></ProtectedRoute>} />
         <Route path='/faculty/students' element={<ProtectedRoute><FacultyStudentList /></ProtectedRoute>} />
         <Route path='/faculty/students/:studentId' element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
+        <Route path='/faculty/edit-requests' element={<ProtectedRoute><EditRequests /></ProtectedRoute>} />
         <Route path='/faculty/assignments' element={<ProtectedRoute><FacultyAssignments /></ProtectedRoute>} />
         <Route path='/faculty/assignments/:id' element={<ProtectedRoute><AssignmentSubmissions /></ProtectedRoute>} />
         <Route path='/faculty/profile' element={<ProtectedRoute><FacultyProfile /></ProtectedRoute>} />
@@ -116,6 +121,7 @@ function App() {
         <Route path='/admin/students' element={<ProtectedRoute><StudentList /></ProtectedRoute>} />
         <Route path='/admin/students/blocked' element={<ProtectedRoute><BlockedStudents /></ProtectedRoute>} />
         <Route path='/admin/students/:studentId' element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
+        <Route path='/admin/edit-requests' element={<ProtectedRoute><EditRequests /></ProtectedRoute>} />
         <Route path='/admin/admins' element={<ProtectedRoute><AdminList /></ProtectedRoute>} />
         <Route path='/admin/add-admin' element={<ProtectedRoute><AddAdmin /></ProtectedRoute>} />
         <Route path='/admin/send-notification' element={<ProtectedRoute><SendNotification /></ProtectedRoute>} />
@@ -142,6 +148,7 @@ function App() {
         <Route path='/hod/profile' element={<ProtectedRoute><HODProfile /></ProtectedRoute>} />
         <Route path='/hod/students' element={<ProtectedRoute><HODStudents /></ProtectedRoute>} />
         <Route path='/hod/students/:studentId' element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
+        <Route path='/hod/edit-requests' element={<ProtectedRoute><EditRequests /></ProtectedRoute>} />
         <Route path='/hod/blocked-students' element={<ProtectedRoute><HODBlockedStudents /></ProtectedRoute>} />
         <Route path='/hod/assignments' element={<ProtectedRoute><FacultyAssignments /></ProtectedRoute>} />
         <Route path='/hod/assignments/:id' element={<ProtectedRoute><AssignmentSubmissions /></ProtectedRoute>} />
@@ -155,14 +162,17 @@ function App() {
         <Route path='/admin/aptitude-tests/create' element={<ProtectedRoute><CreateAptitudeTest /></ProtectedRoute>} />
         <Route path='/admin/aptitude-tests/:id/edit' element={<ProtectedRoute><EditAptitudeTest /></ProtectedRoute>} />
         <Route path='/admin/aptitude-tests/:id/analytics' element={<ProtectedRoute><AptitudeTestAnalytics /></ProtectedRoute>} />
+        <Route path='/admin/aptitude-tests/:id/results' element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
         <Route path='/hod/aptitude-tests' element={<ProtectedRoute><AptitudeTestList /></ProtectedRoute>} />
         <Route path='/hod/aptitude-tests/create' element={<ProtectedRoute><CreateAptitudeTest /></ProtectedRoute>} />
         <Route path='/hod/aptitude-tests/:id/edit' element={<ProtectedRoute><EditAptitudeTest /></ProtectedRoute>} />
         <Route path='/hod/aptitude-tests/:id/analytics' element={<ProtectedRoute><AptitudeTestAnalytics /></ProtectedRoute>} />
+        <Route path='/hod/aptitude-tests/:id/results' element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
         <Route path='/faculty/aptitude-tests' element={<ProtectedRoute><AptitudeTestList /></ProtectedRoute>} />
         <Route path='/faculty/aptitude-tests/create' element={<ProtectedRoute><CreateAptitudeTest /></ProtectedRoute>} />
         <Route path='/faculty/aptitude-tests/:id/edit' element={<ProtectedRoute><EditAptitudeTest /></ProtectedRoute>} />
         <Route path='/faculty/aptitude-tests/:id/analytics' element={<ProtectedRoute><AptitudeTestAnalytics /></ProtectedRoute>} />
+        <Route path='/faculty/aptitude-tests/:id/results' element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
 
         {/* Student Routes */}
         <Route path='/student/tests' element={<ProtectedRoute><StudentTestPortal /></ProtectedRoute>} />
@@ -171,6 +181,7 @@ function App() {
         <Route path='/student/tests/:testId/take' element={<ProtectedRoute><TakeTest /></ProtectedRoute>} />
         <Route path='/student/tests/:testId/result' element={<ProtectedRoute><TestResult /></ProtectedRoute>} />
       </Routes>
+      </ErrorBoundary>
 
       {/* ✅ Add React Query DevTools at the bottom */}
       <ReactQueryDevtools initialIsOpen={false} />

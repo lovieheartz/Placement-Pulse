@@ -373,11 +373,84 @@ const sendBlockNotificationEmail = async (student, reason = 'policy violation') 
   }
 };
 
+/**
+ * Send a student their score right after they submit an aptitude test.
+ * @param {object} student  { name, email }
+ * @param {object} test     { title, totalMarks, passPercentage }
+ * @param {object} attempt  { score, percentage, passed, rank, totalCorrect, totalWrong, totalSkipped, timeTaken, submittedAt }
+ */
+const sendTestScoreEmail = async (student, test, attempt) => {
+  const passed = !!attempt.passed;
+  const accent = passed ? '#16a34a' : '#dc2626';
+  const badge = passed ? 'PASSED' : 'NOT PASSED';
+  const pct = Number(attempt.percentage || 0).toFixed(2);
+  const frontend = process.env.FRONTEND_URL || '';
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: student.email,
+    subject: `Your Score — ${test.title} | NSEC Placement Portal`,
+    html: `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8" /></head>
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:Segoe UI,Roboto,Arial,sans-serif;">
+      <div style="max-width:600px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,.08);">
+
+        <div style="background:linear-gradient(135deg,#2563eb,#4f46e5);padding:24px 28px;color:#fff;">
+          <h1 style="margin:0;font-size:20px;">Test Result</h1>
+          <p style="margin:6px 0 0;opacity:.9;font-size:14px;">${test.title}</p>
+        </div>
+
+        <div style="padding:28px;">
+          <p style="margin:0 0 18px;color:#0f172a;font-size:15px;">Hi <strong>${student.name || 'Student'}</strong>, your test has been evaluated.</p>
+
+          <div style="text-align:center;padding:22px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">
+            <div style="font-size:40px;font-weight:700;color:${accent};line-height:1;">${attempt.score} <span style="font-size:20px;color:#64748b;font-weight:600;">/ ${test.totalMarks}</span></div>
+            <div style="margin-top:6px;font-size:16px;color:#334155;font-weight:600;">${pct}%</div>
+            <div style="display:inline-block;margin-top:12px;padding:6px 16px;border-radius:999px;background:${accent};color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;">${badge}</div>
+          </div>
+
+          <table style="width:100%;margin-top:22px;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:9px 0;color:#64748b;border-bottom:1px solid #f1f5f9;">Correct</td><td style="padding:9px 0;text-align:right;color:#16a34a;font-weight:600;border-bottom:1px solid #f1f5f9;">${attempt.totalCorrect ?? 0}</td></tr>
+            <tr><td style="padding:9px 0;color:#64748b;border-bottom:1px solid #f1f5f9;">Wrong</td><td style="padding:9px 0;text-align:right;color:#dc2626;font-weight:600;border-bottom:1px solid #f1f5f9;">${attempt.totalWrong ?? 0}</td></tr>
+            <tr><td style="padding:9px 0;color:#64748b;border-bottom:1px solid #f1f5f9;">Skipped</td><td style="padding:9px 0;text-align:right;color:#334155;font-weight:600;border-bottom:1px solid #f1f5f9;">${attempt.totalSkipped ?? 0}</td></tr>
+            ${attempt.rank ? `<tr><td style="padding:9px 0;color:#64748b;border-bottom:1px solid #f1f5f9;">Rank</td><td style="padding:9px 0;text-align:right;color:#2563eb;font-weight:700;border-bottom:1px solid #f1f5f9;">#${attempt.rank}</td></tr>` : ''}
+            <tr><td style="padding:9px 0;color:#64748b;">Time Taken</td><td style="padding:9px 0;text-align:right;color:#334155;font-weight:600;">${Math.round(Number(attempt.timeTaken || 0))} min</td></tr>
+          </table>
+
+          <p style="margin:20px 0 0;color:#64748b;font-size:13px;">Passing mark for this test is <strong>${test.passPercentage}%</strong>.</p>
+
+          ${frontend ? `<div style="text-align:center;margin-top:24px;">
+            <a href="${frontend}/student/test-history" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 26px;border-radius:8px;font-weight:600;font-size:14px;">View Detailed Result</a>
+          </div>` : ''}
+        </div>
+
+        <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px;text-align:center;">
+          This is an automated message from the NSEC Placement Portal. Please do not reply.
+        </div>
+      </div>
+    </body>
+    </html>
+    `,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Test score email sent to ${student.email}: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    console.error(`Failed to send test score email to ${student.email}:`, error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendOTPEmail,
   sendFacultyWelcomeEmail,
   sendBlockNotificationEmail,
   sendNOCNotificationEmail,
+  sendTestScoreEmail,
   transporter
 };

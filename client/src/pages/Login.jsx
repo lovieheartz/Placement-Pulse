@@ -101,10 +101,10 @@ const Login = () => {
         </Link>
 
         <div className="liquid-glass-strong rounded-[1.75rem] p-8 sm:p-10 ds-reveal">
-          <h1 className="font-heading italic text-4xl sm:text-5xl tracking-[-1.5px] leading-none">
+          <h1 className="text-center font-heading italic text-4xl sm:text-5xl tracking-[-1.5px] leading-none">
             Welcome back
           </h1>
-          <p className="mt-3 text-sm text-white/70 font-light">
+          <p className="mt-3 text-center text-sm text-white/70 font-light">
             Sign in to continue to your placement workspace.
           </p>
 

@@ -45,7 +45,7 @@ app.use("/notifications", require("./routes/notificationRoutes")); // Notificati
 app.use("/noc", require("./routes/nocRoutes")); // NOC routes
 app.use("/api/resume-analysis", require("./routes/resumeAnalysisRoutes")); // Resume analysis routes
 app.use("/api/mock-interview", require("./routes/mockInterviewRoutes")); // AI Mock Interview routes
-app.use("/api/interview", require("./routes/openaiInterviewRoutes").router); // OpenAI Realtime Interview routes
+app.use("/api/interview", require("./routes/interviewRoutes").router); // Gemini Live AI Mock Interview routes
 app.use("/api/aptitude", require("./routes/aptitudeTestRoutes")); // Aptitude Test routes
 app.use("/api/attempts", require("./routes/testAttemptRoutes")); // Test Attempt routes
 app.use("/api/batches", require("./routes/testBatchRoutes")); // Test Batch routes
@@ -67,11 +67,11 @@ const PORT = process.env.PORT || 3001;
 const http = require('http');
 const server = http.createServer(app);
 
-// Initialize OpenAI Realtime Interview WebSocket
+// Initialize the Gemini Live interview WebSocket (audio in/out + transcripts)
 const WebSocket = require('ws');
-const { setupWebSocket: setupOpenAIWebSocket } = require('./routes/openaiInterviewRoutes');
+const { setupWebSocket: setupInterviewWebSocket } = require('./routes/interviewRoutes');
 const interviewWss = new WebSocket.Server({ server, path: '/api/interview/ws' });
-setupOpenAIWebSocket(interviewWss);
-console.log('✅ OpenAI Realtime Interview WebSocket initialized on /api/interview/ws');
+setupInterviewWebSocket(interviewWss);
+console.log('✅ AI Interview WebSocket listening on /api/interview/ws');
 
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -297,6 +297,9 @@ server/uploads/optimized_resumes/**/*.pdf
 server/uploads/noc/
 server/uploads/noc/**/*
 client/public/uploads/
+thesis/
+docs/
+presentation/
 
 # PDF and Document files (user uploads)
 *.pdf

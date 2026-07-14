@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE } from '../lib/api';
 import LiquidGlass from '../components/ui/LiquidGlass';
+import DateTimePicker, { toLocalInput } from '../components/ui/date-time-picker';
 
 const EditAptitudeTest = () => {
   const navigate = useNavigate();
@@ -119,8 +120,9 @@ const EditAptitudeTest = () => {
         markingScheme: test.markingScheme,
         settings: test.settings,
         schedule: {
-          startDate: test.schedule.startDate ? new Date(test.schedule.startDate).toISOString().slice(0, 16) : '',
-          endDate: test.schedule.endDate ? new Date(test.schedule.endDate).toISOString().slice(0, 16) : ''
+          // Local time, not UTC — toISOString() would shift by the timezone offset.
+          startDate: toLocalInput(test.schedule.startDate),
+          endDate: toLocalInput(test.schedule.endDate)
         },
         instructions: test.instructions || ''
       });
@@ -438,22 +440,29 @@ const EditAptitudeTest = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">Start Date & Time *</label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     value={testData.schedule.startDate}
-                    onChange={(e) => handleNestedChange('schedule', 'startDate', e.target.value)}
-                    className={inputClass}
+                    onChange={(v) => {
+                      handleNestedChange('schedule', 'startDate', v);
+                      if (v && testData.schedule.endDate && testData.schedule.endDate < v) {
+                        handleNestedChange('schedule', 'endDate', '');
+                      }
+                    }}
+                    placeholder="Select start date & time"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">End Date & Time *</label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     value={testData.schedule.endDate}
-                    onChange={(e) => handleNestedChange('schedule', 'endDate', e.target.value)}
-                    className={inputClass}
+                    onChange={(v) => handleNestedChange('schedule', 'endDate', v)}
+                    min={testData.schedule.startDate}
+                    placeholder="Select end date & time"
                   />
+                  {testData.schedule.startDate && testData.schedule.endDate && testData.schedule.endDate <= testData.schedule.startDate && (
+                    <p className="mt-1 text-xs text-red-400">End must be after the start time.</p>
+                  )}
                 </div>
               </div>
 

@@ -1031,7 +1031,21 @@ exports.getTestAnalytics = async (req, res) => {
     // Get or create analytics
     let analytics = await prisma.testAnalytics.findFirst({ where: { testId: test.id } });
 
-    if (!analytics || analytics.calculationStatus === 'pending') {
+    // Recalculate when it's missing/pending, OR when a submission landed after the last
+    // calculation. Without this staleness check the cached row was returned forever, so the
+    // analytics page kept showing zeros even though students had already submitted.
+    let isStale = false;
+    if (analytics?.lastCalculated) {
+      const latest = await prisma.testAttempt.findFirst({
+        where: { testId: test.id, status: 'completed', isDeleted: false },
+        orderBy: { submittedAt: 'desc' },
+        select: { submittedAt: true }
+      });
+      isStale = !!latest?.submittedAt &&
+        new Date(latest.submittedAt) > new Date(analytics.lastCalculated);
+    }
+
+    if (!analytics || analytics.calculationStatus === 'pending' || isStale) {
       // Calculate analytics
       analytics = await testAnalyticsService.calculateForTest(test.id);
     }

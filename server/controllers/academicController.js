@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const storageService = require('../services/storageService');
 const { extractMarksheet } = require('../services/academicExtractionService');
 const { calculateCompletion } = require('./studentProfileController');
 
@@ -34,32 +35,206 @@ function computeCgpa(semesters) {
   return Math.round(avg * 100) / 100;
 }
 
-// POST /student-profile/extract-result
-// Upload a marksheet (PDF/image) -> AI extracts structured JSON. Does NOT save.
-// Optional form field `kind`: 'semester' (default) | 'board' (Class X / XII).
+// POST /student-profile/extract-result   (student, multipart 'document')
+// AUTO-DETECT: the AI decides whether this is a Class X / Class XII / semester document,
+// extracts the matching fields, and we persist the original file so it can be viewed later.
+// Does NOT save the record — the student reviews first.
 exports.extractResult = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No document uploaded.' });
     }
 
-    const kind = req.body?.kind === 'board' ? 'board' : 'semester';
-    const { data, method } = await extractMarksheet(req.file.buffer, req.file.mimetype, kind);
+    const { data, method } = await extractMarksheet(req.file.buffer, req.file.mimetype, 'auto');
 
-    if (!data || !Array.isArray(data.subjects) || data.subjects.length === 0) {
+    const type = data?.documentType;
+    const subjects = type === 'semester' ? data?.semesterSubjects : data?.boardSubjects;
+
+    if (!type || type === 'unknown' || !Array.isArray(subjects) || subjects.length === 0) {
       return res.status(422).json({
         success: false,
-        message: 'Could not read subjects from this document. Please try a clearer scan or a different file.',
+        message: "Couldn't read this document. Please upload a clearer scan of a Class X / XII marksheet or a semester grade card.",
       });
     }
 
-    res.status(200).json({ success: true, data, method });
+    // Keep the original file so the student AND the placement cell can open it later.
+    let fileUrl = null;
+    let fileName = req.file.originalname;
+    try {
+      const uploaded = await storageService.uploadMulterFile(req.file, storageService.FOLDERS.MARKSHEET);
+      fileUrl = uploaded.publicUrl;
+    } catch (e) {
+      console.error('Marksheet upload failed (continuing without file):', e.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      documentType: type,
+      data,
+      fileUrl,
+      fileName,
+      method,
+    });
   } catch (error) {
     console.error('Extract result error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to extract marksheet.',
     });
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Records lock once saved. A student must be granted permission to edit again.
+// The lock lives inside the record JSON, so no schema migration is needed.
+// ---------------------------------------------------------------------------
+
+function isLocked(record) {
+  return !!record && record.locked === true;
+}
+
+// POST /student-profile/academic-record   (student)
+// Body: { documentType, record, fileUrl?, fileName? }
+// Auto-routes to classX / classXII / semesterMarks and LOCKS the saved record.
+exports.saveAcademicRecord = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { documentType, record, fileUrl, fileName, header = {} } = req.body;
+
+    if (!documentType || !record) {
+      return res.status(400).json({ success: false, message: 'documentType and record are required.' });
+    }
+
+    const profile = await prisma.studentProfile.findUnique({ where: { studentId } });
+
+    const stamp = {
+      fileUrl: fileUrl || undefined,
+      fileName: fileName || undefined,
+      locked: true,                 // read-only until an admin grants edit permission
+      editRequest: null,            // clear any previous request
+      savedAt: new Date().toISOString(),
+    };
+
+    // ---------- Class X / Class XII ----------
+    if (documentType === 'classX' || documentType === 'classXII') {
+      const existing = profile?.[documentType];
+      if (isLocked(existing)) {
+        return res.status(403).json({
+          success: false,
+          code: 'LOCKED',
+          message: 'This record is locked. Request edit permission from the placement cell to change it.',
+        });
+      }
+
+      const merged = { ...profile, [documentType]: { ...record, ...stamp } };
+      const completionPercentage = calculateCompletion(merged);
+
+      const updated = await prisma.studentProfile.upsert({
+        where: { studentId },
+        create: { studentId, [documentType]: { ...record, ...stamp }, completionPercentage },
+        update: { [documentType]: { ...record, ...stamp }, completionPercentage },
+      });
+      return res.status(200).json({ success: true, message: 'Marksheet saved and locked.', data: updated });
+    }
+
+    // ---------- Semester ----------
+    if (documentType === 'semester') {
+      const semNo = Number(record.semesterNumber);
+      if (!Number.isFinite(semNo)) {
+        return res.status(400).json({ success: false, message: 'A valid semesterNumber is required.' });
+      }
+
+      const current = (profile?.semesterMarks && typeof profile.semesterMarks === 'object')
+        ? profile.semesterMarks
+        : {};
+      const semesters = Array.isArray(current.semesters) ? [...current.semesters] : [];
+      const idx = semesters.findIndex((s) => Number(s.semesterNumber) === semNo);
+
+      if (idx >= 0 && isLocked(semesters[idx])) {
+        return res.status(403).json({
+          success: false,
+          code: 'LOCKED',
+          message: `Semester ${semNo} is locked. Request edit permission from the placement cell to change it.`,
+        });
+      }
+
+      const entry = { ...record, semesterNumber: semNo, ...stamp };
+      if (idx >= 0) semesters[idx] = entry; else semesters.push(entry);
+      semesters.sort((a, b) => Number(a.semesterNumber) - Number(b.semesterNumber));
+
+      const cgpa = computeCgpa(semesters);
+      const semesterMarks = { ...current, semesters, cgpa };
+
+      const allowedHeader = ['universityRoll', 'universityRegistration', 'course', 'stream'];
+      const headerData = {};
+      for (const key of allowedHeader) {
+        if (header[key] != null && String(header[key]).trim() !== '') {
+          headerData[key] = String(header[key]).trim();
+        }
+      }
+
+      const merged = { ...(profile || {}), ...headerData, semesterMarks };
+      const completionPercentage = calculateCompletion(merged);
+
+      const updated = await prisma.studentProfile.upsert({
+        where: { studentId },
+        create: { studentId, ...headerData, semesterMarks, completionPercentage },
+        update: { ...headerData, semesterMarks, completionPercentage },
+      });
+      return res.status(200).json({ success: true, message: `Semester ${semNo} saved and locked.`, data: updated });
+    }
+
+    return res.status(400).json({ success: false, message: `Unsupported documentType: ${documentType}` });
+  } catch (error) {
+    console.error('Save academic record error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to save record.' });
+  }
+};
+
+// POST /student-profile/academic-record/request-edit   (student)
+// Body: { recordType: 'classX'|'classXII'|'semester', semesterNumber?, reason? }
+exports.requestEdit = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { recordType, semesterNumber, reason } = req.body;
+
+    const profile = await prisma.studentProfile.findUnique({ where: { studentId } });
+    if (!profile) return res.status(404).json({ success: false, message: 'Profile not found.' });
+
+    const request = {
+      status: 'pending',
+      reason: reason || '',
+      requestedAt: new Date().toISOString(),
+    };
+
+    if (recordType === 'classX' || recordType === 'classXII') {
+      const rec = profile[recordType];
+      if (!rec) return res.status(404).json({ success: false, message: 'No saved record to edit.' });
+      const updated = await prisma.studentProfile.update({
+        where: { studentId },
+        data: { [recordType]: { ...rec, editRequest: request } },
+      });
+      return res.status(200).json({ success: true, message: 'Edit permission requested.', data: updated });
+    }
+
+    if (recordType === 'semester') {
+      const current = profile.semesterMarks || {};
+      const semesters = Array.isArray(current.semesters) ? [...current.semesters] : [];
+      const idx = semesters.findIndex((s) => Number(s.semesterNumber) === Number(semesterNumber));
+      if (idx < 0) return res.status(404).json({ success: false, message: 'Semester not found.' });
+
+      semesters[idx] = { ...semesters[idx], editRequest: request };
+      const updated = await prisma.studentProfile.update({
+        where: { studentId },
+        data: { semesterMarks: { ...current, semesters } },
+      });
+      return res.status(200).json({ success: true, message: 'Edit permission requested.', data: updated });
+    }
+
+    return res.status(400).json({ success: false, message: 'Invalid recordType.' });
+  } catch (error) {
+    console.error('Request edit error:', error);
+    res.status(500).json({ success: false, message: 'Failed to request edit permission.' });
   }
 };
 
@@ -171,5 +346,128 @@ exports.deleteSemester = async (req, res) => {
       success: false,
       message: error.message || 'Failed to delete semester.',
     });
+  }
+};
+
+// ---------------------------------------------------------------------------
+// ADMIN / STAFF: edit-permission queue
+// ---------------------------------------------------------------------------
+
+// Collect every pending edit request across all student profiles.
+function collectRequests(profile, student) {
+  const out = [];
+  const base = { studentId: profile.studentId, studentName: student?.name, studentEmail: student?.email };
+
+  for (const t of ['classX', 'classXII']) {
+    const rec = profile[t];
+    if (rec?.editRequest?.status === 'pending') {
+      out.push({
+        ...base,
+        recordType: t,
+        label: t === 'classX' ? 'Class X (10th)' : 'Class XII (12th)',
+        reason: rec.editRequest.reason,
+        requestedAt: rec.editRequest.requestedAt,
+        fileUrl: rec.fileUrl || null,
+      });
+    }
+  }
+
+  const semesters = profile.semesterMarks?.semesters || [];
+  for (const s of semesters) {
+    if (s?.editRequest?.status === 'pending') {
+      out.push({
+        ...base,
+        recordType: 'semester',
+        semesterNumber: s.semesterNumber,
+        label: s.semesterName || `Semester ${s.semesterNumber}`,
+        reason: s.editRequest.reason,
+        requestedAt: s.editRequest.requestedAt,
+        fileUrl: s.fileUrl || null,
+      });
+    }
+  }
+  return out;
+}
+
+// GET /student-profile/edit-requests   (admin/hod/faculty)
+exports.listEditRequests = async (req, res) => {
+  try {
+    const profiles = await prisma.studentProfile.findMany();
+    const ids = profiles.map((p) => p.studentId);
+    const students = ids.length
+      ? await prisma.student.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, email: true } })
+      : [];
+    const sMap = new Map(students.map((s) => [s.id, s]));
+
+    const requests = profiles.flatMap((p) => collectRequests(p, sMap.get(p.studentId)));
+    requests.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+
+    res.status(200).json({ success: true, count: requests.length, data: requests });
+  } catch (error) {
+    console.error('List edit requests error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load edit requests.' });
+  }
+};
+
+// POST /student-profile/edit-requests/resolve   (admin/hod/faculty)
+// Body: { studentId, recordType, semesterNumber?, approve: boolean }
+// Approving UNLOCKS the record so the student can edit it once; it re-locks on save.
+exports.resolveEditRequest = async (req, res) => {
+  try {
+    const { studentId, recordType, semesterNumber, approve } = req.body;
+    const profile = await prisma.studentProfile.findUnique({ where: { studentId } });
+    if (!profile) return res.status(404).json({ success: false, message: 'Profile not found.' });
+
+    const decision = {
+      status: approve ? 'approved' : 'denied',
+      resolvedAt: new Date().toISOString(),
+      resolvedBy: req.user.id,
+    };
+
+    if (recordType === 'classX' || recordType === 'classXII') {
+      const rec = profile[recordType];
+      if (!rec) return res.status(404).json({ success: false, message: 'Record not found.' });
+      const next = {
+        ...rec,
+        locked: approve ? false : true,                       // unlock only on approval
+        editRequest: { ...(rec.editRequest || {}), ...decision },
+      };
+      const updated = await prisma.studentProfile.update({
+        where: { studentId },
+        data: { [recordType]: next },
+      });
+      return res.status(200).json({
+        success: true,
+        message: approve ? 'Edit permission granted.' : 'Edit request denied.',
+        data: updated,
+      });
+    }
+
+    if (recordType === 'semester') {
+      const current = profile.semesterMarks || {};
+      const semesters = Array.isArray(current.semesters) ? [...current.semesters] : [];
+      const idx = semesters.findIndex((s) => Number(s.semesterNumber) === Number(semesterNumber));
+      if (idx < 0) return res.status(404).json({ success: false, message: 'Semester not found.' });
+
+      semesters[idx] = {
+        ...semesters[idx],
+        locked: approve ? false : true,
+        editRequest: { ...(semesters[idx].editRequest || {}), ...decision },
+      };
+      const updated = await prisma.studentProfile.update({
+        where: { studentId },
+        data: { semesterMarks: { ...current, semesters } },
+      });
+      return res.status(200).json({
+        success: true,
+        message: approve ? 'Edit permission granted.' : 'Edit request denied.',
+        data: updated,
+      });
+    }
+
+    return res.status(400).json({ success: false, message: 'Invalid recordType.' });
+  } catch (error) {
+    console.error('Resolve edit request error:', error);
+    res.status(500).json({ success: false, message: 'Failed to resolve edit request.' });
   }
 };

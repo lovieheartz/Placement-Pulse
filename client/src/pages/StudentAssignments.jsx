@@ -17,7 +17,7 @@ const MAX_SIZE = 10 * 1024 * 1024;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 
 const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` } });
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null);
+const fmtDate = (d) => (d ? new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null);
 
 const SubmissionResult = ({ sub }) => {
   if (!sub) return null;

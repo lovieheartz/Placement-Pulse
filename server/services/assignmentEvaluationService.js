@@ -2,22 +2,8 @@
 // - Reads the submission (image or PDF) with Gemini vision (handwriting OCR + grading in one pass).
 // - Grades it against the assignment's instructions / questions / total marks.
 // Returns { score, maxScore, percentage, feedback, breakdown, extractedText }.
-const pdfParse = require('pdf-parse');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const aiService = require('./aiService');
-
-function getVisionModel() {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey || geminiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-    throw new Error('Gemini vision is not configured (missing GEMINI_API_KEY) — cannot read handwritten submissions.');
-  }
-  const genAI = new GoogleGenerativeAI(geminiKey);
-  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  return genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
-  });
-}
+const aiProvider = require('./aiProvider');
+const { Type } = aiProvider;
 
 // Build the grading instructions from the assignment definition.
 function buildInstructions(assignment) {
@@ -60,22 +46,38 @@ Rules:
 - Never invent answers the student did not write.`;
 }
 
-async function evaluateFromImage(buffer, mimeType, instructions) {
-  const model = getVisionModel();
-  const result = await model.generateContent([
-    { inlineData: { data: buffer.toString('base64'), mimeType }, },
-    instructions,
-  ]);
-  return aiService.parseResponse(result.response.text(), 'json');
-}
-
-async function evaluateFromText(text, instructions) {
-  const prompt = `${instructions}\n\nSTUDENT SUBMISSION (typed text):\n"""\n${text}\n"""`;
-  return aiService.generate(prompt, { responseFormat: 'json', temperature: 0.2, maxTokens: 4096 });
-}
+// Constrains the model's output grammar, so a grade can never come back with a
+// missing score or a half-written breakdown.
+const GRADING_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    score: { type: Type.NUMBER, description: 'Marks awarded' },
+    maxScore: { type: Type.NUMBER },
+    feedback: { type: Type.STRING, description: '2-4 constructive sentences' },
+    breakdown: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          q: { type: Type.STRING },
+          awarded: { type: Type.NUMBER },
+          max: { type: Type.NUMBER },
+          comment: { type: Type.STRING },
+        },
+        required: ['q', 'awarded', 'max', 'comment'],
+      },
+    },
+    extractedText: { type: Type.STRING, description: "Transcription of the student's answers" },
+  },
+  required: ['score', 'maxScore', 'feedback', 'breakdown', 'extractedText'],
+};
 
 /**
  * Evaluate a submission buffer against an assignment.
+ *
+ * The file (PDF or image) goes to Gemini as raw bytes — it reads handwriting
+ * and PDFs natively, so there is no text-extraction step to fail first.
+ *
  * @param {Buffer} buffer
  * @param {string} mimeType
  * @param {object} assignment  { title, description, instructions, questions, totalMarks }
@@ -83,27 +85,18 @@ async function evaluateFromText(text, instructions) {
  */
 async function evaluateSubmission(buffer, mimeType, assignment) {
   const instructions = buildInstructions(assignment);
-  const isPdf = mimeType === 'application/pdf';
-  let raw;
-  let method = 'vision';
+  const method = 'vision';
 
-  if (isPdf) {
-    let text = '';
-    try {
-      const parsed = await pdfParse(buffer);
-      text = (parsed.text || '').trim();
-    } catch (err) {
-      console.warn('pdf-parse failed on submission, using vision:', err.message);
-    }
-    if (text.length >= 40) {
-      raw = await evaluateFromText(text, instructions);
-      method = 'pdf-text';
-    } else {
-      raw = await evaluateFromImage(buffer, 'application/pdf', instructions);
-    }
-  } else {
-    raw = await evaluateFromImage(buffer, mimeType, instructions);
-  }
+  const raw = await aiProvider.generateVision(
+    [aiProvider.filePart(buffer, mimeType), { text: instructions }],
+    {
+      json: true,
+      schema: GRADING_SCHEMA,
+      temperature: 0.2,
+      maxTokens: 16384,
+      tier: 'parsing', // reading handwriting and grading it fairly needs the pro model
+    },
+  );
 
   const maxScore = Number(raw?.maxScore) || Number(assignment.totalMarks) || 100;
   let score = Number(raw?.score);

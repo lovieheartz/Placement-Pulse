@@ -6,6 +6,7 @@ import LiquidGlass from "../components/ui/LiquidGlass";
 import BlurText from "../components/ui/BlurText";
 import Reveal from "../components/ui/Reveal";
 import ParallaxOrbs from "../components/ui/ParallaxOrbs";
+import Parallax, { Drift } from "../components/ui/Parallax";
 import ScrollProgress from "../components/ui/ScrollProgress";
 import CountUp from "../components/ui/CountUp";
 import { BRAND } from "../constants/brand";
@@ -108,8 +109,8 @@ const JOURNEY = [
 ];
 
 const TESTIMONIALS = [
-  { quote: "The AI mock interviews felt scarily real. By my third TCS round I wasn't nervous at all — I just knew what to say.", name: "Anuska Saha", role: "B.Tech CSE-AIML · Placed" },
-  { quote: "Our placement cell finally runs without a hundred spreadsheets. Authoring a test and seeing live analytics is a game-changer.", name: "Dr. R. Banerjee", role: "Faculty · Placement Coordinator" },
+  { quote: "The AI mock interviews felt scarily real. By my third TCS round I wasn't nervous at all — I just knew what to say.", name: "Rehan Farooque", role: "B.Tech CSE-AIML · Final Year" },
+  { quote: "Our placement cell finally runs without a hundred spreadsheets. Authoring a test and seeing live analytics is a game-changer.", name: "Asst. Prof. Saikat Bandopadhyay", role: "Dept. of AI & ML · Project Guide" },
   { quote: "The resume analyzer caught gaps three seniors missed. My callback rate genuinely doubled.", name: "Aditya Verma", role: "B.Tech IT · Final Year" },
 ];
 
@@ -209,30 +210,48 @@ const Navbar = ({ navigate }) => {
 
 /* ------------------------------- Hero ------------------------------- */
 const Hero = ({ navigate }) => {
-  // Scroll parallax: background drifts slower than the page, foreground
-  // content rises and gently fades as you scroll past the fold.
+  // Layered parallax: the background drifts slower than the page on scroll and
+  // leans away from the cursor; the foreground rises, fades, and leans gently
+  // toward it. Mouse offsets are lerped for a weighty, fluid feel.
   const bgRef = useRef(null);
   const fgRef = useRef(null);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
     let raf = 0;
-    const update = () => {
-      raf = 0;
+    let running = true;
+    // target (raw cursor) and eased mouse offsets, normalised -0.5 .. 0.5
+    const t = { x: 0, y: 0 };
+    const m = { x: 0, y: 0 };
+
+    const frame = () => {
+      if (!running) return;
+      m.x += (t.x - m.x) * 0.06;
+      m.y += (t.y - m.y) * 0.06;
       const y = Math.max(0, window.scrollY);
-      if (bgRef.current) bgRef.current.style.transform = `translate3d(0, ${y * 0.32}px, 0)`;
+      if (bgRef.current) {
+        bgRef.current.style.transform =
+          `translate3d(${(m.x * -26).toFixed(2)}px, ${(y * 0.32 + m.y * -18).toFixed(2)}px, 0)`;
+      }
       if (fgRef.current) {
-        fgRef.current.style.transform = `translate3d(0, ${y * 0.14}px, 0)`;
+        fgRef.current.style.transform =
+          `translate3d(${(m.x * 12).toFixed(2)}px, ${(y * 0.14 + m.y * 8).toFixed(2)}px, 0)`;
         fgRef.current.style.opacity = String(Math.max(0, 1 - y / 620));
       }
+      raf = requestAnimationFrame(frame);
     };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
+
+    const onMove = (e) => {
+      t.x = e.clientX / window.innerWidth - 0.5;
+      t.y = e.clientY / window.innerHeight - 0.5;
     };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
+
+    raf = requestAnimationFrame(frame);
+    window.addEventListener("mousemove", onMove, { passive: true });
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      running = false;
+      window.removeEventListener("mousemove", onMove);
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -241,7 +260,7 @@ const Hero = ({ navigate }) => {
     <section id="home" className="relative min-h-screen overflow-hidden bg-black">
       {/* Full-screen video biased to its lower content, with a cinematic
           slow zoom + scroll parallax on the wrapper. */}
-      <div ref={bgRef} className="absolute inset-[-12%_0_-12%_0] z-0 overflow-hidden will-change-transform">
+      <div ref={bgRef} className="absolute inset-[-12%_-4%_-12%_-4%] z-0 overflow-hidden will-change-transform">
         <div className="absolute inset-0 ds-aurora" />
         <FadingVideo
           src={HERO_VIDEO}
@@ -258,8 +277,6 @@ const Hero = ({ navigate }) => {
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        <Navbar navigate={navigate} />
-
         {/* Top-aligned so nothing is clipped by the fixed nav */}
         <div ref={fgRef} className="flex-1 flex flex-col items-center px-6 text-center pt-32 md:pt-36 will-change-transform">
           <Reveal immediate delay={0.1}>
@@ -389,6 +406,7 @@ const Capabilities = () => (
     <GlassBackground video={CAPABILITY_VIDEO} overlay={0.55} />
     <div className="relative z-10 mx-auto w-full max-w-7xl px-6 md:px-12 lg:px-20 pt-24 pb-20 flex flex-col min-h-screen">
       <div className="mb-12">
+        <Drift speed={20} />
         <Kicker>The Platform</Kicker>
         <BlurText
           as="h2"
@@ -404,6 +422,7 @@ const Capabilities = () => (
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+        <Drift speed={-16} />
         {CAPABILITIES.map((c, idx) => (
           <Reveal key={c.title} delay={0.15 * idx}>
             <LiquidGlass hover tilt className="h-full rounded-[1.25rem] p-6 min-h-[360px] flex flex-col">
@@ -443,6 +462,7 @@ const Audiences = () => (
     <ParallaxOrbs variant={3} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="max-w-2xl">
+        <Drift speed={20} />
         <Kicker>Built for the whole campus</Kicker>
         <BlurText
           as="h2"
@@ -451,6 +471,7 @@ const Audiences = () => (
         />
       </div>
       <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Drift speed={-16} />
         {AUDIENCES.map((a, i) => (
           <Reveal key={a.title} delay={0.12 * i}>
             <LiquidGlass hover tilt className="h-full rounded-[1.25rem] p-7 flex flex-col">
@@ -480,6 +501,7 @@ const Features = () => (
     <SectionAura variant={2} texture="dots" />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="text-center max-w-2xl mx-auto">
+        <Drift speed={20} />
         <Kicker>Everything in one portal</Kicker>
         <BlurText
           as="h2"
@@ -489,6 +511,7 @@ const Features = () => (
         />
       </div>
       <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+        <Drift speed={-14} />
         {FEATURES.map((f, i) => (
           <Reveal key={f.title} delay={0.08 * i}>
             <LiquidGlass hover tilt className="h-full rounded-[1.25rem] p-6 flex items-start gap-4">
@@ -514,6 +537,7 @@ const Outcomes = () => (
     <SectionAura variant={3} seam={false} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="text-center">
+        <Drift speed={18} />
         <Kicker>Outcomes</Kicker>
         <BlurText
           as="h2"
@@ -523,6 +547,7 @@ const Outcomes = () => (
         />
       </div>
       <div className="mt-14 grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <Drift speed={-16} />
         {OUTCOMES.map((o, i) => (
           <Reveal key={o.label} delay={0.1 * i}>
             <LiquidGlass hover tilt className="rounded-[1.25rem] p-6 text-center">
@@ -546,6 +571,7 @@ const Journey = () => (
     <ParallaxOrbs variant={2} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="max-w-2xl">
+        <Drift speed={20} />
         <Kicker>The Journey</Kicker>
         <BlurText
           as="h2"
@@ -554,6 +580,7 @@ const Journey = () => (
         />
       </div>
       <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Drift speed={-16} />
         {JOURNEY.map((j, i) => (
           <Reveal key={j.step} delay={0.12 * i}>
             <LiquidGlass hover tilt className="rounded-[1.25rem] p-7 h-full">
@@ -575,6 +602,7 @@ const Testimonials = () => (
     <ParallaxOrbs variant={3} />
     <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
       <div className="max-w-2xl">
+        <Drift speed={20} />
         <Kicker>Loved on campus</Kicker>
         <BlurText
           as="h2"
@@ -583,6 +611,7 @@ const Testimonials = () => (
         />
       </div>
       <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Drift speed={-16} />
         {TESTIMONIALS.map((t, i) => (
           <Reveal key={t.name} delay={0.12 * i}>
             <LiquidGlass hover className="rounded-[1.25rem] p-7 h-full flex flex-col">
@@ -653,6 +682,7 @@ const FAQ = () => {
       <ParallaxOrbs variant={2} />
       <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24">
         <div className="text-center max-w-2xl mx-auto">
+        <Drift speed={18} />
           <Kicker>Questions</Kicker>
           <BlurText
             as="h2"
@@ -662,6 +692,7 @@ const FAQ = () => {
           />
         </div>
         <div className="mt-12 max-w-3xl mx-auto space-y-3">
+        <Drift speed={-12} />
           {FAQS.map((f, i) => (
             <Reveal key={f.q} delay={0.06 * i}>
               <FAQItem q={f.q} a={f.a} open={openIdx === i} onToggle={() => setOpenIdx(openIdx === i ? -1 : i)} />
@@ -790,6 +821,10 @@ const LandingPage = () => {
   return (
     <div className="ds-scope bg-[#05060a] font-body text-white antialiased">
       <ScrollProgress />
+      {/* Fixed nav must live at the page root: inside Hero's z-10 stacking
+          context its z-50 could not compete with later sections' z-10
+          wrappers, whose transparent boxes swallowed clicks after scrolling. */}
+      <Navbar navigate={navigate} />
       <Hero navigate={navigate} />
       <RecruitersStrip />
       <Capabilities />

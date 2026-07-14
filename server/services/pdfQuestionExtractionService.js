@@ -1,169 +1,97 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const OpenAI = require('openai');
-const pdf = require('pdf-parse');
+const aiProvider = require('./aiProvider');
 const fs = require('fs').promises;
+const { Type } = aiProvider;
 
-// Initialize AI providers
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+const EXTRACT_RULES = `Extract EVERY multiple-choice question from this question paper.
 
-/**
- * Call AI provider with fallback support
- */
-async function callAI(prompt, preferredProvider = 'gemini') {
-  let providers = [];
+RULES:
+1. Extract EVERY question you find — do not stop early or summarise.
+2. Each question must have exactly 4 options, labelled A, B, C and D.
+3. If the paper marks the correct answer, put its label in correctAnswer, e.g. ["B"].
+4. If the correct answer is not indicated, use an empty array [].
+5. Transcribe the question text faithfully; fix only obvious OCR/formatting noise.
+6. Number the questions from 1 in the order they appear.
+7. Never invent questions that are not in the document.`;
 
-  if (preferredProvider === 'gemini' && genAI) {
-    providers = ['gemini', 'openai'];
-  } else if (preferredProvider === 'openai' && openai) {
-    providers = ['openai', 'gemini'];
-  } else {
-    if (genAI) providers.push('gemini');
-    if (openai) providers.push('openai');
-  }
-
-  if (providers.length === 0) {
-    throw new Error('No AI provider configured');
-  }
-
-  let lastError = null;
-
-  for (const provider of providers) {
-    try {
-      console.log(`Using ${provider.toUpperCase()} for PDF extraction...`);
-
-      if (provider === 'gemini') {
-        const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash-exp',
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 8192,
-          }
-        });
-        const result = await model.generateContent(prompt);
-        return (await result.response).text();
-      } else if (provider === 'openai') {
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: 'You extract questions from text and return valid JSON only.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.3,
-          max_tokens: 8000,
-          response_format: { type: 'json_object' }
-        });
-        return completion.choices[0].message.content;
-      }
-    } catch (error) {
-      console.error(`${provider.toUpperCase()} failed:`, error.message);
-      lastError = error;
-    }
-  }
-
-  throw new Error(`All AI providers failed: ${lastError?.message}`);
-}
+const QUESTION_SET_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    questions: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          questionNumber: { type: Type.INTEGER },
+          questionText: { type: Type.STRING },
+          options: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                optionLabel: { type: Type.STRING, description: 'A, B, C or D' },
+                optionText: { type: Type.STRING },
+              },
+              required: ['optionLabel', 'optionText'],
+            },
+          },
+          correctAnswer: { type: Type.ARRAY, items: { type: Type.STRING } },
+          marks: { type: Type.INTEGER },
+          difficultyLevel: { type: Type.STRING },
+          category: { type: Type.STRING },
+        },
+        required: ['questionText', 'options', 'correctAnswer'],
+      },
+    },
+  },
+  required: ['questions'],
+};
 
 /**
- * Extract questions from PDF using AI.
- * Accepts an in-memory Buffer (multer memoryStorage) or, for backward compatibility,
- * a file path string.
+ * Extract questions from a question-paper PDF.
+ *
+ * The PDF goes to Gemini as raw bytes rather than being run through a text
+ * extractor first. Gemini reads PDFs natively, which keeps option layout and
+ * tables intact, works on scanned/handwritten papers, and sidesteps pdf-parse
+ * choking on perfectly valid files ("bad XRef entry").
+ *
+ * @param {Buffer|string} pdfInput in-memory buffer, or a path for older callers
  */
 exports.extractQuestionsFromPDF = async (pdfInput) => {
   try {
-    const dataBuffer = Buffer.isBuffer(pdfInput) ? pdfInput : await fs.readFile(pdfInput);
-    const pdfData = await pdf(dataBuffer);
-    const pdfText = pdfData.text;
+    const buffer = Buffer.isBuffer(pdfInput) ? pdfInput : await fs.readFile(pdfInput);
 
-    if (!pdfText || pdfText.trim().length === 0) {
-      throw new Error('No text content found in PDF');
+    const parsedData = await aiProvider.generateVision(
+      [
+        aiProvider.filePart(buffer, 'application/pdf'),
+        { text: EXTRACT_RULES },
+      ],
+      { json: true, schema: QUESTION_SET_SCHEMA, temperature: 0.2, maxTokens: 32768, tier: 'parsing' },
+    );
+
+    const questions = parsedData.questions || parsedData;
+    if (!Array.isArray(questions) || questions.length === 0) {
+      throw new Error('No questions could be found in that PDF');
     }
 
-    const questions = await extractQuestionsWithAI(pdfText);
-    return questions;
-
+    return questions.map(normalizeQuestion);
   } catch (error) {
-    console.error('Error extracting questions from PDF:', error);
+    console.error('Error extracting questions from PDF:', error.message);
     throw new Error(`Failed to extract questions: ${error.message}`);
   }
 };
 
-/**
- * Use AI to parse questions from text
- */
-async function extractQuestionsWithAI(text) {
-  try {
-    const prompt = `
-Extract ALL multiple-choice questions from this text.
-
-RULES:
-1. Extract EVERY question you find
-2. Each question MUST have exactly 4 options (A, B, C, D)
-3. Identify correct answer if marked
-4. If correct answer unclear, use empty array []
-5. Clean formatting issues
-6. Number questions starting from 1
-
-Output Format (STRICT JSON):
-{
-  "questions": [
-    {
-      "questionNumber": 1,
-      "questionText": "What is 2+2?",
-      "options": [
-        { "optionLabel": "A", "optionText": "3" },
-        { "optionLabel": "B", "optionText": "4" },
-        { "optionLabel": "C", "optionText": "5" },
-        { "optionLabel": "D", "optionText": "6" }
-      ],
-      "correctAnswer": ["B"],
-      "marks": 1,
-      "difficultyLevel": "easy"
-    }
-  ]
-}
-
-TEXT TO ANALYZE:
-${text}
-
-Return ONLY valid JSON, no additional text.
-`;
-
-    const responseText = await callAI(prompt);
-    let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    let parsedData;
-    try {
-      parsedData = JSON.parse(cleanedText);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', cleanedText);
-      throw new Error('AI returned invalid JSON format');
-    }
-
-    const questions = parsedData.questions || parsedData;
-
-    if (!Array.isArray(questions)) {
-      throw new Error('AI response is not an array');
-    }
-
-    const validatedQuestions = questions.map((q, index) => ({
-      questionNumber: q.questionNumber || index + 1,
-      questionText: q.questionText || '',
-      questionType: 'single-choice',
-      options: validateOptions(q.options),
-      correctAnswer: Array.isArray(q.correctAnswer) ? q.correctAnswer : [],
-      marks: q.marks || 1,
-      negativeMarks: q.negativeMarks || 0,
-      difficultyLevel: q.difficultyLevel || 'medium',
-      category: q.category || 'General'
-    }));
-
-    return validatedQuestions;
-
-  } catch (error) {
-    console.error('Error in AI question extraction:', error);
-    throw error;
-  }
+function normalizeQuestion(q, index) {
+  return {
+    questionNumber: q.questionNumber || index + 1,
+    questionText: q.questionText || '',
+    questionType: 'single-choice',
+    options: validateOptions(q.options),
+    correctAnswer: Array.isArray(q.correctAnswer) ? q.correctAnswer : [],
+    marks: q.marks || 1,
+    negativeMarks: q.negativeMarks || 0,
+    difficultyLevel: q.difficultyLevel || 'medium',
+    category: q.category || 'General',
+  };
 }
 
 /**
@@ -214,38 +142,29 @@ function generateDefaultOptions() {
 }
 
 /**
- * Re-extract with feedback
+ * Re-run extraction with reviewer corrections applied.
+ * @param {Buffer|string} pdfInput in-memory buffer, or a path for older callers
  */
-exports.reExtractWithFeedback = async (pdfPath, feedback) => {
+exports.reExtractWithFeedback = async (pdfInput, feedback) => {
   try {
-    const dataBuffer = await fs.readFile(pdfPath);
-    const pdfData = await pdf(dataBuffer);
-    const pdfText = pdfData.text;
+    const buffer = Buffer.isBuffer(pdfInput) ? pdfInput : await fs.readFile(pdfInput);
 
-    const prompt = `
-Re-extract questions from this text with these corrections:
-${JSON.stringify(feedback)}
+    const parsedData = await aiProvider.generateVision(
+      [
+        aiProvider.filePart(buffer, 'application/pdf'),
+        {
+          text: `${EXTRACT_RULES}\n\nApply these reviewer corrections to your extraction:\n${JSON.stringify(feedback)}`,
+        },
+      ],
+      { json: true, schema: QUESTION_SET_SCHEMA, temperature: 0.2, maxTokens: 32768, tier: 'parsing' },
+    );
 
-TEXT: ${pdfText}
-
-Return ONLY a JSON object with questions array.
-`;
-
-    const responseText = await callAI(prompt);
-    let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    const parsedData = JSON.parse(cleanedText);
     const questions = parsedData.questions || parsedData;
+    if (!Array.isArray(questions)) throw new Error('Re-extraction returned no questions');
 
-    return questions.map((q, i) => ({
-      ...q,
-      questionNumber: i + 1,
-      questionType: 'single-choice',
-      options: validateOptions(q.options)
-    }));
-
+    return questions.map(normalizeQuestion);
   } catch (error) {
-    console.error('Error in re-extraction:', error);
+    console.error('Error in re-extraction:', error.message);
     throw error;
   }
 };

@@ -1,226 +1,53 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const aiProvider = require('./aiProvider');
+const { Type } = aiProvider;
+
+const score10 = { type: Type.INTEGER, description: '1-10' };
+const strings = { type: Type.ARRAY, items: { type: Type.STRING } };
+
+const ANSWER_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    aiScore: score10,
+    technicalAccuracy: score10,
+    communication: score10,
+    confidence: score10,
+    completeness: score10,
+    strengths: strings,
+    weaknesses: strings,
+    improvementSuggestions: strings,
+    idealAnswer: { type: Type.STRING },
+  },
+  required: [
+    'aiScore', 'technicalAccuracy', 'communication', 'confidence',
+    'completeness', 'strengths', 'weaknesses', 'improvementSuggestions', 'idealAnswer',
+  ],
+};
 
 /**
- * 🤖 UNIFIED AI SERVICE
- * Seamlessly integrates Gemini and OpenRouter for maximum reliability
- * Automatic fallback, retry logic, and intelligent prompt optimization
+ * 🤖 DOMAIN AI SERVICE
+ * Interview questions, answer analysis, resume feedback.
+ *
+ * This class owns the prompts and nothing else. Model choice, fallback and
+ * JSON enforcement live in aiProvider, so there is one place to update when a
+ * model is retired.
  */
 class AIService {
-  constructor() {
-    this.initializeProviders();
-    this.circuitBreaker = {
-      gemini: { failures: 0, lastFailure: null, isOpen: false },
-      openrouter: { failures: 0, lastFailure: null, isOpen: false }
-    };
-    this.CIRCUIT_THRESHOLD = 3; // Open circuit after 3 failures
-    this.CIRCUIT_TIMEOUT = 60000; // Reset after 60 seconds
-  }
-
-  initializeProviders() {
-    // Initialize Gemini
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (geminiKey && geminiKey !== 'YOUR_GEMINI_API_KEY_HERE') {
-      try {
-        this.gemini = new GoogleGenerativeAI(geminiKey);
-        const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-        this.geminiModel = this.gemini.getGenerativeModel({
-          model: modelName,
-          generationConfig: {
-            temperature: 0.8,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 4096,
-          },
-        });
-        console.log(`✅ Gemini initialized: ${modelName}`);
-      } catch (error) {
-        console.error('⚠️  Gemini init failed:', error.message);
-        this.geminiModel = null;
-      }
-    } else {
-      this.geminiModel = null;
-    }
-
-    // Initialize OpenRouter
-    this.openRouterKey = process.env.OPENROUTER_API_KEY;
-    if (this.openRouterKey && this.openRouterKey !== 'YOUR_OPENROUTER_KEY_HERE') {
-      console.log('✅ OpenRouter initialized');
-    } else {
-      this.openRouterKey = null;
-    }
-  }
-
   /**
-   * ⚡ CIRCUIT BREAKER MANAGEMENT
-   */
-  checkCircuit(provider) {
-    const circuit = this.circuitBreaker[provider];
-    if (!circuit) return false;
-
-    // Reset circuit if timeout expired
-    if (circuit.isOpen && circuit.lastFailure) {
-      const elapsed = Date.now() - circuit.lastFailure;
-      if (elapsed > this.CIRCUIT_TIMEOUT) {
-        console.log(`🔄 Resetting circuit breaker for ${provider}`);
-        circuit.failures = 0;
-        circuit.isOpen = false;
-        circuit.lastFailure = null;
-      }
-    }
-
-    return circuit.isOpen;
-  }
-
-  recordFailure(provider) {
-    const circuit = this.circuitBreaker[provider];
-    if (!circuit) return;
-
-    circuit.failures++;
-    circuit.lastFailure = Date.now();
-
-    if (circuit.failures >= this.CIRCUIT_THRESHOLD) {
-      circuit.isOpen = true;
-      console.log(`⚠️  Circuit breaker OPENED for ${provider} (${circuit.failures} failures)`);
-    }
-  }
-
-  recordSuccess(provider) {
-    const circuit = this.circuitBreaker[provider];
-    if (!circuit) return;
-
-    circuit.failures = 0;
-    circuit.isOpen = false;
-    circuit.lastFailure = null;
-  }
-
-  /**
-   * 🎯 INTELLIGENT GENERATION WITH MULTI-PROVIDER FALLBACK
-   * OPTIMIZED: Reduced retries for faster response times + Circuit breaker pattern
+   * @param {string} prompt
+   * @param {object} [options] responseFormat: 'text' | 'json', schema, temperature, maxTokens
    */
   async generate(prompt, options = {}) {
     const {
-      maxRetries = 0, // Changed from 2 to 0 - only 1 attempt per provider
-      preferredProvider = 'gemini', // 'gemini' or 'openrouter'
-      responseFormat = 'text', // 'text' or 'json'
+      responseFormat = 'text',
+      schema,
       temperature = 0.8,
-      maxTokens = 2048
+      // Shared with the model's internal thinking — a tight cap truncates the answer.
+      maxTokens = 16384,
     } = options;
 
-    let lastError;
-    const providers = preferredProvider === 'gemini'
-      ? ['gemini', 'openrouter']
-      : ['openrouter', 'gemini'];
-
-    // Try each provider with minimal retries for speed
-    for (const provider of providers) {
-      // Skip if circuit breaker is open
-      if (this.checkCircuit(provider)) {
-        console.log(`⏭️  Skipping ${provider} (circuit breaker open)`);
-        continue;
-      }
-
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`🤖 Trying ${provider}${attempt > 0 ? ` (attempt ${attempt + 1})` : ''}...`);
-
-          if (provider === 'gemini' && this.geminiModel) {
-            const result = await this.generateWithGemini(prompt, { temperature, maxTokens });
-            console.log(`✅ Success with Gemini`);
-            this.recordSuccess(provider);
-            return this.parseResponse(result, responseFormat);
-          } else if (provider === 'openrouter' && this.openRouterKey) {
-            const result = await this.generateWithOpenRouter(prompt, { temperature, maxTokens });
-            console.log(`✅ Success with OpenRouter`);
-            this.recordSuccess(provider);
-            return this.parseResponse(result, responseFormat);
-          }
-        } catch (error) {
-          lastError = error;
-          this.recordFailure(provider);
-          console.log(`❌ ${provider} failed: ${error.message}`);
-
-          // Minimal delay before retry (only if retries enabled)
-          if (attempt < maxRetries) {
-            const delay = 500; // Fixed 500ms delay instead of exponential backoff
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
-        }
-      }
-    }
-
-    throw new Error(`All AI providers failed. Last error: ${lastError?.message || 'Unknown error'}`);
-  }
-
-  async generateWithGemini(prompt, options) {
-    if (!this.geminiModel) {
-      throw new Error('Gemini not available');
-    }
-
-    const result = await this.geminiModel.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
-  }
-
-  async generateWithOpenRouter(prompt, options) {
-    if (!this.openRouterKey) {
-      throw new Error('OpenRouter not available');
-    }
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.openRouterKey}`,
-        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
-        'X-Title': 'Placement Management System'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp:free', // Free, fast, powerful
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: options.temperature || 0.8,
-        max_tokens: options.maxTokens || 2048
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  }
-
-  parseResponse(text, format) {
-    if (format === 'text') {
-      return text.trim();
-    }
-
-    if (format === 'json') {
-      // Clean markdown code blocks
-      let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-      // Try to extract JSON if wrapped in text
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        cleaned = jsonMatch[0];
-      }
-
-      try {
-        return JSON.parse(cleaned);
-      } catch (error) {
-        console.error('JSON parse error:', error.message);
-        console.error('Raw text:', cleaned.substring(0, 200));
-        throw new Error('Failed to parse JSON response');
-      }
-    }
-
-    return text;
+    return responseFormat === 'json'
+      ? aiProvider.generateJSON(prompt, { schema, temperature, maxTokens })
+      : aiProvider.generateText(prompt, { temperature, maxTokens });
   }
 
   /**
@@ -363,11 +190,9 @@ Analyze this answer comprehensively and provide detailed, constructive feedback.
 
     try {
       const analysis = await this.generate(prompt, {
-        maxRetries: 3,
-        preferredProvider: 'openrouter', // OpenRouter often better for analysis
         responseFormat: 'json',
+        schema: ANSWER_SCHEMA,
         temperature: 0.7,
-        maxTokens: 1000
       });
 
       // Validate structure
@@ -572,7 +397,6 @@ ${jobDescription.substring(0, 1500)}
 Provide detailed, actionable feedback. Return ONLY valid JSON.`;
 
     return await this.generate(prompt, {
-      preferredProvider: 'openrouter',
       responseFormat: 'json',
       temperature: 0.7,
       maxTokens: 3000
@@ -580,7 +404,7 @@ Provide detailed, actionable feedback. Return ONLY valid JSON.`;
   }
 
   isAvailable() {
-    return this.geminiModel !== null || this.openRouterKey !== null;
+    return aiProvider.isAvailable();
   }
 }
 

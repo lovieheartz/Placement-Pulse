@@ -1,106 +1,58 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const OpenAI = require('openai');
+const aiProvider = require('./aiProvider');
+const { Type } = aiProvider;
 
-// Initialize AI providers
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+const SYSTEM_PROMPT =
+  'You are an expert aptitude test creator. Generate high-quality multiple-choice questions.';
 
-/**
- * Call AI provider with fallback support
- * @param {string} prompt - The prompt to send
- * @param {string} preferredProvider - 'gemini' or 'openai'
- * @returns {Promise<string>} - AI response text
- */
-async function callAI(prompt, preferredProvider = 'gemini') {
-  let providers = [];
-
-  // Set provider order based on preference and availability
-  if (preferredProvider === 'gemini' && genAI) {
-    providers = ['gemini', 'openai'];
-  } else if (preferredProvider === 'openai' && openai) {
-    providers = ['openai', 'gemini'];
-  } else {
-    // Use whatever is available
-    if (genAI) providers.push('gemini');
-    if (openai) providers.push('openai');
-  }
-
-  if (providers.length === 0) {
-    throw new Error('No AI provider configured. Please set GEMINI_API_KEY or OPENAI_API_KEY in environment variables.');
-  }
-
-  let lastError = null;
-
-  // Try each provider in order
-  for (const provider of providers) {
-    try {
-      console.log(`Attempting to generate with ${provider.toUpperCase()}...`);
-
-      if (provider === 'gemini') {
-        return await callGemini(prompt);
-      } else if (provider === 'openai') {
-        return await callOpenAI(prompt);
-      }
-    } catch (error) {
-      console.error(`${provider.toUpperCase()} failed:`, error.message);
-      lastError = error;
-      // Continue to next provider
-    }
-  }
-
-  // If all providers failed
-  throw new Error(`All AI providers failed. Last error: ${lastError?.message || 'Unknown error'}`);
-}
-
-/**
- * Call Gemini AI
- */
-async function callGemini(prompt) {
-  if (!genAI) {
-    throw new Error('Gemini AI not configured');
-  }
-
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash-exp',
-    generationConfig: {
-      temperature: 0.7,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 8192,
-    }
-  });
-
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  return response.text();
-}
-
-/**
- * Call OpenAI
- */
-async function callOpenAI(prompt) {
-  if (!openai) {
-    throw new Error('OpenAI not configured');
-  }
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: 'You are an expert aptitude test creator. Generate high-quality multiple-choice questions in valid JSON format only.'
+// Passed to Gemini as a responseSchema, which constrains the output grammar —
+// the model physically cannot return a half-written question or a 3-option MCQ.
+const QUESTION_SET_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    questions: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          questionNumber: { type: Type.INTEGER },
+          questionText: { type: Type.STRING },
+          options: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                optionLabel: { type: Type.STRING, description: 'A, B, C or D' },
+                optionText: { type: Type.STRING },
+              },
+              required: ['optionLabel', 'optionText'],
+            },
+          },
+          correctAnswer: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Label(s) of the correct option, e.g. ["B"]',
+          },
+          explanation: { type: Type.STRING },
+          marks: { type: Type.INTEGER },
+          difficultyLevel: { type: Type.STRING },
+          category: { type: Type.STRING },
+          topic: { type: Type.STRING },
+        },
+        required: ['questionText', 'options', 'correctAnswer', 'explanation', 'category', 'topic'],
       },
-      {
-        role: 'user',
-        content: prompt
-      }
-    ],
-    temperature: 0.7,
-    max_tokens: 8000,
-    response_format: { type: 'json_object' }
-  });
+    },
+  },
+  required: ['questions'],
+};
 
-  return completion.choices[0].message.content;
+async function callAIForJSON(prompt) {
+  return aiProvider.generateJSON(prompt, {
+    system: SYSTEM_PROMPT,
+    schema: QUESTION_SET_SCHEMA,
+    temperature: 0.7,
+    // Question sets are long; the budget is shared with the model's thinking.
+    maxTokens: 32768,
+  });
 }
 
 /**
@@ -114,7 +66,6 @@ exports.generateTestFromCompany = async ({
   difficulty = 'medium',
   topics = [],
   questionTypes = ['aptitude', 'logical', 'verbal'],
-  aiProvider = 'gemini'
 }) => {
   try {
     const topicsText = topics.length > 0 ? topics.join(', ') : 'General Aptitude, Logical Reasoning, Verbal Ability';
@@ -159,19 +110,7 @@ OUTPUT FORMAT (STRICT JSON):
 IMPORTANT: Return ONLY valid JSON, no additional text, no markdown code blocks.
 `;
 
-    const responseText = await callAI(prompt, aiProvider);
-
-    // Clean up response
-    let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    // Parse JSON
-    let parsedData;
-    try {
-      parsedData = JSON.parse(cleanedText);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', cleanedText.substring(0, 500));
-      throw new Error('AI returned invalid JSON format');
-    }
+    const parsedData = await callAIForJSON(prompt);
 
     // Extract questions array
     const questions = parsedData.questions || parsedData;
@@ -214,7 +153,6 @@ exports.generateFromPreviousYear = async ({
   companyName,
   numberOfQuestions,
   difficulty = 'medium',
-  aiProvider = 'gemini'
 }) => {
   try {
     const prompt = `
@@ -256,10 +194,7 @@ Return ONLY valid JSON with this structure:
 No markdown, no extra text, just pure JSON.
 `;
 
-    const responseText = await callAI(prompt, aiProvider);
-    let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    const parsedData = JSON.parse(cleanedText);
+    const parsedData = await callAIForJSON(prompt);
     const questions = parsedData.questions || parsedData;
 
     const validatedQuestions = questions.map((q, i) => ({

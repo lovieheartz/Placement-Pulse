@@ -44,24 +44,34 @@ exports.generateTestResultsExcel = async (testId, batchId = null) => {
       orderBy: [{ score: 'desc' }, { timeTaken: 'asc' }]
     });
 
-    // Manually populate studentId (name email universityRollNumber branch course passoutYear semester)
+    // Manually populate studentId. NOTE: `universityRollNumber`/`semester` do NOT exist on
+    // the Student model — selecting them made Prisma throw and 500'd this endpoint.
+    // The roll number lives on StudentProfile.universityRoll, so we join that separately.
     const studentIds = [...new Set(attempts.map((a) => a.studentId).filter(Boolean))];
     const studentMap = new Map();
     if (studentIds.length) {
-      const students = await prisma.student.findMany({
-        where: { id: { in: studentIds } },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          universityRollNumber: true,
-          branch: true,
-          course: true,
-          passoutYear: true,
-          semester: true
-        }
-      });
-      students.forEach((s) => studentMap.set(s.id, s));
+      const [students, profiles] = await Promise.all([
+        prisma.student.findMany({
+          where: { id: { in: studentIds } },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            branch: true,
+            course: true,
+            passoutYear: true
+          }
+        }),
+        prisma.studentProfile.findMany({
+          where: { studentId: { in: studentIds } },
+          select: { studentId: true, universityRoll: true }
+        })
+      ]);
+      const rollMap = new Map(profiles.map((p) => [p.studentId, p.universityRoll]));
+      students.forEach((s) => studentMap.set(s.id, {
+        ...s,
+        universityRollNumber: rollMap.get(s.id) || ''
+      }));
     }
 
     // Manually populate batchId (batchName batchCode)
@@ -157,25 +167,25 @@ async function createResultsSheet(workbook, test, attempts, questions) {
 
   // Add data rows
   attempts.forEach((attempt, index) => {
-    const student = attempt.studentId;
+    const student = attempt.studentId || {};
     const row = sheet.addRow({
       rank: attempt.rank || index + 1,
-      name: student.name,
-      email: student.email,
-      rollNumber: student.universityRollNumber,
-      branch: student.branch,
-      course: student.course,
+      name: student.name || 'Unknown',
+      email: student.email || '',
+      rollNumber: student.universityRollNumber || '',
+      branch: student.branch || '',
+      course: student.course || '',
       batch: attempt.batchId ? attempt.batchId.batchName : 'N/A',
       score: attempt.score,
       totalMarks: test.totalMarks,
-      percentage: attempt.percentage.toFixed(2) + '%',
+      percentage: Number(attempt.percentage || 0).toFixed(2) + '%',
       result: attempt.passed ? 'PASS' : 'FAIL',
       correct: attempt.totalCorrect,
       wrong: attempt.totalWrong,
       skipped: attempt.totalSkipped,
       timeTaken: attempt.timeTaken,
-      tabSwitches: attempt.proctoring.tabSwitchCount,
-      submittedAt: attempt.submittedAt ? attempt.submittedAt.toLocaleString() : 'N/A'
+      tabSwitches: attempt.proctoring?.tabSwitchCount ?? 0,
+      submittedAt: attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : 'N/A'
     });
 
     // Color code pass/fail
@@ -317,17 +327,19 @@ async function createQuestionAnalysisSheet(workbook, test, questions, attempts) 
     fgColor: { argb: 'FFFFC000' }
   };
 
-  // Add question data
+  // Add question data ('stats' is a nullable Json column — guard it)
   questions.forEach(q => {
-    const correctCount = q.stats.correctAttempts || 0;
-    const wrongCount = q.stats.wrongAttempts || 0;
-    const skippedCount = q.stats.skippedAttempts || 0;
-    const totalAttempts = q.stats.totalAttempts || 0;
+    const stats = q.stats || {};
+    const correctCount = stats.correctAttempts || 0;
+    const wrongCount = stats.wrongAttempts || 0;
+    const skippedCount = stats.skippedAttempts || 0;
+    const totalAttempts = stats.totalAttempts || 0;
     const accuracy = totalAttempts > 0 ? (correctCount / totalAttempts) * 100 : 0;
 
+    const qText = q.questionText || '';
     sheet.addRow({
       qNum: q.questionNumber,
-      question: q.questionText.substring(0, 100) + (q.questionText.length > 100 ? '...' : ''),
+      question: qText.substring(0, 100) + (qText.length > 100 ? '...' : ''),
       category: q.category,
       difficulty: q.difficultyLevel,
       attempts: totalAttempts,
@@ -379,25 +391,29 @@ async function createProctoringReportSheet(workbook, test, attempts) {
     fgColor: { argb: 'FFE74C3C' }
   };
 
-  // Add proctoring data
+  // Add proctoring data ('proctoring' is a nullable Json column — guard every access)
   attempts.forEach(attempt => {
+    const student = attempt.studentId || {};
+    const p = attempt.proctoring || {};
+    const severity = p.violationSeverity || 'none';
+
     const row = sheet.addRow({
-      name: attempt.studentId.name,
-      email: attempt.studentId.email,
+      name: student.name || 'Unknown',
+      email: student.email || '',
       batch: attempt.batchId ? attempt.batchId.batchName : 'N/A',
-      tabSwitches: attempt.proctoring.tabSwitchCount,
-      fullscreenExits: attempt.proctoring.fullscreenExitCount,
-      snapshots: attempt.proctoring.cameraSnapshots.length,
-      severity: attempt.proctoring.violationSeverity.toUpperCase(),
-      autoSubmitted: attempt.proctoring.autoSubmittedDueToViolation ? 'YES' : 'NO',
-      ipAddress: attempt.proctoring.browserInfo.ipAddress || 'N/A'
+      tabSwitches: p.tabSwitchCount ?? 0,
+      fullscreenExits: p.fullscreenExitCount ?? 0,
+      snapshots: Array.isArray(p.cameraSnapshots) ? p.cameraSnapshots.length : 0,
+      severity: String(severity).toUpperCase(),
+      autoSubmitted: p.autoSubmittedDueToViolation ? 'YES' : 'NO',
+      ipAddress: p.browserInfo?.ipAddress || 'N/A'
     });
 
     // Color code severity
     const severityCell = row.getCell('severity');
-    if (attempt.proctoring.violationSeverity === 'critical') {
+    if (severity === 'critical') {
       severityCell.font = { bold: true, color: { argb: 'FFFF0000' } };
-    } else if (attempt.proctoring.violationSeverity === 'high') {
+    } else if (severity === 'high') {
       severityCell.font = { bold: true, color: { argb: 'FFFF6600' } };
     }
   });

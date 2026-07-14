@@ -24,6 +24,7 @@ const FOLDERS = {
   TEST_PDF: "test_pdfs",
   ASSIGNMENT: "assignments",
   SUBMISSION: "submissions",
+  MARKSHEET: "marksheets",
 };
 
 /**

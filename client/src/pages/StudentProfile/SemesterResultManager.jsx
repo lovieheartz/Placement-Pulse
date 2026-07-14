@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { Sparkles, Upload, FileText, Loader2, Plus, X, Save, ScanLine } from 'lucide-react';
+import { Sparkles, Upload, FileText, Loader2, Plus, X, Save, ScanLine, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SemesterResultsView from './SemesterResultsView';
@@ -22,12 +22,15 @@ const emptySubject = () => ({ code: '', name: '', grade: '', points: '', credit:
  *  - profileData: the fetched student profile (reads semesterMarks.semesters)
  *  - setValue: react-hook-form setValue, to reflect header fields in the main form
  */
-const SemesterResultManager = ({ profileData, setValue }) => {
+const BOARD_LABEL = { classX: 'a Class X (10th) marksheet', classXII: 'a Class XII (12th) marksheet' };
+
+const SemesterResultManager = ({ profileData, setValue, onSwitchTab }) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
 
   const [file, setFile] = useState(null);
   const [review, setReview] = useState(null); // editable extracted data or null
+  const [mismatch, setMismatch] = useState(null); // { detected } when it's a board marksheet
 
   const token = sessionStorage.getItem('authToken');
   const authHeader = { headers: { Authorization: `Bearer ${token}` } };
@@ -43,6 +46,16 @@ const SemesterResultManager = ({ profileData, setValue }) => {
       return data.data;
     },
     onSuccess: (data) => {
+      // Refuse to file a Class X / XII board marksheet as a semester result.
+      const detected = data.documentType;
+      if (detected === 'classX' || detected === 'classXII') {
+        setMismatch({ detected });
+        setReview(null);
+        toast.error(`That looks like ${BOARD_LABEL[detected]} — not a semester grade card.`);
+        return;
+      }
+
+      setMismatch(null);
       setReview({
         semesterNumber: data.semesterNumber ?? '',
         semesterName: data.semesterName ?? '',
@@ -246,6 +259,33 @@ const SemesterResultManager = ({ profileData, setValue }) => {
           </p>
         )}
       </div>
+
+      {/* Wrong document type — this is a board marksheet, not a semester grade card */}
+      {mismatch && (
+        <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+              <AlertTriangle className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-foreground">This isn't a semester grade card</h4>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                The AI read this as <span className="font-medium text-foreground">{BOARD_LABEL[mismatch.detected]}</span>.
+                Save it under the right tab so your records stay correct.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {onSwitchTab && (
+                  <Button type="button" variant="gradient" size="sm"
+                    onClick={() => { setMismatch(null); onSwitchTab(mismatch.detected); }}>
+                    Go to {mismatch.detected === 'classX' ? 'Class X (10th)' : 'Class XII (12th)'} →
+                  </Button>
+                )}
+                <Button type="button" variant="ghost" size="sm" onClick={() => setMismatch(null)}>Dismiss</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Review & confirm */}
       {review && (

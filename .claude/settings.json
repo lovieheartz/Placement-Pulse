@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"C:/Users/REHAN~1.FAR/AppData/Local/Temp/claude/c--Users-rehan-farooque-Downloads-Placement-Pulse/483f7f26-92db-4d0f-848c-a5260119e1be/scratchpad/probe.js\" ./_tmp_probe.js)",
+      "Bash(node _tmp_probe.js)"
+    ]
+  }
+}

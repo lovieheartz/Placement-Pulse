@@ -225,15 +225,29 @@ async function calculateForTest(testId) {
     const completedAttempts = attempts.filter(a => a.status === 'completed');
     const inProgressAttempts = attempts.filter(a => a.status === 'in-progress');
 
-    // Calculate overall stats
-    const totalStudentsAssigned = assignedBatches.reduce((sum, batch) => sum + batch.studentCount, 0);
+    // Calculate overall stats.
+    let totalStudentsAssigned = assignedBatches.reduce((sum, batch) => sum + batch.studentCount, 0);
+
+    // Tests are usually targeted via `recipients` (course/branch/passoutYear), not batches.
+    // Without this fallback totalStudentsAssigned stays 0, which made notStartedCount go negative
+    // and participationRate always read 0%.
+    if (totalStudentsAssigned === 0 && test.recipients?.students) {
+      const r = test.recipients.students;
+      const where = { isVerified: true };
+      if (!r.all) {
+        if (Array.isArray(r.courses) && r.courses.length) where.course = { in: r.courses };
+        if (Array.isArray(r.branches) && r.branches.length) where.branch = { in: r.branches };
+        if (Array.isArray(r.passoutYears) && r.passoutYears.length) where.passoutYear = { in: r.passoutYears };
+      }
+      totalStudentsAssigned = await prisma.student.count({ where });
+    }
 
     const overallStats = {
       totalStudentsAssigned,
       totalAttempts: attempts.length,
       completedAttempts: completedAttempts.length,
       inProgressAttempts: inProgressAttempts.length,
-      notStartedCount: totalStudentsAssigned - attempts.length,
+      notStartedCount: Math.max(0, totalStudentsAssigned - attempts.length),
       participationRate: totalStudentsAssigned > 0 ? (attempts.length / totalStudentsAssigned) * 100 : 0,
       completionRate: attempts.length > 0 ? (completedAttempts.length / attempts.length) * 100 : 0
     };

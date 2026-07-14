@@ -13,10 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import DateTimePicker from '@/components/ui/date-time-picker';
 import { API_BASE } from '../config/api';
 
 const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('authToken')}` } });
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null);
+const fmtDate = (d) => (d ? new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null);
 
 const emptyQuestion = () => ({ q: '', maxMarks: '' });
 
@@ -68,7 +69,14 @@ const CreatePanel = ({ role, onClose, onCreated }) => {
             placeholder="What should students do? The AI grades answers against this." />
         </div>
         <div><label className={label}>Total Marks</label><Input type="number" value={form.totalMarks} onChange={(e) => set('totalMarks', e.target.value)} placeholder="100" /></div>
-        <div><label className={label}>Due Date</label><Input type="date" value={form.dueDate} onChange={(e) => set('dueDate', e.target.value)} /></div>
+        <div>
+          <label className={label}>Deadline</label>
+          <DateTimePicker
+            value={form.dueDate}
+            onChange={(v) => set('dueDate', v)}
+            placeholder="Set a deadline"
+          />
+        </div>
         {role === 'admin' && (
           <>
             <div><label className={label}>Course *</label><Input value={form.course} onChange={(e) => set('course', e.target.value)} placeholder="e.g. B.Tech" /></div>

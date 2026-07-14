@@ -1,7 +1,8 @@
 import React from 'react';
-import { GraduationCap, Trash2, BookOpen } from 'lucide-react';
+import { GraduationCap, Trash2, BookOpen, ExternalLink, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/surface';
+import { resolveFileUrl } from '../../lib/api';
 
 // Map a letter grade to a Badge tone. Higher grades -> success, mid -> default, low -> warning.
 const gradeTone = (grade) => {
@@ -83,6 +84,14 @@ const SemesterResultsView = ({ semesterMarks, onDelete, deletingNumber, emptyHin
                 <Badge variant={String(sem.result).toUpperCase().startsWith('P') ? 'success' : 'destructive'}>
                   {String(sem.result).toUpperCase().startsWith('P') ? 'Pass' : sem.result}
                 </Badge>
+              )}
+              {sem.locked && <Badge variant="secondary"><Lock className="mr-1 size-3" /> Locked</Badge>}
+              {sem.fileUrl && (
+                <a href={resolveFileUrl(sem.fileUrl)} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                  title="Open the uploaded grade card">
+                  <ExternalLink className="size-3.5" /> View file
+                </a>
               )}
               {onDelete && (
                 <button

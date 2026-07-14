@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE } from '../lib/api';
 import LiquidGlass from '../components/ui/LiquidGlass';
+import DateTimePicker from '../components/ui/date-time-picker';
 
 const CreateAptitudeTest = () => {
   const navigate = useNavigate();
@@ -320,7 +321,8 @@ const CreateAptitudeTest = () => {
         }
       );
 
-      const testId = testResponse.data.data._id;
+      // Prisma returns `id`; keep `_id` as a fallback for any legacy response shape.
+      const testId = testResponse.data.data.id ?? testResponse.data.data._id;
 
       // Add questions
       await axios.post(
@@ -519,22 +521,30 @@ const CreateAptitudeTest = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">Start Date & Time *</label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     value={testData.schedule.startDate}
-                    onChange={(e) => handleNestedChange('schedule', 'startDate', e.target.value)}
-                    className={inputClass}
+                    onChange={(v) => {
+                      handleNestedChange('schedule', 'startDate', v);
+                      // Keep the window valid: clear an end date that now precedes the start.
+                      if (v && testData.schedule.endDate && testData.schedule.endDate < v) {
+                        handleNestedChange('schedule', 'endDate', '');
+                      }
+                    }}
+                    placeholder="Select start date & time"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">End Date & Time *</label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     value={testData.schedule.endDate}
-                    onChange={(e) => handleNestedChange('schedule', 'endDate', e.target.value)}
-                    className={inputClass}
+                    onChange={(v) => handleNestedChange('schedule', 'endDate', v)}
+                    min={testData.schedule.startDate}
+                    placeholder="Select end date & time"
                   />
+                  {testData.schedule.startDate && testData.schedule.endDate && testData.schedule.endDate <= testData.schedule.startDate && (
+                    <p className="mt-1 text-xs text-red-400">End must be after the start time.</p>
+                  )}
                 </div>
               </div>
 

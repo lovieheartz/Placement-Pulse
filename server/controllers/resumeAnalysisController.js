@@ -1,4 +1,3 @@
-const { HfInference } = require('@huggingface/inference');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const PDFDocument = require('pdfkit');
@@ -7,9 +6,6 @@ const path = require('path');
 const prisma = require('../lib/prisma');
 const aiService = require('../services/aiService');
 const storageService = require('../services/storageService');
-
-// Initialize Hugging Face client (fallback)
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 class ResumeAnalysisController {
   
@@ -35,10 +31,10 @@ class ResumeAnalysisController {
   static async generateAIAnalysis(resumeText, jobDescription) {
     console.log('Starting AI analysis...');
 
-    // 1ST PRIORITY: Try AI Service (Gemini + OpenRouter fallback)
+    // 1ST PRIORITY: Gemini
     if (aiService.isAvailable()) {
       try {
-        console.log('🚀 Attempting AI analysis (Gemini/OpenRouter)...');
+        console.log('🚀 Attempting AI analysis (Gemini)...');
         const geminiResult = await aiService.analyzeResume(resumeText, jobDescription);
         console.log('✅ AI analysis successful!');
 
@@ -72,73 +68,8 @@ class ResumeAnalysisController {
       console.log('Local AI service not available:', error.message);
     }
 
-    // 3RD PRIORITY: Try Hugging Face API if available
-    if (process.env.HUGGINGFACE_API_KEY) {
-      try {
-        console.log('Attempting Hugging Face API call...');
-        const prompt = `
-          You are an expert ATS (Applicant Tracking System) analyzer and career coach. 
-          
-          RESUME TEXT:
-          "${resumeText.substring(0, 1000)}"
-          
-          JOB DESCRIPTION:
-          "${jobDescription.substring(0, 500)}"
-          
-          Please analyze this resume against the job description and provide a comprehensive analysis in the following JSON format ONLY. Do not include any other text:
-          
-          {
-            "ats_score": [number between 0-100],
-            "missing_keywords": [array of important keywords from job description that are missing in resume],
-            "suggestions": [
-              {
-                "category": "[technical_skills|experience|education|keywords|formatting|general]",
-                "suggestion": "[specific actionable improvement suggestion]",
-                "priority": "[high|medium|low]"
-              }
-            ],
-            "optimized_resume": "[rewritten resume text that better matches the job description while maintaining truthfulness]"
-          }
-        `;
-
-        // Use a better text generation model for structured outputs
-        const response = await hf.textGeneration({
-          model: 'microsoft/DialoGPT-large',
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 1500,
-            temperature: 0.2,
-            return_full_text: false
-          }
-        });
-
-        console.log('Received response from Hugging Face');
-
-        // Try to parse the response as JSON
-        let analysisResult;
-        try {
-          // Extract JSON from response
-          const jsonMatch = response.generated_text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            analysisResult = JSON.parse(jsonMatch[0]);
-          } else {
-            throw new Error('No JSON found in response');
-          }
-        } catch (parseError) {
-          console.error('Failed to parse AI response as JSON:', parseError);
-          // Fallback analysis
-          analysisResult = ResumeAnalysisController.generateFallbackAnalysis(resumeText, jobDescription);
-        }
-
-        // Validate and sanitize the response
-        return ResumeAnalysisController.validateAnalysisResult(analysisResult);
-        
-      } catch (error) {
-        console.error('Error with Hugging Face API:', error);
-      }
-    }
-    
-    // Fallback to rule-based analysis
+    // Last resort: keyword/rule-based scoring so the feature still returns
+    // something useful if Gemini is unreachable.
     console.log('Using fallback rule-based analysis');
     return ResumeAnalysisController.generateFallbackAnalysis(resumeText, jobDescription);
   }

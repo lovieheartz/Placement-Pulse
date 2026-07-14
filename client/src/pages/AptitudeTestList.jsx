@@ -4,7 +4,7 @@ import axios from 'axios';
 import {
   FiPlus, FiEdit2, FiTrash2, FiBarChart2, FiDownload, FiEye, FiUsers,
   FiUserPlus, FiX, FiCheck, FiArrowLeft, FiSearch, FiClock, FiHelpCircle,
-  FiCalendar, FiSend, FiInbox, FiFileText,
+  FiCalendar, FiSend, FiInbox, FiFileText, FiAward,
 } from 'react-icons/fi';
 import { API_BASE } from '../lib/api';
 import LiquidGlass from '../components/ui/LiquidGlass';
@@ -45,7 +45,11 @@ const AptitudeTestList = () => {
   const fetchTests = async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/aptitude/tests`, authHeaders());
-      if (response.data.success) setTests(response.data.data);
+      // Postgres/Prisma returns `id`, but this page was written against Mongo's `_id`.
+      // Normalise here so every action (analytics/export/edit/delete/publish) gets a real id.
+      if (response.data.success) {
+        setTests((response.data.data || []).map((t) => ({ ...t, _id: t._id ?? t.id })));
+      }
     } catch (error) {
       console.error('Error fetching tests:', error);
       alert('Failed to fetch tests');
@@ -402,6 +406,10 @@ const AptitudeTestList = () => {
                             <IconBtn onClick={() => handleManageBatches(test)} title="Manage Batches & Students"
                               className="bg-indigo-500/15 text-indigo-200 ring-indigo-300/25 hover:bg-indigo-500/25">
                               <FiUsers size={16} />
+                            </IconBtn>
+                            <IconBtn onClick={() => navigate(`${basePath}/aptitude-tests/${test._id}/results`)} title="Candidate Scores"
+                              className="bg-teal-500/15 text-teal-200 ring-teal-300/25 hover:bg-teal-500/25">
+                              <FiAward size={16} />
                             </IconBtn>
                             <IconBtn onClick={() => navigate(`${basePath}/aptitude-tests/${test._id}/analytics`)} title="View Analytics"
                               className="bg-sky-500/15 text-sky-200 ring-sky-300/25 hover:bg-sky-500/25">
