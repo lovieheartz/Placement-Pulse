@@ -56,11 +56,32 @@
     border: 1px solid #6E8F79;
     box-shadow:
       0 0 0 7px #FDFEFC,
-      0 0 0 8px #AFC6B3,
+      0 0 0 8px #A3BFA9,
       0 22px 44px -18px rgba(36,53,44,.34),
       0 4px 10px rgba(36,53,44,.08);
     display: flex; flex-direction: column; overflow: hidden;
     padding: 0 46px;
+  }
+  /* inner keyline — the plate frame */
+  .slide::before {
+    content: ""; position: absolute; inset: 9px; z-index: 5; pointer-events: none;
+    border: 1px solid rgba(95,163,126,.26);
+  }
+  /* gold corner brackets on the keyline */
+  .slide::after {
+    content: ""; position: absolute; inset: 9px; z-index: 6; pointer-events: none;
+    background-image:
+      linear-gradient(var(--gold), var(--gold)), linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)), linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)), linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)), linear-gradient(var(--gold), var(--gold));
+    background-position:
+      left top, left top, right top, right top,
+      left bottom, left bottom, right bottom, right bottom;
+    background-size:
+      26px 2px, 2px 26px, 26px 2px, 2px 26px,
+      26px 2px, 2px 26px, 26px 2px, 2px 26px;
+    background-repeat: no-repeat;
   }
 
   /* ---------- header band ---------- */
@@ -241,7 +262,7 @@
   .wordmark span { color: var(--gold); }
   .cover .lede {
     font-family: var(--sans); font-size: 20px; font-weight: 300; color: var(--ink-2);
-    line-height: 1.4; margin-top: 20px; max-width: 30ch;
+    line-height: 1.4; margin-top: 20px;
   }
   .cover .gbar { width: 90px; height: 3px; background: var(--gold); margin: 30px 0; }
   .cover .oneline {
@@ -293,20 +314,13 @@
   <section class="slide cover">
     <div class="cover-in">
       <div class="kick">B.Tech Final Year Project &middot; Viva Voce</div>
-      <h1 class="wordmark">Ascend<span>.</span></h1>
+      <h1 class="wordmark">Ascend</h1>
       <div class="lede">An AI-Augmented Integrated Campus<br />Placement Management System</div>
       <div class="gbar"></div>
       <p class="oneline">
         A placement platform where the AI is load-bearing — giving every student
         a resume expert and an interviewer on demand, at the marginal cost of an API call.
       </p>
-      <div class="chips">
-        <span class="chip"><b>16</b> entities</span>
-        <span class="chip"><b>62</b> pages</span>
-        <span class="chip"><b>15</b> services</span>
-        <span class="chip"><b>4</b> roles</span>
-        <span class="chip">status &middot; <b>deployed live</b></span>
-      </div>
     </div>
   </section>
 
@@ -377,7 +391,7 @@
         <div class="stat clay"><div class="v">0</div><div class="l"><b>Data blindness</b> — no analytics, so mistakes repeat</div></div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>02</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>02</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 03 · PROBLEMS BY STAKEHOLDER ══════════ -->
@@ -424,7 +438,7 @@
         The scarce resource is <b>expert attention</b> — and expert attention <b>does not scale</b>.
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>03</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>03</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 04 · COMPETITORS ══════════ -->
@@ -478,9 +492,9 @@
 
             <circle cx="386" cy="54" r="13" fill="var(--green)" opacity=".18" />
             <circle cx="386" cy="54" r="6.5" fill="var(--green-d)" />
-            <text class="tt" x="386" y="35" text-anchor="middle" fill="var(--green-d)">ASCEND</text>
+            <text class="tt" x="386" y="38" text-anchor="middle" fill="var(--green-d)">ASCEND</text>
             <text class="tm" x="386" y="78" text-anchor="middle">OWNED BY THE COLLEGE</text>
-            <text class="tm" x="450" y="30" text-anchor="end" fill="var(--green-d)">THE EMPTY QUADRANT</text>
+            <text class="tm" x="450" y="110" text-anchor="end" fill="var(--green-d)">THE EMPTY QUADRANT</text>
           </svg>
 
           <div class="card f-green c-green">
@@ -490,7 +504,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>04</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>04</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 05 · THE SOLUTION ══════════ -->
@@ -521,7 +535,7 @@
         <b>The AI is the reason this system is worth building.</b>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>05</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>05</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 06 · ARCHITECTURE ══════════ -->
@@ -577,7 +591,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>06</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>06</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 07 · STACK + DATABASE ══════════ -->
@@ -618,21 +632,20 @@
       </div>
 
       <div class="split-r">
-        <svg viewBox="0 0 330 146" role="img" aria-label="A test owns its questions and attempts; a student owns attempts, profile, submissions and NOC. A unique constraint on test and student blocks duplicate attempts.">
-          <rect class="bg" x="100" y="1" width="126" height="28" />
-          <text class="tt" x="163" y="19" text-anchor="middle">AptitudeTest</text>
-          <path class="ln" d="M134 29 V44 H64 V58" /><path class="ln" d="M60 52 l4 6 4 -6" />
-          <path class="ln" d="M192 29 V44 H264 V58" /><path class="ln" d="M260 52 l4 6 4 -6" />
-          <rect class="b" x="8" y="59" width="112" height="28" />
-          <text class="tt" x="64" y="77" text-anchor="middle" font-size="9">TestQuestion</text>
-          <rect class="by" x="208" y="59" width="112" height="28" />
-          <text class="tt" x="264" y="77" text-anchor="middle" font-size="9">TestAttempt</text>
-          <text class="tm" x="264" y="99" text-anchor="middle" fill="var(--gold)">UNIQUE (testId, studentId)</text>
-          <rect class="bg" x="100" y="110" width="126" height="28" />
-          <text class="tt" x="163" y="128" text-anchor="middle">Student</text>
-          <path class="ln" d="M226 124 H284 V87" /><path class="ln" d="M280 93 l4 -6 4 6" />
-          <text class="tm" x="8" y="126" fill="var(--muted)">+ Profile · Submission</text>
-          <text class="tm" x="8" y="138" fill="var(--muted)">+ NOC · Notification</text>
+        <svg viewBox="0 0 360 164" role="img" aria-label="A test owns its questions and attempts; a student owns attempts, profile, submissions and NOC. A unique constraint on test and student blocks duplicate attempts.">
+          <rect class="bg" x="117" y="2" width="126" height="28" />
+          <text class="tt" x="180" y="20" text-anchor="middle">AptitudeTest</text>
+          <path class="ln" d="M151 30 V44 H76 V54" /><path class="ln" d="M72 48 l4 6 4 -6" />
+          <path class="ln" d="M209 30 V44 H284 V54" /><path class="ln" d="M280 48 l4 6 4 -6" />
+          <rect class="b" x="20" y="55" width="112" height="28" />
+          <text class="tt" x="76" y="73" text-anchor="middle" font-size="9">TestQuestion</text>
+          <rect class="by" x="228" y="55" width="112" height="28" />
+          <text class="tt" x="284" y="73" text-anchor="middle" font-size="9">TestAttempt</text>
+          <text class="tm" x="284" y="97" text-anchor="middle" fill="var(--gold)">UNIQUE (testId, studentId)</text>
+          <rect class="bg" x="117" y="110" width="126" height="28" />
+          <text class="tt" x="180" y="128" text-anchor="middle">Student</text>
+          <path class="ln" d="M243 124 H352 V69 H342" /><path class="ln" d="M348 65 l-6 4 6 4" />
+          <text class="tm" x="180" y="156" text-anchor="middle" fill="var(--muted)">+ Profile · Submission · NOC · Notification</text>
         </svg>
 
         <div class="col">
@@ -642,7 +655,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>07</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>07</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 08 · DEPLOYMENT ══════════ -->
@@ -693,7 +706,7 @@
         <div class="card f-green c-green"><h3>Free-tier honesty</h3><p>Render sleeps when idle; Supabase pauses after a week. A scheduled ping keeps both warm — <b>a real constraint, engineered around</b>.</p></div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>08</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>08</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 09 · AI LAYER ══════════ -->
@@ -749,7 +762,7 @@
         <div class="card c-blue"><h3>Resilience by list</h3><p>Each tier holds an ordered model list. Google retiring a preview model <b>degrades</b> the tier; it does not break the page.</p></div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>09</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>09</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 10 · RESUME ANALYZER ══════════ -->
@@ -803,7 +816,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>10</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>10</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 11 · MOCK INTERVIEW ══════════ -->
@@ -860,7 +873,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>11</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>11</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 12 · HANDWRITING ══════════ -->
@@ -908,7 +921,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>12</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>12</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 13 · TESTS, ANALYTICS & WORKFLOWS ══════════ -->
@@ -952,7 +965,7 @@
         </div>
       </div>
 
-      <svg viewBox="0 0 920 74" role="img" aria-label="After login a role guard routes the user to the student, faculty, HOD or admin scope, each with its own capabilities">
+      <svg viewBox="0 0 920 86" role="img" aria-label="After login a role guard routes the user to the student, faculty, HOD or admin scope, each with its own capabilities">
         <rect class="b" x="1" y="25" width="104" height="26" />
         <text class="tt" x="53" y="42" text-anchor="middle" font-size="9">Login (JWT)</text>
         <path class="lg" d="M105 38 H133" /><path class="lg" d="M127 34 l6 4 -6 4" />
@@ -974,7 +987,7 @@
         <text class="ts" x="358" y="75">Targeted notices · approve NOCs · test analytics · manage all users and roles</text>
       </svg>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>13</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>13</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 14 · EVALUATION ══════════ -->
@@ -1021,7 +1034,7 @@
         <b>four in five students did not know the filter existed</b> — they were being rejected by a machine they had never heard of.
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>14</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>14</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 15 · CONCLUSION ══════════ -->
@@ -1061,7 +1074,7 @@
         <b>This is not just software — it is a strategic upgrade that makes placement transparent, efficient and student-centric.</b>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>15</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>15</b> / 16</span></div>
   </section>
 
   <!-- ══════════ 16 · THANK YOU + ALL CREDITS ══════════ -->
@@ -1078,7 +1091,6 @@
           </p>
           <div class="chips" style="margin-top:22px">
             <span class="chip">github.com/lovieheartz/<b>Placement-Pulse</b></span>
-            <span class="chip">Full report &middot; <b>Ascend_Project_Report</b></span>
           </div>
         </div>
 
@@ -1106,7 +1118,7 @@
         </div>
       </div>
     </div>
-    <div class="foot"><span class="mark">Ascend<span>.</span></span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>16</b> / 16</span></div>
+    <div class="foot"><span class="mark">Ascend</span><span class="tag">AI-Augmented Campus Placement Management System</span><span class="pg"><b>16</b> / 16</span></div>
   </section>
 
 </div>
