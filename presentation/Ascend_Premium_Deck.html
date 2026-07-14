@@ -1,0 +1,1443 @@
+<title>Ascend — AI-Augmented Campus Placement Management System</title>
+
+<style>
+  /* ============================================================
+     ASCEND — viva deck
+     Treatment: engineering drawing + academic ledger.
+     Hairline rules, technical SVG, tabular numerals, no emoji.
+     ============================================================ */
+
+  :root {
+    --ground:      #F4FAF7;   /* mint off-white */
+    --card:        #FFFFFF;
+    --ink:         #0B2A22;   /* deep forest, near-black with green bias */
+    --ink-soft:    #34544A;
+    --muted:       #5C7C71;   /* sage neutral — biased toward the accent */
+    --rule:        #CFE3DA;   /* hairline */
+    --rule-strong: #9FC4B5;
+    --accent:      #0E9F6E;   /* emerald */
+    --accent-deep: #046C4E;   /* deep green */
+    --accent-wash: #E3F3EC;
+    --coral:       #E0674C;   /* reserved: the one uncomfortable number */
+    --amber:       #C98A16;
+
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:      #071A15;
+      --card:        #0C2721;
+      --ink:         #E8F5EF;
+      --ink-soft:    #B9D5C9;
+      --muted:       #85A89A;
+      --rule:        #1E463B;
+      --rule-strong: #2F6553;
+      --accent:      #34C795;
+      --accent-deep: #7FE0BC;
+      --accent-wash: #12362C;
+      --coral:       #FF8A6B;
+      --amber:       #E8B54D;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #071A15;
+    --card:        #0C2721;
+    --ink:         #E8F5EF;
+    --ink-soft:    #B9D5C9;
+    --muted:       #85A89A;
+    --rule:        #1E463B;
+    --rule-strong: #2F6553;
+    --accent:      #34C795;
+    --accent-deep: #7FE0BC;
+    --accent-wash: #12362C;
+    --coral:       #FF8A6B;
+    --amber:       #E8B54D;
+  }
+  :root[data-theme="light"] {
+    --ground:      #F4FAF7;
+    --card:        #FFFFFF;
+    --ink:         #0B2A22;
+    --ink-soft:    #34544A;
+    --muted:       #5C7C71;
+    --rule:        #CFE3DA;
+    --rule-strong: #9FC4B5;
+    --accent:      #0E9F6E;
+    --accent-deep: #046C4E;
+    --accent-wash: #E3F3EC;
+    --coral:       #E0674C;
+    --amber:       #C98A16;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- deck chrome ---------- */
+  .deck { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 28px 16px 96px; }
+
+  .slide {
+    position: relative;
+    width: 100%;
+    max-width: 1180px;
+    aspect-ratio: 16 / 9;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    overflow: hidden;
+  }
+
+  /* the vertical rail: slide number + section, like a drawing's title block */
+  .rail {
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    background: linear-gradient(180deg, var(--accent-wash), transparent 60%);
+  }
+  .rail .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-deep);
+    letter-spacing: .08em;
+  }
+  .rail .sect {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .rail .tick { width: 1px; flex: 1; background: var(--rule); margin: 12px 0; }
+
+  .body { padding: 34px 40px 30px; display: flex; flex-direction: column; min-height: 0; }
+
+  /* ---------- typography ---------- */
+  .kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: var(--sans);
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 650;
+    letter-spacing: -.015em;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  h1 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent-deep); }
+  .sub {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 76ch;
+    margin: 0 0 16px;
+  }
+  .rule { height: 1px; background: var(--rule); margin: 0 0 18px; }
+
+  .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ---------- primitives ---------- */
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .split { display: grid; grid-template-columns: 1.25fr .95fr; gap: 20px; align-items: start; }
+  .split-r { display: grid; grid-template-columns: .95fr 1.25fr; gap: 20px; align-items: start; }
+
+  .card {
+    border: 1px solid var(--rule);
+    padding: 13px 15px;
+    background: var(--card);
+  }
+  .card h3 {
+    margin: 0 0 5px;
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: -.005em;
+    color: var(--ink);
+  }
+  .card p { margin: 0; font-size: 12.2px; line-height: 1.5; color: var(--muted); }
+  .card p + p { margin-top: 6px; }
+  .card .eg {
+    margin-top: 7px; padding-top: 7px;
+    border-top: 1px dashed var(--rule);
+    font-family: var(--serif); font-style: italic;
+    font-size: 11.5px; color: var(--ink-soft);
+  }
+  .card.hi { border-color: var(--accent); background: var(--accent-wash); }
+  .card.hi p { color: var(--ink-soft); }
+
+  /* numbered card — only where the content IS a sequence */
+  .card .n {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent-deep);
+    border: 1px solid var(--rule-strong);
+    width: 17px; height: 17px; line-height: 15px;
+    text-align: center;
+    margin-right: 7px;
+    vertical-align: 1px;
+  }
+
+  ul.list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  ul.list li { position: relative; padding-left: 15px; font-size: 12.4px; line-height: 1.5; color: var(--muted); }
+  ul.list li::before {
+    content: ""; position: absolute; left: 0; top: 8px;
+    width: 5px; height: 5px; background: var(--accent);
+  }
+  ul.list li b { color: var(--ink); font-weight: 650; }
+
+  /* stat tiles */
+  .stat { border: 1px solid var(--rule); padding: 12px 13px; }
+  .stat .v {
+    font-size: 30px; font-weight: 680; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; color: var(--accent-deep);
+    line-height: 1;
+  }
+  .stat .v.coral { color: var(--coral); }
+  .stat .l { margin-top: 6px; font-size: 11.4px; line-height: 1.4; color: var(--muted); }
+
+  /* tables — ledger feel */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    background: var(--accent-wash);
+    color: var(--accent-deep);
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    font-weight: 650;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--rule);
+    color: var(--muted);
+    line-height: 1.45;
+    vertical-align: top;
+  }
+  tbody td:first-child { color: var(--ink); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .twrap { overflow-x: auto; border: 1px solid var(--rule); }
+
+  /* pill chain (state flows) */
+  .chain { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    font-family: var(--mono); font-size: 10.5px;
+    border: 1px solid var(--rule-strong);
+    padding: 5px 9px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .pill.on { background: var(--accent); border-color: var(--accent); color: #06231B; font-weight: 600; }
+  .arw { color: var(--rule-strong); font-size: 12px; }
+
+  .quote {
+    border-left: 2px solid var(--accent);
+    padding: 8px 0 8px 13px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .quote b { font-style: normal; font-weight: 650; color: var(--ink); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .04em;
+    border: 1px solid var(--rule); padding: 4px 8px; color: var(--muted);
+  }
+  .chip b { color: var(--accent-deep); font-weight: 650; }
+
+  /* ---------- SVG diagrams ---------- */
+  svg { display: block; width: 100%; height: auto; }
+  .dg-box { fill: var(--card); stroke: var(--rule-strong); stroke-width: 1; }
+  .dg-box-a { fill: var(--accent-wash); stroke: var(--accent); stroke-width: 1; }
+  .dg-t { fill: var(--ink); font-family: var(--sans); font-size: 11px; font-weight: 620; }
+  .dg-s { fill: var(--muted); font-family: var(--sans); font-size: 9.5px; }
+  .dg-m { fill: var(--accent-deep); font-family: var(--mono); font-size: 8.5px; letter-spacing: .06em; }
+  .dg-line { stroke: var(--rule-strong); stroke-width: 1; fill: none; }
+  .dg-line-a { stroke: var(--accent); stroke-width: 1.4; fill: none; }
+  .dg-dash { stroke: var(--rule-strong); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+  .dg-lbl { fill: var(--muted); font-family: var(--mono); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+  .dg-band { fill: var(--accent-wash); stroke: none; }
+  .bar { fill: var(--accent); }
+  .bar-w { fill: var(--rule); }
+
+  /* title slide */
+  .title-slide { grid-template-columns: 1fr; }
+  .title-body { padding: 0; display: grid; grid-template-columns: 1.35fr 1fr; height: 100%; }
+  .title-left { padding: 52px 46px; display: flex; flex-direction: column; justify-content: center; }
+  .title-left h1 { font-size: 46px; letter-spacing: -.03em; margin-bottom: 14px; }
+  .title-right {
+    border-left: 1px solid var(--rule);
+    background: linear-gradient(160deg, var(--accent-wash), transparent 70%);
+    padding: 46px 34px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .meta { font-size: 12.5px; line-height: 1.8; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 650; }
+
+  /* progress + nav */
+  .bar-top { position: fixed; top: 0; left: 0; height: 2px; background: var(--accent); z-index: 50; transition: width .15s; }
+  .hud {
+    position: fixed; bottom: 16px; right: 18px; z-index: 50;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--rule);
+    padding: 6px 8px;
+    font-family: var(--mono); font-size: 11px;
+    font-variant-numeric: tabular-nums; color: var(--muted);
+  }
+  .hud button {
+    font: inherit; cursor: pointer;
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--rule); padding: 2px 8px;
+  }
+  .hud button:hover { background: var(--accent-wash); border-color: var(--accent); }
+  .hud button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- print: one 16:9 slide per landscape page ---------- */
+  @page { size: 297mm 167mm; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .deck { gap: 0; padding: 0; }
+    .hud, .bar-top { display: none !important; }
+    .slide {
+      max-width: none; width: 297mm; height: 167mm; aspect-ratio: auto;
+      border: 0; page-break-after: always; break-after: page;
+    }
+  }
+</style>
+
+<div class="bar-top" id="bar" style="width:0"></div>
+
+<div class="deck" id="deck">
+
+  <!-- ============ 01 TITLE ============ -->
+  <section class="slide title-slide">
+    <div class="title-body">
+      <div class="title-left">
+        <div class="kicker">B.Tech Final Year Project &middot; Viva Voce &middot; July 2026</div>
+        <h1>Ascend<br /><em>an AI-augmented</em> campus placement management system</h1>
+        <div class="rule" style="margin:16px 0 18px;max-width:320px"></div>
+        <p class="sub" style="font-size:14px;max-width:52ch">
+          A placement platform where the AI is <b style="color:var(--ink)">load-bearing</b> — it gives every
+          student a resume expert and an interviewer on demand, at the marginal cost of an API call.
+        </p>
+        <div class="chips" style="margin-top:6px">
+          <span class="chip"><b>16</b> entities</span>
+          <span class="chip"><b>62</b> pages</span>
+          <span class="chip"><b>15</b> services</span>
+          <span class="chip"><b>4</b> roles</span>
+          <span class="chip">deployed &middot; <b>live</b></span>
+        </div>
+      </div>
+      <div class="title-right">
+        <div>
+          <div class="kicker">Presented by</div>
+          <div class="meta">
+            <b>Md Rehan Farooque</b><br />
+            Roll 10930622032<br />
+            Regd 221090110043
+          </div>
+        </div>
+        <div>
+          <div class="kicker">Supervision</div>
+          <div class="meta">
+            Guide: <b>Prof. Saikat Bandopadhyay</b><br />
+            Assistant Professor<br />
+            HOD: <b>Dr. Anupam Ghosh</b>
+          </div>
+        </div>
+        <div class="meta" style="font-size:11.5px">
+          Dept. of Artificial Intelligence &amp; Machine Learning<br />
+          Netaji Subhash Engineering College<br />
+          MAKAUT, West Bengal
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 THE PREMISE ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">02</span><span class="tick"></span><span class="sect">Problem</span></div>
+    <div class="body">
+      <div class="kicker">The current scenario</div>
+      <h1>Placement runs on <em>manual, disconnected</em> systems</h1>
+      <p class="sub">Dedicated TPOs and student PRs have built a strong placement record — but the process behind it is spreadsheets, WhatsApp groups and paper forms.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="split">
+          <div>
+            <div class="kicker" style="margin-bottom:8px">The broken telephone</div>
+            <!-- diagram: information decay through relay hops -->
+            <svg viewBox="0 0 560 128" role="img" aria-label="Drive notice passes from TPO through PRs to WhatsApp groups, losing fidelity at each hop">
+              <rect class="dg-box-a" x="1" y="34" width="88" height="42" />
+              <text class="dg-t" x="45" y="52" text-anchor="middle">TPO</text>
+              <text class="dg-s" x="45" y="66" text-anchor="middle">drive notice</text>
+
+              <path class="dg-line-a" d="M89 55 H141" />
+              <path class="dg-line-a" d="M135 51 l6 4 -6 4" />
+
+              <rect class="dg-box" x="142" y="34" width="88" height="42" />
+              <text class="dg-t" x="186" y="52" text-anchor="middle">12 dept PRs</text>
+              <text class="dg-s" x="186" y="66" text-anchor="middle">relay by hand</text>
+
+              <path class="dg-line" d="M230 55 H282" />
+              <path class="dg-line" d="M276 51 l6 4 -6 4" />
+
+              <rect class="dg-box" x="283" y="34" width="96" height="42" />
+              <text class="dg-t" x="331" y="52" text-anchor="middle">WhatsApp</text>
+              <text class="dg-s" x="331" y="66" text-anchor="middle">buried in chats</text>
+
+              <path class="dg-dash" d="M379 55 H431" />
+              <path class="dg-line" d="M425 51 l6 4 -6 4" />
+
+              <rect class="dg-box" x="432" y="34" width="96" height="42" stroke="var(--coral)" />
+              <text class="dg-t" x="480" y="52" text-anchor="middle" fill="var(--coral)">Student</text>
+              <text class="dg-s" x="480" y="66" text-anchor="middle">misses the drive</text>
+
+              <text class="dg-lbl" x="186" y="24" text-anchor="middle">3 forgot to forward</text>
+              <text class="dg-lbl" x="480" y="24" text-anchor="middle">signal lost</text>
+              <text class="dg-lbl" x="264" y="103" text-anchor="middle">fidelity decays at every hop &middot; no read receipts &middot; no reminders</text>
+            </svg>
+
+            <ul class="list" style="margin-top:14px">
+              <li>TPOs lose <b>15+ hours a week</b> to coordination instead of employer outreach</li>
+              <li>NOC approvals take <b>5&ndash;7 days</b> on paper, with zero tracking</li>
+              <li>Placement records live in Excel, where <b>trend analysis is impossible</b></li>
+            </ul>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="card hi">
+              <h3>Why act now</h3>
+              <p>Roughly <b style="color:var(--coral)">68%</b> of resumes are auto-rejected by ATS software before a human ever reads them.</p>
+              <p>Realtime voice AI has only just become affordable enough for a student-facing tool at cohort scale.</p>
+            </div>
+            <div class="quote">
+              The scarce resource is <b>expert attention</b> — and expert attention <b>does not scale</b>.
+              This single sentence is the premise of the entire project.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 WHO HURTS ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">03</span><span class="tick"></span><span class="sect">Problem</span></div>
+    <div class="body">
+      <div class="kicker">Stakeholder pain</div>
+      <h1>Three roles, <em>one broken</em> process</h1>
+      <p class="sub">Every pain point below became a numbered functional requirement — FR-1 … FR-12, NFR-1 … NFR-6.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="grid g3" style="flex:1">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="kicker" style="color:var(--ink)">TPOs</div>
+            <div class="card">
+              <h3>No screening tool</h3>
+              <p>500+ resumes per drive reviewed by hand, with no standardised screening.</p>
+              <div class="eg">A deserving student was overlooked for Amazon — her resume was misplaced in a pile.</div>
+            </div>
+            <div class="card">
+              <h3>Data blindness</h3>
+              <p>Excel records; no real-time reports, no trend analytics.</p>
+              <div class="eg">Nobody could say why only 30% of ME students placed. The skills gap surfaced a year late.</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="kicker" style="color:var(--ink)">Students</div>
+            <div class="card">
+              <h3>Rejections they can't explain</h3>
+              <p>Formatting errors and missing keywords trigger auto-rejection. Nobody tells them why.</p>
+              <div class="eg">A CSE student was rejected by all 8 companies he applied to — no quantifiable achievements, not ATS-friendly.</div>
+            </div>
+            <div class="card">
+              <h3>No way to rehearse</h3>
+              <p>Volunteer mocks can't scale to 500 students or repeat on demand — so the first real interview <b>is</b> the placement interview.</p>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="kicker" style="color:var(--ink)">Faculty</div>
+            <div class="card">
+              <h3>Feedback bottleneck</h3>
+              <p>Personalised feedback on every submission is time-infeasible; late grades break the learning cycle the test was meant to serve.</p>
+            </div>
+            <div class="card">
+              <h3>Untracked requests</h3>
+              <p>Queries scatter across WhatsApp and e-mail with no ownership.</p>
+              <div class="eg">15+ students e-mailed the same NOC question daily for a week — and got no reply.</div>
+            </div>
+          </div>
+        </div>
+        <div class="quote">
+          Only <b style="color:var(--coral)">21%</b> of surveyed final-year students knew an ATS would screen their resume at all
+          <span style="font-style:normal;color:var(--muted)">(n = 14)</span>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 COMPETITION ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">04</span><span class="tick"></span><span class="sect">Novelty</span></div>
+    <div class="body">
+      <div class="kicker">Existing solutions</div>
+      <h1>The market has tools — <em>none fit</em> a college</h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="twrap">
+          <table>
+            <thead>
+              <tr><th style="width:19%">Platform</th><th style="width:36%">What it is</th><th>Why it doesn't solve this</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Superset</td><td>Official placement portal of 600+ Indian colleges</td><td>Recruiter-side operations only — <b>no resume coaching, no interview practice</b></td></tr>
+              <tr><td>Unstop</td><td>24M+ students; gamified hiring via competitions</td><td>Employer-branding skewed to Tier-1 — not an internal placement-office system</td></tr>
+              <tr><td>HirePro</td><td>Campus assessment &amp; drive vendor since 2004</td><td>Proctored tests sold to companies — <b>the college is the venue, not the customer</b></td></tr>
+              <tr><td>Jobscan · Resume Worded</td><td>ATS resume checkers with keyword analysis</td><td>US$19–50 <b>per student per month</b>; blind to the college's own drives and data</td></tr>
+              <tr><td>Final Round AI</td><td>AI mock-interview subscription</td><td>US$99–299 a month; free tier ≈ 5 minutes — unaffordable at cohort scale</td></tr>
+              <tr><td>Google Interview Warmup</td><td>Free, typed interview practice</td><td>Generic, text-only — and <b>retired in April 2026</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="quote">
+          Recruiter platforms manage the <span style="font-style:italic">drive</span>; prep tools charge <span style="font-style:italic">each student</span> and know nothing about the college.
+          <b>No existing system gives one institution both. Ascend does — on infrastructure the college owns.</b>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 THE ANSWER ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">05</span><span class="tick"></span><span class="sect">Solution</span></div>
+    <div class="body">
+      <div class="kicker">Introducing Ascend</div>
+      <h1>Every problem, <em>answered</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="twrap">
+          <table>
+            <thead><tr><th style="width:30%">The problem</th><th style="width:38%">Ascend's answer</th><th>Outcome</th></tr></thead>
+            <tbody>
+              <tr><td>Notices lost in WhatsApp relays</td><td><b>Targeted notices</b> by branch &amp; batch — in-app + e-mail</td><td>No missed drives</td></tr>
+              <tr><td>500+ resumes screened by hand</td><td><b>AI Resume Analyzer</b> — ATS score with evidence and fixes</td><td>Students repair resumes <b>before</b> applying</td></tr>
+              <tr><td>No interview rehearsal at scale</td><td><b>AI voice mock interview</b> — adaptive, resume-conditioned</td><td>Unlimited practice, on demand</td></tr>
+              <tr><td>Paper NOC, 5–7 day approvals</td><td><b>Digital NOC</b> with live status and audit trail</td><td>Tracked end-to-end</td></tr>
+              <tr><td>Manual test &amp; assignment grading</td><td>Auto-graded tests + <b>AI handwriting grading</b></td><td>Same-day results, personal feedback</td></tr>
+              <tr><td>Excel-only records</td><td>Live dashboards + four-sheet Excel export</td><td>Trends per question, batch and drive</td></tr>
+              <tr><td>One shared login for everyone</td><td><b>4 server-enforced roles</b> (JWT + middleware)</td><td>Each user sees exactly their scope</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="quote">
+          Remove the Resume Analyzer and the Mock Interview, and what remains is an unremarkable admin database.
+          <b>The AI is the reason the system is worth building.</b>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 ARCHITECTURE ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">06</span><span class="tick"></span><span class="sect">Architecture</span></div>
+    <div class="body">
+      <div class="kicker">System design</div>
+      <h1>Three-tier architecture, <em>server-side AI</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="split">
+          <svg viewBox="0 0 600 320" role="img" aria-label="Three-tier architecture: React browser talks over HTTPS and one WebSocket to an Express server, which alone reaches Postgres, object storage and Gemini">
+            <!-- tier bands -->
+            <rect class="dg-band" x="0" y="6" width="600" height="66" opacity=".5" />
+            <text class="dg-lbl" x="6" y="20">Presentation tier</text>
+            <rect class="dg-box" x="150" y="26" width="300" height="40" />
+            <text class="dg-t" x="300" y="43" text-anchor="middle">React 19 + Vite SPA</text>
+            <text class="dg-s" x="300" y="57" text-anchor="middle">Student · Faculty · HOD · Admin — four role-scoped portals</text>
+
+            <!-- transport -->
+            <path class="dg-line-a" d="M255 66 V112" />
+            <path class="dg-line-a" d="M251 106 l4 6 4 -6" />
+            <text class="dg-m" x="262" y="84">HTTPS / REST</text>
+            <path class="dg-line-a" d="M405 66 V112" />
+            <path class="dg-line-a" d="M401 106 l4 6 4 -6" />
+            <text class="dg-m" x="412" y="84">1 × WebSocket</text>
+
+            <!-- app tier -->
+            <rect class="dg-band" x="0" y="112" width="600" height="86" opacity=".5" />
+            <text class="dg-lbl" x="6" y="126">Application tier</text>
+            <rect class="dg-box-a" x="120" y="132" width="360" height="56" />
+            <text class="dg-t" x="300" y="152" text-anchor="middle">Node.js + Express 5</text>
+            <text class="dg-s" x="300" y="167" text-anchor="middle">JWT auth · role guards · REST routers</text>
+            <text class="dg-s" x="300" y="180" text-anchor="middle">relay (not passthrough) to the Gemini Live socket</text>
+
+            <!-- data tier -->
+            <path class="dg-line" d="M180 188 V236" /><path class="dg-line" d="M176 230 l4 6 4 -6" />
+            <path class="dg-line" d="M300 188 V236" /><path class="dg-line" d="M296 230 l4 6 4 -6" />
+            <path class="dg-line" d="M420 188 V236" /><path class="dg-line" d="M416 230 l4 6 4 -6" />
+
+            <rect class="dg-band" x="0" y="236" width="600" height="80" opacity=".5" />
+            <text class="dg-lbl" x="6" y="250">Data &amp; model tier</text>
+
+            <rect class="dg-box" x="118" y="256" width="124" height="46" />
+            <text class="dg-t" x="180" y="274" text-anchor="middle">PostgreSQL</text>
+            <text class="dg-s" x="180" y="288" text-anchor="middle">Supabase · Prisma 6</text>
+
+            <rect class="dg-box" x="248" y="256" width="104" height="46" />
+            <text class="dg-t" x="300" y="274" text-anchor="middle">Object Storage</text>
+            <text class="dg-s" x="300" y="288" text-anchor="middle">every upload</text>
+
+            <rect class="dg-box" x="358" y="256" width="124" height="46" stroke="var(--accent)" />
+            <text class="dg-t" x="420" y="274" text-anchor="middle" fill="var(--accent-deep)">Google Gemini</text>
+            <text class="dg-s" x="420" y="288" text-anchor="middle">text · vision · live audio</text>
+
+            <!-- the security line -->
+            <path class="dg-dash" d="M0 104 H600" stroke="var(--coral)" />
+            <text class="dg-m" x="596" y="100" text-anchor="end" fill="var(--coral)">no key ever crosses this line</text>
+          </svg>
+
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div class="card">
+              <h3>Presentation</h3>
+              <p>React 19 + Vite SPA. Four role-scoped portals share one design system. HTTPS plus exactly one WebSocket.</p>
+            </div>
+            <div class="card">
+              <h3>Application</h3>
+              <p>Express 5 — REST, JWT auth, role guards, and a <b>relay</b> to the Gemini Live socket. The server mediates every model call.</p>
+            </div>
+            <div class="card">
+              <h3>Data</h3>
+              <p>Supabase PostgreSQL via Prisma ORM; object storage for uploads — files never touch local disk.</p>
+            </div>
+            <div class="card hi">
+              <h3>Security posture</h3>
+              <p><b>No model runs in the browser. No API key ever reaches it.</b> The browser holds only a JWT.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 DEPLOYMENT ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">07</span><span class="tick"></span><span class="sect">Architecture</span></div>
+    <div class="body">
+      <div class="kicker">Deployment — live, not a localhost demo</div>
+      <h1>Shipped to <em>production</em></h1>
+      <p class="sub">The system is deployed and publicly reachable. Every URL below is live; the frontend is built from the same commit as the backend.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <svg viewBox="0 0 880 190" role="img" aria-label="Deployment topology: Vercel frontend calls the Render backend, which reaches Supabase Postgres, Supabase storage and the Gemini API; GitHub Actions pings the backend to keep it warm">
+          <rect class="dg-box" x="1" y="60" width="128" height="56" />
+          <text class="dg-t" x="65" y="80" text-anchor="middle">Browser</text>
+          <text class="dg-s" x="65" y="95" text-anchor="middle">student / TPO</text>
+
+          <path class="dg-line-a" d="M129 88 H185" /><path class="dg-line-a" d="M179 84 l6 4 -6 4" />
+
+          <rect class="dg-box-a" x="186" y="52" width="150" height="72" />
+          <text class="dg-t" x="261" y="74" text-anchor="middle">Vercel</text>
+          <text class="dg-s" x="261" y="89" text-anchor="middle">React SPA (static)</text>
+          <text class="dg-m" x="261" y="105" text-anchor="middle">VITE_API_URL</text>
+
+          <path class="dg-line-a" d="M336 88 H392" /><path class="dg-line-a" d="M386 84 l6 4 -6 4" />
+          <text class="dg-lbl" x="364" y="78" text-anchor="middle">REST + WS</text>
+
+          <rect class="dg-box-a" x="393" y="44" width="164" height="88" />
+          <text class="dg-t" x="475" y="68" text-anchor="middle">Render</text>
+          <text class="dg-s" x="475" y="83" text-anchor="middle">Express 5 + WebSocket</text>
+          <text class="dg-s" x="475" y="97" text-anchor="middle">node-cron jobs</text>
+          <text class="dg-m" x="475" y="115" text-anchor="middle">holds every secret</text>
+
+          <path class="dg-line" d="M557 62 H640" /><path class="dg-line" d="M634 58 l6 4 -6 4" />
+          <path class="dg-line" d="M557 88 H640" /><path class="dg-line" d="M634 84 l6 4 -6 4" />
+          <path class="dg-line" d="M557 114 H640" /><path class="dg-line" d="M634 110 l6 4 -6 4" />
+
+          <rect class="dg-box" x="641" y="44" width="180" height="36" />
+          <text class="dg-t" x="731" y="60" text-anchor="middle">Supabase Postgres</text>
+          <text class="dg-s" x="731" y="72" text-anchor="middle">Prisma · pooled 6543</text>
+
+          <rect class="dg-box" x="641" y="84" width="180" height="30" />
+          <text class="dg-t" x="731" y="103" text-anchor="middle">Supabase Storage</text>
+
+          <rect class="dg-box" x="641" y="118" width="180" height="30" stroke="var(--accent)" />
+          <text class="dg-t" x="731" y="137" text-anchor="middle" fill="var(--accent-deep)">Gemini API</text>
+
+          <!-- keep-alive loop -->
+          <path class="dg-dash" d="M475 132 V166 H120 V116" stroke="var(--amber)" />
+          <path class="dg-line" d="M116 122 l4 -6 4 6" stroke="var(--amber)" />
+          <rect class="dg-box" x="196" y="152" width="220" height="28" stroke="var(--amber)" />
+          <text class="dg-s" x="306" y="170" text-anchor="middle" fill="var(--amber)">GitHub Actions — 10-min keep-alive ping</text>
+        </svg>
+
+        <div class="grid g3">
+          <div class="card">
+            <h3>Frontend — Vercel</h3>
+            <p>Static React build, global CDN. The API origin is injected at build time; not a single URL is hard-coded.</p>
+          </div>
+          <div class="card">
+            <h3>Backend — Render</h3>
+            <p>Express + WebSocket + cron. Every secret lives here as an environment variable — none are committed to git.</p>
+          </div>
+          <div class="card hi">
+            <h3>Free-tier honesty</h3>
+            <p>Render sleeps when idle and Supabase pauses after a week. A scheduled ping keeps both warm — a real constraint, engineered around.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 08 DATA MODEL ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">08</span><span class="tick"></span><span class="sect">Data</span></div>
+    <div class="body">
+      <div class="kicker">The database</div>
+      <h1>16 entities — and a <em>mid-project migration</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="split-r">
+          <svg viewBox="0 0 340 260" role="img" aria-label="Entity relationships: a test owns questions and attempts; a student owns attempts, submissions, profile and NOC">
+            <rect class="dg-box-a" x="106" y="1" width="128" height="34" />
+            <text class="dg-t" x="170" y="22" text-anchor="middle">AptitudeTest</text>
+
+            <path class="dg-line" d="M140 35 V62 H70 V78" /><path class="dg-line" d="M66 72 l4 6 4 -6" />
+            <path class="dg-line" d="M200 35 V62 H272 V78" /><path class="dg-line" d="M268 72 l4 6 4 -6" />
+
+            <rect class="dg-box" x="12" y="79" width="116" height="34" />
+            <text class="dg-t" x="70" y="100" text-anchor="middle">TestQuestion</text>
+
+            <rect class="dg-box" x="214" y="79" width="116" height="34" />
+            <text class="dg-t" x="272" y="100" text-anchor="middle">TestAttempt</text>
+            <text class="dg-m" x="272" y="126" text-anchor="middle">UNIQUE (testId, studentId)</text>
+
+            <rect class="dg-box-a" x="106" y="150" width="128" height="34" />
+            <text class="dg-t" x="170" y="171" text-anchor="middle">Student</text>
+
+            <path class="dg-line" d="M234 167 H290 V113" /><path class="dg-line" d="M286 119 l4 -6 4 6" />
+
+            <path class="dg-line" d="M130 184 V206 H44 V222" /><path class="dg-line" d="M40 216 l4 6 4 -6" />
+            <path class="dg-line" d="M170 184 V222" /><path class="dg-line" d="M166 216 l4 6 4 -6" />
+            <path class="dg-line" d="M210 184 V206 H296 V222" /><path class="dg-line" d="M292 216 l4 6 4 -6" />
+
+            <rect class="dg-box" x="1" y="223" width="86" height="32" />
+            <text class="dg-t" x="44" y="243" text-anchor="middle" font-size="10">Submission</text>
+            <rect class="dg-box" x="127" y="223" width="86" height="32" />
+            <text class="dg-t" x="170" y="243" text-anchor="middle" font-size="10">Profile</text>
+            <rect class="dg-box" x="253" y="223" width="86" height="32" />
+            <text class="dg-t" x="296" y="243" text-anchor="middle" font-size="10">NOC</text>
+          </svg>
+
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div class="card">
+              <h3><span class="n">1</span>Why we left MongoDB</h3>
+              <p>Deleting a test <b>orphaned its questions and attempts</b>, corrupting analytics. The store refused to enforce invariants the domain genuinely has. <b>The domain is relational.</b></p>
+            </div>
+            <div class="card hi">
+              <h3><span class="n">2</span>What the engine now guarantees</h3>
+              <p><b>UNIQUE (testId, studentId)</b> makes a duplicate attempt <b>impossible</b>, not merely guarded against. Soft deletion preserves every student's evidentiary record.</p>
+            </div>
+            <div class="card">
+              <h3><span class="n">3</span>Honest qualification</h3>
+              <p>Cross-model references are still plain strings — no declared foreign keys. Declaring true FKs in Prisma is named immediate future work, not hidden.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 09 THE AI LAYER ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">09</span><span class="tick"></span><span class="sect">AI</span></div>
+    <div class="body">
+      <div class="kicker">The AI layer</div>
+      <h1>One key, <em>three modalities</em>, a fallback chain</h1>
+      <p class="sub">Every AI feature is served by Google Gemini through a single provider module. Each capability routes to the model tier it actually needs — and each tier degrades down a list rather than failing.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <svg viewBox="0 0 880 172" role="img" aria-label="Model routing: features route to a text tier, a parsing vision tier, or the live audio tier, each with ordered model fallbacks">
+          <rect class="dg-box" x="1" y="14" width="150" height="26" />
+          <text class="dg-s" x="76" y="31" text-anchor="middle">Resume analysis</text>
+          <rect class="dg-box" x="1" y="44" width="150" height="26" />
+          <text class="dg-s" x="76" y="61" text-anchor="middle">Test generation</text>
+          <rect class="dg-box" x="1" y="74" width="150" height="26" />
+          <text class="dg-s" x="76" y="91" text-anchor="middle">Handwriting grading</text>
+          <rect class="dg-box" x="1" y="104" width="150" height="26" />
+          <text class="dg-s" x="76" y="121" text-anchor="middle">Marksheet OCR</text>
+          <rect class="dg-box" x="1" y="134" width="150" height="26" />
+          <text class="dg-s" x="76" y="151" text-anchor="middle">Voice interview</text>
+
+          <path class="dg-line" d="M151 27 H236 V44" /><path class="dg-line" d="M151 57 H236" />
+          <path class="dg-line" d="M151 87 H210 V96" /><path class="dg-line" d="M151 117 H210 V96" />
+          <path class="dg-line" d="M210 96 H236" />
+          <path class="dg-line" d="M151 147 H236" />
+
+          <rect class="dg-box-a" x="237" y="34" width="180" height="34" />
+          <text class="dg-t" x="327" y="49" text-anchor="middle">Text + JSON tier</text>
+          <text class="dg-m" x="327" y="62" text-anchor="middle">schema-constrained output</text>
+
+          <rect class="dg-box-a" x="237" y="79" width="180" height="34" />
+          <text class="dg-t" x="327" y="94" text-anchor="middle">Parsing / vision tier</text>
+          <text class="dg-m" x="327" y="107" text-anchor="middle">pro model — reads documents</text>
+
+          <rect class="dg-box-a" x="237" y="130" width="180" height="34" />
+          <text class="dg-t" x="327" y="145" text-anchor="middle">Live audio tier</text>
+          <text class="dg-m" x="327" y="158" text-anchor="middle">speech in / speech out</text>
+
+          <path class="dg-line-a" d="M417 51 H472" /><path class="dg-line-a" d="M466 47 l6 4 -6 4" />
+          <path class="dg-line-a" d="M417 96 H472" /><path class="dg-line-a" d="M466 92 l6 4 -6 4" />
+          <path class="dg-line-a" d="M417 147 H472" /><path class="dg-line-a" d="M466 143 l6 4 -6 4" />
+
+          <text class="dg-lbl" x="672" y="24" text-anchor="middle">ordered fallback — a retired preview model cannot take the feature down</text>
+
+          <rect class="dg-box" x="473" y="34" width="130" height="34" />
+          <text class="dg-t" x="538" y="55" text-anchor="middle" font-size="10">gemini-3.5-flash</text>
+          <path class="dg-dash" d="M603 51 H628" />
+          <rect class="dg-box" x="629" y="34" width="120" height="34" opacity=".72" />
+          <text class="dg-s" x="689" y="55" text-anchor="middle">gemini-2.5-flash</text>
+
+          <rect class="dg-box" x="473" y="79" width="130" height="34" />
+          <text class="dg-t" x="538" y="100" text-anchor="middle" font-size="10">gemini-3.1-pro</text>
+          <path class="dg-dash" d="M603 96 H628" />
+          <rect class="dg-box" x="629" y="79" width="120" height="34" opacity=".72" />
+          <text class="dg-s" x="689" y="100" text-anchor="middle">gemini-2.5-pro</text>
+
+          <rect class="dg-box" x="473" y="130" width="130" height="34" />
+          <text class="dg-t" x="538" y="147" text-anchor="middle" font-size="9.5">3.1-flash-live</text>
+          <text class="dg-m" x="538" y="158" text-anchor="middle">voice: Charon</text>
+          <path class="dg-dash" d="M603 147 H628" />
+          <rect class="dg-box" x="629" y="130" width="120" height="34" opacity=".72" />
+          <text class="dg-s" x="689" y="151" text-anchor="middle">next live model</text>
+        </svg>
+
+        <div class="grid g3">
+          <div class="card hi">
+            <h3>Schema-constrained, not prompt-and-pray</h3>
+            <p>Grading and analysis calls declare a strict response schema. A grade can never come back with a missing score or a half-written breakdown.</p>
+          </div>
+          <div class="card">
+            <h3>Right model for the job</h3>
+            <p>Flash reads text fast. Reading a handwritten script or a grade card is a different problem — those route to a <b>pro</b> model, because Flash drops table rows.</p>
+          </div>
+          <div class="card">
+            <h3>Resilience by list</h3>
+            <p>Each tier holds an ordered model list. Google retiring a preview model degrades the tier; it does not break the page.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 10 RESUME ANALYZER ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">10</span><span class="tick"></span><span class="sect">AI</span></div>
+    <div class="body">
+      <div class="kicker">Module 1</div>
+      <h1>AI Resume Analyzer — <em>how it works</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <svg viewBox="0 0 880 108" role="img" aria-label="Five-step resume analysis pipeline from upload to persisted, explainable result">
+          <g>
+            <rect class="dg-box-a" x="1" y="24" width="150" height="58" />
+            <text class="dg-m" x="12" y="41">01</text>
+            <text class="dg-t" x="12" y="58">Upload</text>
+            <text class="dg-s" x="12" y="72">PDF/DOCX + job desc</text>
+          </g>
+          <path class="dg-line-a" d="M151 53 H179" /><path class="dg-line-a" d="M173 49 l6 4 -6 4" />
+          <g>
+            <rect class="dg-box" x="180" y="24" width="150" height="58" />
+            <text class="dg-m" x="191" y="41">02</text>
+            <text class="dg-t" x="191" y="58">Extract text</text>
+            <text class="dg-s" x="191" y="72">pdf-parse · mammoth</text>
+          </g>
+          <path class="dg-line-a" d="M330 53 H358" /><path class="dg-line-a" d="M352 49 l6 4 -6 4" />
+          <g>
+            <rect class="dg-box-a" x="359" y="24" width="150" height="58" />
+            <text class="dg-m" x="370" y="41">03</text>
+            <text class="dg-t" x="370" y="58">AI analysis</text>
+            <text class="dg-s" x="370" y="72">Gemini · JSON schema</text>
+          </g>
+          <path class="dg-line-a" d="M509 53 H537" /><path class="dg-line-a" d="M531 49 l6 4 -6 4" />
+          <g>
+            <rect class="dg-box" x="538" y="24" width="160" height="58" />
+            <text class="dg-m" x="549" y="41">04</text>
+            <text class="dg-t" x="549" y="58">Explainable result</text>
+            <text class="dg-s" x="549" y="72">score + evidence + fixes</text>
+          </g>
+          <path class="dg-line-a" d="M698 53 H726" /><path class="dg-line-a" d="M720 49 l6 4 -6 4" />
+          <g>
+            <rect class="dg-box" x="727" y="24" width="150" height="58" />
+            <text class="dg-m" x="738" y="41">05</text>
+            <text class="dg-t" x="738" y="58">Persist</text>
+            <text class="dg-s" x="738" y="72">re-openable history</text>
+          </g>
+          <text class="dg-lbl" x="76" y="14">in memory — never written to disk</text>
+          <text class="dg-lbl" x="440" y="100" text-anchor="middle">a model outage degrades the result; it never breaks the page</text>
+        </svg>
+
+        <div class="split">
+          <div>
+            <div class="kicker" style="margin-bottom:8px">The six-factor weighted score</div>
+            <svg viewBox="0 0 480 128" role="img" aria-label="Bar chart of the six ATS score weights: keyword match 25 percent, semantic relevance 20, skill alignment 20, experience fit 15, format 10, industry 10">
+              <g font-family="var(--sans)">
+                <text class="dg-s" x="0" y="14">K — keyword match</text>
+                <rect class="bar-w" x="180" y="4" width="280" height="11" />
+                <rect class="bar" x="180" y="4" width="175" height="11" />
+                <text class="dg-m" x="466" y="14" text-anchor="end">0.25</text>
+
+                <text class="dg-s" x="0" y="35">M — semantic (TF-IDF)</text>
+                <rect class="bar-w" x="180" y="25" width="280" height="11" />
+                <rect class="bar" x="180" y="25" width="140" height="11" />
+                <text class="dg-m" x="466" y="35" text-anchor="end">0.20</text>
+
+                <text class="dg-s" x="0" y="56">K′ — skill alignment</text>
+                <rect class="bar-w" x="180" y="46" width="280" height="11" />
+                <rect class="bar" x="180" y="46" width="140" height="11" />
+                <text class="dg-m" x="466" y="56" text-anchor="end">0.20</text>
+
+                <text class="dg-s" x="0" y="77">E — experience fit</text>
+                <rect class="bar-w" x="180" y="67" width="280" height="11" />
+                <rect class="bar" x="180" y="67" width="105" height="11" />
+                <text class="dg-m" x="466" y="77" text-anchor="end">0.15</text>
+
+                <text class="dg-s" x="0" y="98">F — format / parseability</text>
+                <rect class="bar-w" x="180" y="88" width="280" height="11" />
+                <rect class="bar" x="180" y="88" width="70" height="11" />
+                <text class="dg-m" x="466" y="98" text-anchor="end">0.10</text>
+
+                <text class="dg-s" x="0" y="119">I — industry alignment</text>
+                <rect class="bar-w" x="180" y="109" width="280" height="11" />
+                <rect class="bar" x="180" y="109" width="70" height="11" />
+                <text class="dg-m" x="466" y="119" text-anchor="end">0.10</text>
+              </g>
+            </svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card hi">
+              <h3>NFR-4 — never a bare number</h3>
+              <p>A suggestion fires <b>because</b> a measured component fell below its cutoff. Every piece of advice is traceable to the evidence that produced it.</p>
+            </div>
+            <div class="card">
+              <h3>Clamped to [20, 100]</h3>
+              <p>An unrelated resume never reports a demoralising zero — a deliberate pedagogical choice, not a bug.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 11 MOCK INTERVIEW ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">11</span><span class="tick"></span><span class="sect">AI</span></div>
+    <div class="body">
+      <div class="kicker">Module 2 — the flagship</div>
+      <h1>AI Mock Interview — <em>a real conversation</em></h1>
+      <p class="sub">Spoken · adaptive · resume-conditioned · competency-decomposed — the four properties prior systems never satisfied together.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <svg viewBox="0 0 880 96" role="img" aria-label="Five-step interview pipeline from configure to report">
+          <rect class="dg-box-a" x="1" y="18" width="146" height="56" />
+          <text class="dg-m" x="12" y="34">01</text><text class="dg-t" x="12" y="51">Configure</text>
+          <text class="dg-s" x="12" y="65">role · type · difficulty</text>
+          <path class="dg-line-a" d="M147 46 H175" /><path class="dg-line-a" d="M169 42 l6 4 -6 4" />
+
+          <rect class="dg-box" x="176" y="18" width="146" height="56" />
+          <text class="dg-m" x="187" y="34">02</text><text class="dg-t" x="187" y="51">Start session</text>
+          <text class="dg-s" x="187" y="65">resume → persona</text>
+          <path class="dg-line-a" d="M322 46 H350" /><path class="dg-line-a" d="M344 42 l6 4 -6 4" />
+
+          <rect class="dg-box-a" x="351" y="18" width="160" height="56" />
+          <text class="dg-m" x="362" y="34">03</text><text class="dg-t" x="362" y="51">Speak — live loop</text>
+          <text class="dg-s" x="362" y="65">PCM16 both ways · VAD</text>
+          <path class="dg-line-a" d="M511 46 H539" /><path class="dg-line-a" d="M533 42 l6 4 -6 4" />
+
+          <rect class="dg-box" x="540" y="18" width="152" height="56" />
+          <text class="dg-m" x="551" y="34">04</text><text class="dg-t" x="551" y="51">End interview</text>
+          <text class="dg-s" x="551" y="65">transcript flattened</text>
+          <path class="dg-line-a" d="M692 46 H720" /><path class="dg-line-a" d="M714 42 l6 4 -6 4" />
+
+          <rect class="dg-box" x="721" y="18" width="156" height="56" />
+          <text class="dg-m" x="732" y="34">05</text><text class="dg-t" x="732" y="51">Report</text>
+          <text class="dg-s" x="732" y="65">score · bands · analysis</text>
+
+          <text class="dg-lbl" x="431" y="90" text-anchor="middle">separate evaluation call — grading is not done by the interviewer</text>
+        </svg>
+
+        <div class="split">
+          <div>
+            <div class="kicker" style="margin-bottom:8px">Relay, not passthrough</div>
+            <svg viewBox="0 0 480 96" role="img" aria-label="Audio relays from the browser through the Express server to Gemini Live; the API key never leaves the server">
+              <rect class="dg-box" x="1" y="26" width="120" height="44" />
+              <text class="dg-t" x="61" y="44" text-anchor="middle">Browser</text>
+              <text class="dg-s" x="61" y="58" text-anchor="middle">mic · speaker</text>
+
+              <path class="dg-line-a" d="M121 40 H178" /><path class="dg-line-a" d="M172 36 l6 4 -6 4" />
+              <path class="dg-line-a" d="M178 56 H121" /><path class="dg-line-a" d="M127 52 l-6 4 6 4" />
+              <text class="dg-m" x="149" y="30" text-anchor="middle">JWT</text>
+
+              <rect class="dg-box-a" x="179" y="18" width="122" height="60" />
+              <text class="dg-t" x="240" y="42" text-anchor="middle">Express</text>
+              <text class="dg-s" x="240" y="56" text-anchor="middle">holds the key</text>
+              <text class="dg-m" x="240" y="70" text-anchor="middle">relay</text>
+
+              <path class="dg-line-a" d="M301 40 H358" /><path class="dg-line-a" d="M352 36 l6 4 -6 4" />
+              <path class="dg-line-a" d="M358 56 H301" /><path class="dg-line-a" d="M307 52 l-6 4 6 4" />
+
+              <rect class="dg-box" x="359" y="26" width="120" height="44" stroke="var(--accent)" />
+              <text class="dg-t" x="419" y="44" text-anchor="middle" fill="var(--accent-deep)">Gemini Live</text>
+              <text class="dg-s" x="419" y="58" text-anchor="middle">speech ⇄ speech</text>
+
+              <path class="dg-dash" d="M320 8 V88" stroke="var(--coral)" />
+              <text class="dg-m" x="325" y="14" fill="var(--coral)">key never crosses</text>
+            </svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card">
+              <h3>Natural turn-taking</h3>
+              <p>Server-side voice activity detection decides when a turn ends — a conversation, not a walkie-talkie.</p>
+            </div>
+            <div class="card hi">
+              <h3>During the interview: zero praise</h3>
+              <p>The persona may never say "good answer". <b>An interview that flatters teaches nothing</b> — evaluation happens on the record, afterwards.</p>
+            </div>
+            <div class="card">
+              <h3>Resume conditioning</h3>
+              <p>Parsed projects and skills are injected into the persona. No question bank — every follow-up is generated live.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 12 HANDWRITING GRADING ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">12</span><span class="tick"></span><span class="sect">AI</span></div>
+    <div class="body">
+      <div class="kicker">Module 3 — verified end-to-end on the live system</div>
+      <h1>Handwritten scripts, <em>graded by vision</em></h1>
+      <p class="sub">A student photographs or scans a handwritten answer sheet. One vision call performs the OCR and the grading together — there is no brittle text-extraction step to fail first.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <svg viewBox="0 0 880 104" role="img" aria-label="Handwritten submission pipeline: upload, store, single Gemini vision call producing score, feedback, per-question breakdown and transcription, then staff override">
+          <rect class="dg-box-a" x="1" y="20" width="132" height="58" />
+          <text class="dg-m" x="12" y="36">01</text><text class="dg-t" x="12" y="53">Upload</text>
+          <text class="dg-s" x="12" y="67">PDF or photo</text>
+          <path class="dg-line-a" d="M133 49 H161" /><path class="dg-line-a" d="M155 45 l6 4 -6 4" />
+
+          <rect class="dg-box" x="162" y="20" width="132" height="58" />
+          <text class="dg-m" x="173" y="36">02</text><text class="dg-t" x="173" y="53">Store</text>
+          <text class="dg-s" x="173" y="67">object storage</text>
+          <path class="dg-line-a" d="M294 49 H322" /><path class="dg-line-a" d="M316 45 l6 4 -6 4" />
+
+          <rect class="dg-box-a" x="323" y="10" width="230" height="78" stroke="var(--accent)" />
+          <text class="dg-m" x="334" y="26">03</text>
+          <text class="dg-t" x="334" y="43">One Gemini vision call</text>
+          <text class="dg-s" x="334" y="58">reads the handwriting</text>
+          <text class="dg-s" x="334" y="71">+ grades against the rubric</text>
+          <text class="dg-m" x="334" y="84">strict JSON schema</text>
+          <path class="dg-line-a" d="M553 49 H581" /><path class="dg-line-a" d="M575 45 l6 4 -6 4" />
+
+          <rect class="dg-box" x="582" y="10" width="152" height="78" />
+          <text class="dg-m" x="593" y="26">04</text><text class="dg-t" x="593" y="43">Result</text>
+          <text class="dg-s" x="593" y="58">score · feedback</text>
+          <text class="dg-s" x="593" y="71">per-question breakdown</text>
+          <text class="dg-s" x="593" y="84">+ transcription</text>
+          <path class="dg-line-a" d="M734 49 H762" /><path class="dg-line-a" d="M756 45 l6 4 -6 4" />
+
+          <rect class="dg-box" x="763" y="20" width="114" height="58" />
+          <text class="dg-m" x="774" y="36">05</text><text class="dg-t" x="774" y="53">Staff review</text>
+          <text class="dg-s" x="774" y="67">can override</text>
+        </svg>
+
+        <div class="split">
+          <div class="card hi">
+            <h3>Live evidence — not a claim</h3>
+            <p>A handwritten answer sheet was submitted through the deployed system. Gemini transcribed the handwriting <b>verbatim</b> and returned a per-question breakdown.</p>
+            <div class="chips" style="margin-top:9px">
+              <span class="chip"><b>20 / 20</b> awarded</span>
+              <span class="chip">4 questions</span>
+              <span class="chip">OCR matched the script</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card">
+              <h3>The teacher stays in the loop</h3>
+              <p>Staff can override any AI score. The extracted text is kept and shown, so a student can verify what the model believed they wrote — and contest it.</p>
+            </div>
+            <div class="card">
+              <h3>Why one call, not two</h3>
+              <p>OCR-then-grade loses the layout: struck-through work, marginal notes, a diagram. Grading from the image preserves the evidence a human marker would use.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 13 TESTING + ANALYTICS ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">13</span><span class="tick"></span><span class="sect">Modules</span></div>
+    <div class="body">
+      <div class="kicker">Aptitude testing &amp; analytics</div>
+      <h1>Where the cohort <em>actually fails</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="split">
+          <div>
+            <div class="kicker" style="margin-bottom:8px">Per-question difficulty — a real test on the live system</div>
+            <svg viewBox="0 0 480 132" role="img" aria-label="Question success rates fall from 100 percent on question 1 to 20 percent on question 5, identifying the hardest question">
+              <g>
+                <text class="dg-s" x="0" y="14">Q1</text>
+                <rect class="bar-w" x="34" y="4" width="360" height="12" />
+                <rect class="bar" x="34" y="4" width="360" height="12" />
+                <text class="dg-m" x="478" y="14" text-anchor="end">100%</text>
+
+                <text class="dg-s" x="0" y="38">Q2</text>
+                <rect class="bar-w" x="34" y="28" width="360" height="12" />
+                <rect class="bar" x="34" y="28" width="288" height="12" />
+                <text class="dg-m" x="478" y="38" text-anchor="end">80%</text>
+
+                <text class="dg-s" x="0" y="62">Q3</text>
+                <rect class="bar-w" x="34" y="52" width="360" height="12" />
+                <rect class="bar" x="34" y="52" width="216" height="12" />
+                <text class="dg-m" x="478" y="62" text-anchor="end">60%</text>
+
+                <text class="dg-s" x="0" y="86">Q4</text>
+                <rect class="bar-w" x="34" y="76" width="360" height="12" />
+                <rect class="bar" x="34" y="76" width="144" height="12" fill="var(--amber)" />
+                <text class="dg-m" x="478" y="86" text-anchor="end">40%</text>
+
+                <text class="dg-s" x="0" y="110">Q5</text>
+                <rect class="bar-w" x="34" y="100" width="360" height="12" />
+                <rect class="bar" x="34" y="100" width="72" height="12" fill="var(--coral)" />
+                <text class="dg-m" x="478" y="110" text-anchor="end">20%</text>
+
+                <text class="dg-lbl" x="34" y="128">the hardest question is now a fact, not a hunch</text>
+              </g>
+            </svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card">
+              <h3>Three ways to author a test</h3>
+              <p>By hand, by <b>AI generation</b>, or by <b>extraction from a question-paper PDF</b>. Timed attempts, shuffling, negative marking, auto-grading.</p>
+            </div>
+            <div class="card hi">
+              <h3>Proctoring flags — it does not accuse</h3>
+              <p>Tab switches and fullscreen exits are recorded as telemetry <b>for human review</b>. The system never auto-punishes a student on a signal it cannot interpret.</p>
+            </div>
+            <div class="card">
+              <h3>What staff see</h3>
+              <p>Score distribution, pass rate, a named leaderboard, and per-question success rates — plus a four-sheet Excel export.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="kicker" style="margin-bottom:7px">State flows — every transition stamped with actor and time</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="chain">
+              <span class="chip" style="border:0;padding-left:0">NOC</span>
+              <span class="pill on">applies</span><span class="arw">→</span>
+              <span class="pill">sent</span><span class="arw">→</span>
+              <span class="pill">read</span><span class="arw">→</span>
+              <span class="pill">reply soon</span><span class="arw">→</span>
+              <span class="pill on">completed</span>
+              <span class="chip" style="border:0">e-mail at every change · full audit trail</span>
+            </div>
+            <div class="chain">
+              <span class="chip" style="border:0;padding-left:0">Test</span>
+              <span class="pill on">draft</span><span class="arw">→</span>
+              <span class="pill">published</span><span class="arw">→</span>
+              <span class="pill">ongoing</span><span class="arw">→</span>
+              <span class="pill">completed</span><span class="arw">→</span>
+              <span class="pill">archived</span>
+              <span class="chip" style="border:0">deletion is soft — attempts survive</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 14 STACK ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">14</span><span class="tick"></span><span class="sect">Engineering</span></div>
+    <div class="body">
+      <div class="kicker">Tech stack</div>
+      <h1>Stack &amp; <em>justification</em></h1>
+      <p class="sub">Every choice below was made for a reason that can be defended — not because it was fashionable.</p>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="grid g2">
+          <div class="twrap">
+            <table>
+              <thead><tr><th style="width:26%">Layer</th><th>Choice &amp; why</th></tr></thead>
+              <tbody>
+                <tr><td>Client</td><td><b>React 19 + Vite</b> · TanStack Query · Tailwind + shadcn/ui</td></tr>
+                <tr><td>Server</td><td><b>Node.js + Express 5</b> — one language across the stack, native async error handling</td></tr>
+                <tr><td>Database</td><td><b>PostgreSQL</b> (Supabase) via <b>Prisma 6</b> — relational integrity the domain requires</td></tr>
+                <tr><td>Storage</td><td>Supabase Object Storage — uploads never touch local disk</td></tr>
+                <tr><td>Auth</td><td>JWT (24 h) + bcrypt (cost 10) + e-mail OTP</td></tr>
+                <tr><td>Jobs / Export</td><td>node-cron reminders · ExcelJS four-sheet export · PDFKit</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="twrap">
+            <table>
+              <thead><tr><th style="width:44%">AI capability</th><th>Model tier</th></tr></thead>
+              <tbody>
+                <tr><td>Voice interview</td><td>Gemini <b>Live</b> — speech to speech, server VAD</td></tr>
+                <tr><td>Interview evaluation</td><td>Gemini Flash — structured JSON report</td></tr>
+                <tr><td>Resume analysis</td><td>Gemini Flash — schema-constrained</td></tr>
+                <tr><td>Handwriting grading</td><td>Gemini <b>Pro</b> vision — OCR + rubric, one pass</td></tr>
+                <tr><td>Marksheet / paper OCR</td><td>Gemini <b>Pro</b> vision — Flash drops table rows</td></tr>
+                <tr><td>Resilience</td><td>Ordered model fallback per tier</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="quote">
+          One provider, one key, three modalities. <b>Consolidating on Gemini removed an entire class of failure</b> —
+          four vendors meant four outage surfaces, four billing accounts and four SDKs to keep current.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 15 EVALUATION ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">15</span><span class="tick"></span><span class="sect">Evaluation</span></div>
+    <div class="body">
+      <div class="kicker">Methodology &amp; performance</div>
+      <h1>Four methods, <em>one live deployment</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="split">
+          <div class="grid g2">
+            <div class="card"><h3><span class="n">1</span>Functional verification</h3><p>All 14 modules driven end-to-end with real credentials — <b>zero uncaught client exceptions</b>.</p></div>
+            <div class="card"><h3><span class="n">2</span>Behavioural inspection</h3><p>AI outputs examined against their inputs: is the cited evidence actually consistent with the score?</p></div>
+            <div class="card"><h3><span class="n">3</span>Usability study</h3><p>14 volunteer final-year students used both AI modules and were surveyed.</p></div>
+            <div class="card hi"><h3><span class="n">4</span>Systematic code audit</h3><p><b>The audit, not the testing, found the defects</b> now named as immediate hardening work.</p></div>
+          </div>
+          <div>
+            <div class="kicker" style="margin-bottom:8px">Latency — measured</div>
+            <svg viewBox="0 0 400 104" role="img" aria-label="Interview turn latency 0.9 seconds, well under the 1.5 second conversational threshold; resume analysis 4.2 seconds">
+              <text class="dg-s" x="0" y="16">Interview turn</text>
+              <rect class="bar-w" x="0" y="24" width="380" height="14" />
+              <rect class="bar" x="0" y="24" width="72" height="14" />
+              <text class="dg-m" x="80" y="35">0.9 s — streamed</text>
+              <path class="dg-dash" d="M120 18 V44" stroke="var(--coral)" />
+              <text class="dg-m" x="124" y="16" fill="var(--coral)">1.5 s conversational threshold</text>
+
+              <text class="dg-s" x="0" y="66">Resume analysis</text>
+              <rect class="bar-w" x="0" y="74" width="380" height="14" />
+              <rect class="bar" x="0" y="74" width="168" height="14" fill="var(--rule-strong)" />
+              <text class="dg-m" x="176" y="85">4.2 s — not conversational</text>
+              <text class="dg-lbl" x="0" y="102">only one operation has a conversational threshold — and it meets it</text>
+            </svg>
+          </div>
+        </div>
+        <div class="quote">
+          The interview is the only feature where latency is <span style="font-style:italic">felt</span> as rudeness.
+          <b>Four seconds is fine for a resume report and fatal in a conversation</b> — so only the interview streams.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 16 USABILITY ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">16</span><span class="tick"></span><span class="sect">Evaluation</span></div>
+    <div class="body">
+      <div class="kicker">Usability study</div>
+      <h1>What fourteen students <em>told us</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="grid" style="grid-template-columns:repeat(5,1fr)">
+          <div class="stat"><div class="v">93%</div><div class="l">"It asked about <b>my own</b> projects and skills"</div></div>
+          <div class="stat"><div class="v">86%</div><div class="l">"Felt like a conversation" &amp; "more prepared"</div></div>
+          <div class="stat"><div class="v">79%</div><div class="l">Resume suggestions were <b>specific</b>, not generic</div></div>
+          <div class="stat"><div class="v">71%</div><div class="l">"Told me something I did not already know"</div></div>
+          <div class="stat"><div class="v coral">21%</div><div class="l">Knew beforehand an ATS would screen them <b>at all</b></div></div>
+        </div>
+
+        <div class="grid g2" style="margin-top:2px">
+          <div class="card">
+            <h3>Rehearsal cures rehearsal deficits</h3>
+            <p>Students reported their real problem is not <span style="font-style:italic">absent knowledge</span> but articulating knowledge under pressure, aloud, to a stranger — a register they had never once practised.</p>
+          </div>
+          <div class="card hi">
+            <h3>The honest caveat</h3>
+            <p><b>n = 14, self-selected, known to the author.</b> Descriptive only — no statistical inference is drawn. One complaint (an empty Score Breakdown panel) led straight to a real audit finding.</p>
+          </div>
+        </div>
+
+        <div class="quote">
+          The last figure is the one that matters. <b>Four in five students did not know the filter existed</b> —
+          they were being rejected by a machine they had never heard of.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 17 ROAD AHEAD ============ -->
+  <section class="slide">
+    <div class="rail"><span class="num">17</span><span class="tick"></span><span class="sect">Impact</span></div>
+    <div class="body">
+      <div class="kicker">Impact &amp; the road ahead</div>
+      <h1>What changes, and <em>what's next</em></h1>
+      <div class="rule"></div>
+      <div class="content">
+        <div class="grid g3">
+          <div class="card">
+            <h3>For students</h3>
+            <p>24/7 resume feedback and interview rehearsal behind one login. Live NOC tracking — no more office visits for a status. Targeted notices, no missed drives.</p>
+          </div>
+          <div class="card">
+            <h3>For TPOs &amp; faculty</h3>
+            <p>Screening, grading and notification hours automated away. Analytics finally answer <span style="font-style:italic">"where do students fail?"</span> Every request tracked and auditable.</p>
+          </div>
+          <div class="card">
+            <h3>For the institution</h3>
+            <p>The college owns its platform and its data. No per-student licences — the marginal cost is API usage. A model other MAKAUT colleges can adopt.</p>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:var(--rule-strong)">
+          <h3 style="margin-bottom:9px">Road ahead — ordered by benefit over cost</h3>
+          <div class="chain" style="gap:7px">
+            <span class="pill on">1 · close the three audit-found security defects</span>
+            <span class="pill">2 · port the six-factor scorer into Node</span>
+            <span class="pill">3 · declare true foreign keys in Prisma</span>
+            <span class="pill">4 · move interview state to Redis</span>
+            <span class="pill">5 · validate ATS scores against real hiring outcomes</span>
+          </div>
+        </div>
+
+        <div class="quote">
+          Technology should enhance human effort, not replace it.
+          <b>This is not just software — it is a strategic upgrade that makes placement transparent, efficient and student-centric.</b>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 18 CLOSE ============ -->
+  <section class="slide title-slide">
+    <div class="title-body">
+      <div class="title-left">
+        <div class="kicker">Viva Voce &middot; Question &amp; Answer</div>
+        <h1>Thank <em>you</em></h1>
+        <div class="rule" style="margin:18px 0;max-width:320px"></div>
+        <p class="sub" style="max-width:46ch">
+          Ascend is deployed, publicly reachable, and every figure in this deck was measured on the running system.
+        </p>
+        <div class="chips" style="margin-top:8px">
+          <span class="chip">github.com/lovieheartz/<b>Placement-Pulse</b></span>
+          <span class="chip">Full report &middot; <b>Ascend_Project_Report</b></span>
+        </div>
+      </div>
+      <div class="title-right">
+        <div>
+          <div class="kicker">Candidate</div>
+          <div class="meta">
+            <b>Md Rehan Farooque</b><br />
+            Roll 10930622032 &middot; Regd 221090110043
+          </div>
+        </div>
+        <div>
+          <div class="kicker">Supervision</div>
+          <div class="meta">
+            Guide: <b>Prof. Saikat Bandopadhyay</b><br />
+            HOD: <b>Dr. Anupam Ghosh</b>
+          </div>
+        </div>
+        <div class="meta" style="font-size:11.5px">
+          Dept. of AI &amp; Machine Learning<br />
+          Netaji Subhash Engineering College &middot; MAKAUT<br />
+          July 2026
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <button id="prev" aria-label="Previous slide">&larr;</button>
+  <span id="count">1 / 18</span>
+  <button id="next" aria-label="Next slide">&rarr;</button>
+  <button id="print" aria-label="Print or save as PDF">PDF</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const countEl = document.getElementById('count');
+  const barEl = document.getElementById('bar');
+  let i = 0;
+
+  const go = (n) => {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    sync();
+  };
+  const sync = () => {
+    countEl.textContent = (i + 1) + ' / ' + slides.length;
+    barEl.style.width = ((i + 1) / slides.length * 100) + '%';
+  };
+
+  document.getElementById('next').onclick = () => go(i + 1);
+  document.getElementById('prev').onclick = () => go(i - 1);
+  document.getElementById('print').onclick = () => window.print();
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(i + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+    if (e.key === 'Home') { e.preventDefault(); go(0); }
+    if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+  });
+
+  // keep the counter honest when the deck is scrolled by hand
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (en.isIntersecting) { i = slides.indexOf(en.target); sync(); }
+    });
+  }, { threshold: 0.55 });
+  slides.forEach((s) => io.observe(s));
+
+  sync();
+</script>
